@@ -150,7 +150,7 @@ function determineType(result) {
 	 * 
 	 * This is probably not going to work with google scholar in other languages
 	 */
-	var subTitle = ZU.xpathText(result, './div[@class="gs_a"]');
+	var subTitle = ZU.xpathText(result, './/div[@class="gs_a"]');
 	if(!subTitle) return 'article';
 
 	if(subTitle.match(/\bpatent\s+\d/i)) {
@@ -223,10 +223,10 @@ function scrapeArticleResults(doc, articles) {
 
 						//attach linked page as snapshot if available
 						var snapshotUrl = ZU.xpathText(article.result,
-							'.//h3[@class="gs_rt"]/a/@href');
+							'.//h3[@class="gs_rt"]//a/@href');
 						var linkTitle = ZU.xpathText(article.result,
 							'.//h3[@class="gs_rt"]');
-
+                        Zotero.debug("XXX - getting attachment: "+snapshotUrl+" "+linkTitle);
 						var attachment;
 						if(linkTitle && snapshotUrl) {
 							//try to get an attachment
@@ -252,7 +252,7 @@ function scrapeArticleResults(doc, articles) {
 								//a[.//span[@class="gs_ctg2"]]');
 						for(var i=0, n=pdf.length; i<n; i++) {
 							var attach = getAttachment(pdf[i].href,
-											pdf[i].childNodes[0].textContent);
+														pdf[i].textContent);
 							if(!attach) continue;
 
 							//drop attachment linked by the main link
@@ -289,11 +289,11 @@ function scrapeArticleResults(doc, articles) {
 
 function scrapeCaseResults(doc, cases) {
 	for(var i=0, n=cases.length; i<n; i++) {
-		var titleString = ZU.xpathText(cases[i].result, './h3[@class="gs_rt"]');
-		var citeletString = ZU.xpathText(cases[i].result, './div[@class="gs_a"]');
+		var titleString = ZU.xpathText(cases[i].result, './/h3[@class="gs_rt"]');
+		var citeletString = ZU.xpathText(cases[i].result, './/div[@class="gs_a"]');
 	
 		var attachmentFrag = ZU.xpathText(cases[i].result,
-								'./h3[@class="gs_rt"]/a/@href');
+								'.//h3[@class="gs_rt"]//a/@href');
 		if (attachmentFrag) {
 			var attachmentLinks = [attachmentFrag];
 		} else {
@@ -398,7 +398,7 @@ function scrapePatentResults(doc, patents) {
 
 					//attach google patents page
 					var patentUrl = ZU.xpathText(result,
-									'./h3[@class="gs_rt"]/a[1]/@href');
+									'.//h3[@class="gs_rt"]//a[1]/@href');
 					if(patentUrl) {
 						item.attachments.push({
 							title: 'Google Patents page',
@@ -421,7 +421,6 @@ function scrapePatentResults(doc, patents) {
  * result block instead of using Google Patents translator
 		var patentUrl = ZU.xpathText(patents[i].result,
 									'.//h3[@class="gs_rt"]/a[1]/@href');
-
 		if(patentUrl) {
 			(function(doc, url) {
 				ZU.processDocuments(url, function(doc) {

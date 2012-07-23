@@ -16,12 +16,14 @@ function detectWeb(doc, url) {
 	if (!doc.getElementsByTagName("body")[0].hasChildNodes()) return;
 	if (doc.location.href.match(/(search.*[?&]q=|#q=.+tbm=pts)/)) {
 		return "multiple";
-	} else if (doc.location.href.match(/[?&]id=|patents\/US/)) {
+	} else if(doc.location.href.match(/[?&]id=/)) {
 		return "patent";
 	}
 }
 
-function associateData(newItem, dataTags, field, zoteroField) {
+//Google Patents Translator. Code by Adam Crymble
+
+function associateData (newItem, dataTags, field, zoteroField) {
 	if (dataTags[field]) {
 		newItem[zoteroField] = dataTags[field];
 	}
@@ -42,27 +44,27 @@ function scrape(doc, url) {
 	// We avoid the next node containing only :\u00A0 (colon followed by a non-breaking space),
 	// since it is a separate node when the field's value is linked (authors, assignees).
 	var xPathContents = doc.evaluate('//div[@class="patent_bibdata"]//b/following::text()[not(.=":\u00A0")][1]', doc, null, XPathResult.ANY_TYPE, null);
-
+	
 	// create an associative array of the items and their contents
 	var heading, content;
-	while (heading = xPathHeadings.iterateNext(), content = xPathContents.iterateNext()) {
-		if (heading.textContent == 'Publication number') {
+	while( heading = xPathHeadings.iterateNext(), content = xPathContents.iterateNext()){
+		if(heading.textContent == 'Publication number'){
 			content = doc.evaluate('//div[@class="patent_bibdata"]//b[text()="Publication number"]/following::nobr[1]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 		}
-		if (heading.textContent == 'Inventors') {
-			content = ZU.xpathText(doc, '//div[@class="patent_bibdata"]//b[text()="Inventors"]/following::a[contains(@href,"inventor")]');
+		if(heading.textContent == 'Inventors'){
+			content = ZU.xpathText(doc,'//div[@class="patent_bibdata"]//b[text()="Inventors"]/following::a[contains(@href,"inventor")]');
 			dataTags["Inventors"] = content;
 		} else {
 			dataTags[heading.textContent] = content.textContent.replace(": ", '');;
 		}
 		//Zotero.debug(dataTags);
 	}
-
+	
 	if (doc.evaluate('//td[3]/p', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		newItem.abstractNote = (doc.evaluate('//td[3]/p', doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent.replace("Abstract", ''));
-	}
-
-
+	}	
+	
+	
 	/*
 	for (var i =0; i < xPathCount.numberValue; i++) {
 		
@@ -75,6 +77,7 @@ function scrape(doc, url) {
 	splitContent = contents.split(/xxx/);
 	*/
 	//associate headings with contents.
+	
 	//extra field
 	newItem.extra = '';
 
@@ -90,69 +93,58 @@ function scrape(doc, url) {
 		if (dataTags[fieldTitle].match("About this patent")) {
 			dataTags[fieldTitle] = dataTags[fieldTitle].replace("About this patent", '');
 		}
-
-		//author(s)
+		
+	//author(s)
 		if (fieldTitle == "Inventors") {
-			if (dataTags[fieldTitle] && dataTags[fieldTitle].toUpperCase() == dataTags[fieldTitle]) {
+			if (dataTags[fieldTitle] && dataTags[fieldTitle].toUpperCase() == dataTags[fieldTitle])
 				dataTags[fieldTitle] = Zotero.Utilities.capitalizeTitle(dataTags[fieldTitle].toLowerCase(), true);
-				//deal with the quirk that a single "a" remains lowercase with capitalizeTitle
-				dataTags[fieldTitle] = dataTags[fieldTitle].replace(/\sa.?\s/, " A. ");
-			}
 			var authors = dataTags[fieldTitle].split(", ");
 			for (var j = 0; j < authors.length; j++) {
-
 				newItem.creators.push(Zotero.Utilities.cleanAuthor(authors[j], "inventor"));
 			}
 		} else if (fieldTitle == "Inventor") {
-
-			if (dataTags[fieldTitle] && dataTags[fieldTitle].toUpperCase() == dataTags[fieldTitle]) {
+			if (dataTags[fieldTitle] && dataTags[fieldTitle].toUpperCase() == dataTags[fieldTitle])
 				dataTags[fieldTitle] = Zotero.Utilities.capitalizeTitle(dataTags[fieldTitle].toLowerCase(), true);
-				//deal with the quirk that a single "a" remains lowercase with capitalizeTitle
-				dataTags[fieldTitle] = dataTags[fieldTitle].replace(/\sa.?\s/, " A. ");
-			}
 			newItem.creators.push(Zotero.Utilities.cleanAuthor(dataTags["Inventor"], "inventor"));
 		}
-
-		if (fieldTitle == "Current U.S. Classification") {
-			newItem.extra += "U.S. Classification: " + dataTags["Current U.S. Classification"] + "\n";
-		} else if (fieldTitle == "International Classification") {
-			newItem.extra += "International Classification: " + dataTags["International Classification"] + "\n";
-		} else if (fieldTitle == "Publication number") {
-			newItem.extra += "Publication number: " + dataTags["Publication number"] + "\n";
+		
+		if (fieldTitle == "Current U.S. Classification"  ) {
+			newItem.extra += "U.S. Classification: " + dataTags["Current U.S. Classification"]+"\n";
+		} else if (fieldTitle == "International Classification" ) {
+			newItem.extra += "International Classification: " + dataTags["International Classification"]+"\n";
+		}	else if (fieldTitle == "Publication number" ) {
+			newItem.extra += "Publication number: " +dataTags["Publication number"]+"\n";
 		}
 	}
 
-	associateData(newItem, dataTags, "Patent number", "patentNumber");
-	associateData(newItem, dataTags, "Issue date", "date");
-	associateData(newItem, dataTags, "Filing date", "filingDate");
-	associateData(newItem, dataTags, "Assignees", "assignee");
-	associateData(newItem, dataTags, "Assignee", "assignee");
-	associateData(newItem, dataTags, "Original Assignee", "assignee");
-	associateData(newItem, dataTags, "Abstract", "abstractNote");
-	associateData(newItem, dataTags, "Application number", "applicationNumber");
-
-	newItem.title = ZU.xpathText(doc, '//h1[@class="gb-volume-title"]');
-	newItem.url = doc.location.href.replace(/(^[^\?]*\?id=[a-zA-Z0-9\-\_]+).*/, "$1");
+	associateData (newItem, dataTags, "Patent number", "patentNumber");
+	associateData (newItem, dataTags, "Issue date", "date");
+	associateData (newItem, dataTags, "Filing date", "filingDate");
+	associateData (newItem, dataTags, "Assignees", "assignee");
+	associateData (newItem, dataTags, "Assignee", "assignee");
+	associateData (newItem, dataTags, "Original Assignee", "assignee");
+	associateData (newItem, dataTags, "Abstract", "abstractNote");
+	associateData (newItem, dataTags, "Application number", "applicationNumber");
+	
+	newItem.title = doc.evaluate('//h1[@class="gb-volume-title"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+	newItem.url = doc.location.href.replace(/(^[^\?]*\?id=[a-zA-Z0-9]+).*/,"$1");
 
 	// Fix things in uppercase
-	var toFix = ["title", "shortTitle", "assignee"];
-	for each(var i in toFix) {
-		if (newItem[i] && newItem[i].toUpperCase() == newItem[i]) newItem[i] = Zotero.Utilities.capitalizeTitle(newItem[i].toLowerCase(), true);
+	var toFix = [ "title", "shortTitle", "assignee" ];
+	for each (var i in toFix) {
+		if (newItem[i] && newItem[i].toUpperCase() == newItem[i])
+		newItem[i] = Zotero.Utilities.capitalizeTitle(newItem[i].toLowerCase(), true);
 	}
 
-	var pdf = doc.evaluate('//a[@id="appbar-download-pdf-link"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
-	if (pdf) newItem.attachments.push({
-		url: pdf.href,
-		title: "Google Patents PDF",
-		mimeType: "application/pdf"
-	});
+	var pdf = doc.evaluate('//div[@class="g-button-basic"]//a[contains(@href,"/download/")]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+	if (pdf) newItem.attachments.push({url:pdf.href, title:"Google Patents PDF", mimeType:"application/pdf"});
 
 	newItem.complete();
 }
 
 function doWeb(doc, url) {
 	var host = 'http://' + doc.location.host + "/";
-
+	
 	if (detectWeb(doc, url) == "multiple") {
 		var items = Zotero.Utilities.getItemArray(doc, doc, /\/patents(\?id=|\/US.+&ei=)/);
 		var trimmed = {};
@@ -170,11 +162,9 @@ function doWeb(doc, url) {
 				i = i.replace(/\?.+/, "?hl=en");
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, scrape, function () {
-				Zotero.done();
-			});
+			Zotero.Utilities.processDocuments(articles, scrape, function() {Zotero.done();});
 			Zotero.wait();
-		});
+		});			
 	} else {
 		//make sure we always get the overview page - but only reload the page when necessary
 		var newurl;
@@ -228,13 +218,7 @@ var testCases = [
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],
-				"attachments": [
-					{
-						"url": "http://www.google.com/patents/US1065211.pdf",
-						"title": "Google Patents PDF",
-						"mimeType": "application/pdf"
-					}
-				],
+				"attachments": [],
 				"country": "United States",
 				"extra": "U.S. Classification: 215/273",
 				"patentNumber": "1065211",
@@ -255,7 +239,7 @@ var testCases = [
 				"itemType": "patent",
 				"creators": [
 					{
-						"firstName": "Jonathan A.",
+						"firstName": "Jonathan a.",
 						"lastName": "Hunt",
 						"creatorType": "inventor"
 					}
@@ -263,12 +247,7 @@ var testCases = [
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],
-				"attachments": [
-					{
-						"title": "Google Patents PDF",
-						"mimeType": "application/pdf"
-					}
-				],
+				"attachments": [],
 				"country": "United States",
 				"extra": "U.S. Classification: 411/477",
 				"patentNumber": "1120656",
@@ -323,13 +302,7 @@ var testCases = [
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],
-				"attachments": [
-					{
-						"url": "http://www.google.fr/patents/US7123498.pdf",
-						"title": "Google Patents PDF",
-						"mimeType": "application/pdf"
-					}
-				],
+				"attachments": [],
 				"abstractNote": "MRAM has read word lines WLR and write word line WLW extending in the y direction, write/read bit line BLW/R and write bit line BLW extending in the x direction, and the memory cells MC disposed at the points of the intersection of these lines. The memory MC includes sub-cells SC1 and SC2. The sub-cell SC1 includes magneto resistive elements MTJ1 and MTJ2 and a selection transistor Tr1, and the sub-cell SC2 includes magneto resistive elements MTJ3 and MTJ4 and a selection transistor Tr2. The magneto resistive elements MTJ1 and MTJ2 are connected in parallel, and the magneto resistive elements MTJ3 and MTJ4 are also connected in parallel. Further, the sub-cells SC1 and SC2 are connected in series between the write/read bit line BLW/R and the ground.",
 				"country": "United States",
 				"extra": "U.S. Classification: 365/63",
