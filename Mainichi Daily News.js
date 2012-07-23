@@ -16,6 +16,12 @@
 // #### Local utility functions ####
 // #################################
 
+// Original regexp
+// var itemRe = new RegExp('.*/[a-z]*([0-9]{8})([a-z0-9]+)c\.html');
+
+var searchRe = new RegExp('/result\?');
+
+// From 3.0 branch. Looks like there has been a site reorganization.
 var itemRe = new RegExp('.*\/([0-9]{8})[a-z]{1}[a-z0-9]{2}[0-9]{2}[a-z]{1}[0-9a-z]{3}[0-9]{6}c(\/[0-9]*)?\.html');
 
 
@@ -34,9 +40,12 @@ var cleanUp = function (str) {
 // #########################
 
 var detectWeb = function (doc, url) {
-	if (itemRe.test(doc.location.href)) {
-		return "newspaperArticle";
-	} else {
+	if (itemRe.test(url)) {
+		var news = doc.getElementsByClassName("NewsBody");
+		if (news && news.length) {
+			return "newspaperArticle";
+		}
+	} else if (searchRe.test(url)) {
 		return "multiple";
 	}
 }
@@ -81,7 +90,7 @@ var doWeb = function (doc, url) {
 		title = nodes.iterateNext();
 		if (title) {
 			title = cleanUp(title.textContent);
-			scrapeAndParse(url, title);
+			scrapeAndParse(doc, title);
 		}
 	}
 };
@@ -90,21 +99,43 @@ var doWeb = function (doc, url) {
 // ##### Scraper function #####
 // ############################
 
-var scrapeAndParse = function (url, title) {
+var scrapeAndParse = function (doc, title) {
 	var item, mytxt, m, val;
 	item = new Zotero.Item("newspaperArticle");
 	item.title = title;
 	item.publicationTitle = "Mainichi Daily News";
 	item.edition = "online edition";
-	item.url = url;
-	m = itemRe.exec(url);
+	item.url = doc.location.href;
+
+	var date = "";
+	m = item.url.match(itemRe);
 	if (m) {
 		var year = m[1].slice(0,4);
 		var month = m[1].slice(4,6);
 		var day = m[1].slice(6,8);
-		item.date = [year, month, day].join("-");
+		var date = [year, month, day].join("-");
+		item.date = date;
+		date = ", " + date;
 	}
-	item.attachments.push({title:"Mainichi Daily News snapshot", mimeType:"text/html", url:url});
+
+	// Use DOM methods to grab elements and wrap in a new document.
+	var newDoc = false;
+	var label = "Mainichi Shimbun content" + date
+	var article = doc.getElementsByClassName("NewsArticle");
+	if (article && article.length) {
+		newDoc = Zotero.Utilities.composeDOM(doc, label, article);
+	} else {
+		var title = doc.getElementsByClassName("NewsTitle");
+		var body = doc.getElementsByClassName("NewsBody");
+		newDoc = Zotero.Utilities.composeDOM(doc, label, [title, body]);
+	}
+	if (newDoc) {
+		item.attachments.push({
+				title: "Mainichi article content",
+				document:newDoc,
+				snapshot: true
+        });
+	}
 	item.complete();
 };
 /** BEGIN TEST CASES **/
