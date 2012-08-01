@@ -84,11 +84,9 @@ function getFirstResults(node, properties, onlyOneString, preserveObject) {
 				// onlyOneString means we won't return nsIRDFResources, only
 				// actual literals
 				if(typeof(result[0]) != "object" || result[0].termType == 'literal') {
-					if (preserveObject) {
-						return result[0];
-					} else {
-						return result[0].value;
-					}
+					return result[0];
+				} else {
+					return result[0].uri;
 				}
 			} else {
 				return result;
@@ -371,18 +369,18 @@ function detectType(newItem, node, ret) {
 			break;
 			//zotero
 			case "attachment":
-				// unless processing of independent attachment is intended, don't
-				// process
+			// unless processing of independent attachment is intended, don't
+			// process
 
-				// process as file
-				t.zotero = "attachment";
-	
-				var path = getFirstResults(node, [rdf+"resource"]);
-				if(path) {
-					newItem.path = Zotero.RDF.getResourceURI(path[0]);
-				}
-				newItem.charset = getFirstResults(node, [n.link+"charset"], true);
-				newItem.mimeType = getFirstResults(node, [n.link+"type"], true);
+			// process as file
+			t.zotero = "attachment";
+
+			var path = getFirstResults(node, [rdf+"resource"]);
+			if(path) {
+				newItem.path = Zotero.RDF.getResourceURI(path[0]);
+			}
+			newItem.charset = getFirstResults(node, [n.link+"charset"], true);
+			newItem.mimeType = getFirstResults(node, [n.link+"type"], true);
 		}
 	}
 
@@ -670,9 +668,8 @@ function importItem(newItem, node) {
 
 	// XXX fixme
 	// publicationTitle -- first try PRISM, then DC
-	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication",
-		n.dc+"source", n.dcterms+"source", n.og+"site_name"], true);
-	
+	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.dc+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+
 	// rights
 	newItem.rights = getFirstResults(node, [n.prism+"copyright", n.prism2_0+"copyright", n.prism2_1+"copyright", n.dc+"rights", n.dcterms+"rights"], true);
 	
@@ -1075,13 +1072,13 @@ function doImport() {
 		}
 
 		var newItem = new Zotero.Item();
-		newItem.itemID = Zotero.RDF.getResourceURI(node);
+		newItem.itemID = itemID;
 
 		if(importItem(newItem, node)) {
 			newItem.checkFields = 'title';
 			newItem.complete();
 		}
-
+		
 		Zotero.setProgress(i++/nodes.length*100);
 	}
 
