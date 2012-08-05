@@ -698,20 +698,24 @@ function importItem(newItem, node) {
 		newItem.itemType = "journalArticle";
 	}
 
-	// XXX fixme
 	// series
 	var series = getNodeByType(isPartOf, n.bib+"Series");
 	if(series) {
-		newItem.series = getFirstResults(series, [n.dc+"title"], true);
-		newItem.seriesTitle = getFirstResults(series, [n.dcterms+"alternative"], true);
-		newItem.seriesText = getFirstResults(series, [n.dc+"description"], true);
-		newItem.seriesNumber = getFirstResults(series, [n.dc+"identifier"], true);
+		result = getFirstResults(series, [n.dc+"title"], false, true);
+		setMultiFields('series', result);
+		result = getFirstResults(series, [n.dcterms+"alternative"], false, true);
+		setMultiFields("seriesTitle", result); 
+		result = getFirstResults(series, [n.dc+"description"], false, true);
+		setMultiFields("seriesText", result);
+		result = getFirstResults(series, [n.dc+"identifier"], false, true);
+		setMultiFields("seriesNumber", result);
 	}
 
 	// volume
-	newItem.volume = getFirstResults((container ? container : node), [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
-		n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], true);
-	
+	result = getFirstResults((container ? container : node), [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
+		       n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
+	setMultiFields("volume", result);
+
 	// issue
 	newItem.issue = getFirstResults((container ? container : node), [n.prism+"number", n.prism2_0+"number", n.prism2_1+"number",
 		n.eprints+"number", n.bibo+"issue", n.dcterms+"citation.issue"], true);
@@ -744,7 +748,8 @@ function importItem(newItem, node) {
 	newItem.numberOfVolumes = getFirstResults(node, [n.bibo+"numVolumes"], true);
 
 	// short title
-	newItem.shortTitle = getFirstResults(node, [n.bibo+"shortTitle"], true);
+	result = getFirstResults(node, [n.bibo+"shortTitle"], false, true);
+	setMultiFields("shortTitle", result);
 	
 	// mediums
 	newItem.artworkMedium = newItem.interviewMedium = getFirstResults(node, [n.dcterms+"medium"], true);
@@ -802,7 +807,9 @@ function importItem(newItem, node) {
 
 	if(identifiers) {
 		for(var i in identifiers) {
-			if(typeof(identifiers[i]) == "string") {
+			// This is a bit of a workaround. Was simple typeof in official translator.
+			if(typeof identifiers[i] === "string" || !identifiers[i].id) {
+				identifiers[i] = identifiers[i].toString();
 				// grab other things
 				var beforeSpace = identifiers[i].substr(0, identifiers[i].indexOf(" ")).toUpperCase();
 
@@ -966,7 +973,8 @@ function importItem(newItem, node) {
 		var uri = Zotero.RDF.getResourceURI(arc);
 		if(uri.substr(0, n.z.length) == n.z) {
 			var property = uri.substr(n.z.length);
-			newItem[property] = Zotero.RDF.getTargets(node, n.z+property)[0];
+			var result = getFirstResults(node, [uri], false, true);
+			setMultiFields(property, result);
 		}
 	}
 
