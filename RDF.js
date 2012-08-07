@@ -78,12 +78,13 @@ var callNumberTypes = [n.dcterms+"LCC", n.dcterms+"DDC", n.dcterms+"UDC"];
 // ontologies
 function getFirstResults(node, properties, onlyOneString, preserveObject) {
 	for(var i=0; i<properties.length; i++) {
-		var result = Zotero.RDF.getTargets(node, properties[i], true);
+		var result = Zotero.RDF.getTargets(node, properties[i], preserveObject);
 		if(result) {
 			if(onlyOneString) {
 				// onlyOneString means we won't return nsIRDFResources, only
 				// actual literals
-				if(typeof(result[0]) != "object" || result[0].termType == 'literal') {
+				if((!preserveObject && typeof(result[0]) != "object")
+					|| result[0].termType == 'literal') {
 					return result[0];
 				} else {
 					return result[0].uri;
@@ -808,8 +809,9 @@ function importItem(newItem, node) {
 	if(identifiers) {
 		for(var i in identifiers) {
 			// This is a bit of a workaround. Was simple typeof in official translator.
-			if(typeof identifiers[i] === "string" || !identifiers[i].id) {
-				identifiers[i] = identifiers[i].toString();
+			//if(typeof identifiers[i] === "string" || !identifiers[i].id) {
+			//	identifiers[i] = identifiers[i].toString();
+			if(typeof identifiers[i] === "string") {
 				// grab other things
 				var beforeSpace = identifiers[i].substr(0, identifiers[i].indexOf(" ")).toUpperCase();
 
