@@ -156,7 +156,9 @@ function handleCreators(newItem, creators, creatorType) {
 						[n.foaf+"givenName", n.foaf+"firstName",
 						 n.foaf+"givenname"], false, true);	//unofficial
 					creator.lastName = lastName[0].toString();
-					creator.firstName = firstName[0].toString();
+					if (firstName && firstName[0]) {
+						creator.firstName = firstName[0].toString();
+					}
 					creator.creatorType = creatorType;
 					for (var j = 1, jlen = lastName.length; j < jlen; j += 1) {
 						creator.multi._lst.push(lastName[j].lang);
