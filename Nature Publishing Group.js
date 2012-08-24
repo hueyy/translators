@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-30 10:38:44"
+	"lastUpdated": "2012-07-27 18:34:44"
 }
 
 /**
@@ -160,9 +160,21 @@ function scrapeEmbedMeta(doc, url) {
 			}];
 		}
 
-		if (!item.tags || item.tags.length < 1) item.tags = getKeywords(doc);
+		var keywords = getKeywords(doc);
+		if(keywords) item.tags = keywords;
+		else if(item.tags) {
+			keywords = [];
+			//sometimes keywords inside meta tags are not split properly
+			//they have both semicolon and comma. We will also split by comma
+			for(var i=0, n=item.tags.length; i<n; i++) {
+				keywords = keywords.concat(item.tags[i].split(/\s*,\s*/));
+			}
+			item.tags = keywords;
+		}
 
 		if (item.notes) item.notes = [];
+		
+		if(item.ISSN === "ERROR! NO ISSN") delete item.ISSN;
 
 		item.complete();
 	});
@@ -666,18 +678,11 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"ONC",
-					"oncogenes",
-					"cancer",
-					"apoptosis",
-					"tumor suppressor genes",
-					"tumor viruses",
-					"molecular oncology",
-					"cell cycle",
-					"growth factors",
-					"growth factor receptors",
-					"apoptosis",
-					"growth regulatory genes"
+					"gastric cancer",
+					"cancer stem cells",
+					"CD90",
+					"ERBB2",
+					"trastuzumab (herceptin)"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -801,39 +806,10 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"The EMBO Journal",
-					"European Molecular Biology Organization",
-					"science",
-					"scientific journal",
-					"biology articles",
-					"cell signalling",
-					"cell biology",
-					"structure",
-					"biological research",
-					"journal of cell biology",
-					"molecular and cellular biology",
-					"genetics",
-					"biochemistry",
-					"molecular cell biology",
-					"molecular biology of the cell",
-					"development",
-					"immunology",
-					"neuroscience",
-					"plant biology",
-					"structural biology",
-					"genomic and computational biology",
-					"genome stability and dynamics",
-					"chromatin and transcription",
-					"RNA",
-					"proteins",
-					"cellular metabolism",
-					"signal transduction",
-					"cell cycle",
-					"differentiation and death",
-					"membranes and transport",
-					"cell and tissue architecture",
-					"microbiology and pathogens",
-					"molecular biology of disease."
+					"arginine methylation",
+					"cancer",
+					"E2F-1",
+					"growth control"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -857,7 +833,6 @@ var testCases = [
 				"label": "Nature Publishing Group",
 				"distributor": "Nature Publishing Group",
 				"date": "04/04/2012",
-				"ISSN": "ERROR! NO ISSN",
 				"language": "en",
 				"DOI": "10.1038/emboj.2012.17",
 				"abstractNote": "E2F transcription factors are implicated in diverse cellular functions. The founding member, E2F-1, is endowed with contradictory activities, being able to promote cell-cycle progression and induce apoptosis. However, the mechanisms that underlie the opposing outcomes of E2F-1 activation remain largely unknown. We show here that E2F-1 is directly methylated by PRMT5 (protein arginine methyltransferase 5), and that arginine methylation is responsible for regulating its biochemical and functional properties, which impacts on E2F-1-dependent growth control. Thus, depleting PRMT5 causes increased E2F-1 protein levels, which coincides with decreased growth rate and associated apoptosis. Arginine methylation influences E2F-1 protein stability, and the enhanced transcription of a variety of downstream target genes reflects increased E2F-1 DNA-binding activity. Importantly, E2F-1 is methylated in tumour cells, and a reduced level of methylation is evident under DNA damage conditions that allow E2F-1 stabilization and give rise to apoptosis. Significantly, in a subgroup of colorectal cancer, high levels of PRMT5 frequently coincide with low levels of E2F-1 and reflect a poor clinical outcome. Our results establish that arginine methylation regulates the biological activity of E2F-1 activity, and raise the possibility that arginine methylation contributes to tumourigenesis by influencing the E2F pathway.",
@@ -912,8 +887,7 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"Astronomy",
-					"Astrophysics"
+					"Astronomy"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -1150,6 +1124,7 @@ var testCases = [
 					}
 				],
 				"notes": [],
+				"tags": [],
 				"seeAlso": [],
 				"attachments": [
 					{
@@ -1172,7 +1147,6 @@ var testCases = [
 				"label": "Nature Publishing Group",
 				"distributor": "Nature Publishing Group",
 				"date": "11/01/2006",
-				"ISSN": "ERROR! NO ISSN",
 				"language": "en",
 				"DOI": "10.1038/ng1901",
 				"url": "http://www.nature.com/ng/journal/v38/n11/full/ng1901.html",
