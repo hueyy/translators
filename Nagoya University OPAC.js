@@ -218,8 +218,10 @@ var scrapePage = function(doc, spec) {
 /*
  * Bring it all together.
  */
-function scrapeAndParse(doc,url) {
-	if (!detectWeb(doc,url)){
+function scrapeAndParse(doc) {
+    var url = doc.location.href;
+
+    if (!detectWeb(doc,url)){
 		return false;
 	}
 	var item = new Zotero.Item("book");
@@ -260,7 +262,9 @@ function scrapeAndParse(doc,url) {
 	if (data['isbn']) {
 		item.ISBN = data['isbn'][0].replace(/[^0-9]*([0-9]+).*/, "$1");
 	}
+    Zotero.debug("Before complete, item.title= " + item.title);
 	item.complete();
+    Zotero.debug("  After complete, item.title=" + item.title);
 }
 
 // #########################
@@ -284,6 +288,7 @@ function detectWeb(doc, url) {
 function doWeb(doc, url) {
 	var format = detectWeb(doc, url);
 	if (format == "multiple") {
+        var urls = [];
 		var items = {};
 		for (var u in Zotero.selectItems( getBookItems(doc) )){
 			var m = u.match(/.*document\.catsrhform\.pkey\.value=\'([^\']+)\'.*/);
@@ -295,7 +300,7 @@ function doWeb(doc, url) {
 		}
 		ZU.processDocuments(u, scrapeAndParse);
 	} else if (format == "book"){
-		scrapeAndParse(doc, url);
+		scrapeAndParse(doc);
 	}
 }
 /** BEGIN TEST CASES **/
