@@ -1,5 +1,6 @@
 {
 	"translatorID": "57a00950-f0d1-4b41-b6ba-44ff0fc30289",
+	"translatorType": 4,
 	"label": "Google Scholar",
 	"creator": "Simon Kornblith, Frank Bennett, Aurimas Vinckevicius",
 	"target": "^https?://scholar\\.google\\.(?:com|cat|(?:com?\\.)?[a-z]{2})/scholar(?:_case)?\\?",
@@ -7,7 +8,6 @@
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "gcsib",
 	"lastUpdated": "2012-11-01 08:10:06"
 }
@@ -723,6 +723,10 @@ ItemFactory.prototype.getAttachments = function (doctype) {
 	var i, ilen, attachments;
 	attachments = [];
 	for (i = 0, ilen = this.attachmentLinks.length; i < ilen; i += 1) {
+		if (this.attachmentLinks[i].slice(0, 1) === "/") {
+			this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
+			this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/,"");
+		}
 		attachments.push({title:"Google Scholar Linked " + doctype, type:"text/html",
 							  url:this.attachmentLinks[i]});
 	}
@@ -770,6 +774,9 @@ ItemFactory.prototype.saveItem = function () {
 				if (i === (this.vv.volRepPag.length - 1)) {
 					this.pushAttachments("Judgement");
 				}
+				if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
+					this.item.extra = "{:jurisdiction:us} " + this.item.extra;
+				}
 				this.item.itemID = "" + bogusItemID;
 				bogusItemID += 1;
 				completed_items.push(this.item);
@@ -787,6 +794,9 @@ ItemFactory.prototype.saveItem = function () {
 			this.item = new Zotero.Item("case");
 			this.saveItemCommonVars();
 			this.pushAttachments("Judgement");
+			if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
+				this.item.extra = "{:jurisdiction:us} " + this.item.extra;
+			}
 			this.item.complete();
 		}
 	}
