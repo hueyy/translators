@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-09-05 17:34:24"
+	"lastUpdated": "2012-10-07 10:10:42"
 }
 
 /*
@@ -767,6 +767,9 @@ ItemFactory.prototype.saveItem = function () {
 					this.pushAttachments("Judgement");
 				}
 				if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
+                    if (!this.item.extra) {
+                        this.item.extra = "";
+                    }
 					this.item.extra = "{:jurisdiction:us} " + this.item.extra;
 				}
 				this.item.itemID = "" + bogusItemID;
