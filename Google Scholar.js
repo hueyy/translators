@@ -775,6 +775,9 @@ ItemFactory.prototype.saveItem = function () {
 					this.pushAttachments("Judgement");
 				}
 				if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
+                    if (!this.item.extra) {
+                        this.item.extra = "";
+                    }
 					this.item.extra = "{:jurisdiction:us} " + this.item.extra;
 				}
 				this.item.itemID = "" + bogusItemID;
