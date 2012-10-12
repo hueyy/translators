@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-10-11 20:50:27"
+	"lastUpdated": "2012-10-11 22:07:19"
 }
 
 var urlCheck = function (url) {
@@ -69,9 +69,39 @@ var scrapeCase = function (doc, url) {
 	var bodies = doc.getElementsByClassName('grid_12');
 	var heads = doc.getElementsByTagName("head");
     if (heads && bodies) {
-        var head = heads[0];
-        var body = bodies[0];
-	    var extract = Zotero.Utilities.composeDoc(doc, head, body);
+        head = heads[0];
+        body = bodies[0];
+        var headAndBody = [head,body];
+        var stylesheet = "";
+        for (var i = 0, ilen = 2; i < ilen; i += 1) {
+            var sheets = headAndBody[i].getElementsByTagName("link");
+            for (var j = 0, jlen = sheets.length; j < jlen; j += 1) {
+                var sheet = sheets[j];
+                if (sheet.getAttribute("type") === "text/css") {
+                    var src = ZU.retrieveSource(sheet.getAttribute("href"));
+                    // Styling for spoofed inner structure
+                    if (i === 1) {
+                        src = src.replace("html", "div.html-spoof", "g").replace("body", "div.body-spoof", "g");
+                    }
+                    stylesheet += src;
+                }
+            }
+        }
+        var stylesheetnode = doc.createElement("style");
+        stylesheetnode.setAttribute("type", "text/css");
+        var stylesheettext = doc.createTextNode(stylesheet);
+        stylesheetnode.appendChild(stylesheettext);
+        head.appendChild(stylesheetnode);
+
+        // Spoof inner structure
+        // - get children of inner body tag
+        var html_div = doc.createElement("div");
+        html_div.setAttribute("class", "html-spoof");
+        var body_div = doc.createElement("div");
+        body_div.setAttribute("class", "body-spoof");
+        html_div.appendChild(body_div)
+        body_div.appendChild(body.cloneNode(true));
+	    var extract = Zotero.Utilities.composeDoc(doc, head, html_div);
 	    var attachment = {
 		    title:"CALI Free Law Reporter transcript",
 		    document: extract,
