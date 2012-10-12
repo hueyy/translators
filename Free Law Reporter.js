@@ -3,41 +3,40 @@
 	"translatorType": 4,
 	"label": "Free Law Reporter",
 	"creator": "Frank Bennett",
-	"target": "^https?://(?:www\\.)*freelawreporter\\.org",
+	"target": "^https?://(?:www\\.)*freelawreporter\\.org/(?:index.php\\?.*q=|flrdoc.php\\?.*uuid=)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-10-07 10:10:42"
+	"lastUpdated": "2012-10-09 22:53:46"
 }
 
 var urlCheck = function (url) {
 	if (url.indexOf('?uuid=') > -1) {
 		return "case";
-	} else if (url.indexOf('/index.php?')) {
+	} else if (url.indexOf('/index.php?') > -1) {
 		return "multiple";
 	}
 }
 
 var detectWeb = function (doc, url) {
-	// Icon shows only for search results and law cases
+	// Icon should show only for search results and law cases
+    Zotero.debug("XXX url: "+url);
     return urlCheck(url);
 }
 
 var scrapeCase = function (doc, url) {
+    // Preliminaries
+    if (!url) {
+        url = doc.location.href;
+    }
     var elems = doc.getElementsByTagName("meta")
-
+    // Scrape
     var Item = new Zotero.Item("case");
-
-    // Needs: URL, jurisdiction
-    // Strip trailing period on court name
-    // Strip No. from docket number
-
     for (var i = 0, ilen = elems.length; i < ilen; i += 1) {
         var name = elems[i].getAttribute("name");
         var content = elems[i].getAttribute("content");
-        Zotero.debug("XXX "+content+" "+name);
         switch (name) {
         case "parties":
             Item.title = content;
@@ -67,12 +66,9 @@ var scrapeCase = function (doc, url) {
     }
     Item.url = url;
     Item.extra = "{:jurisdiction:us}"
+    // Finalise
     Item.complete();
 }
-
-/*********************************
- * Cookie manipulation functions *
- *********************************/
 
 function doWeb(doc, url) {
     if (urlCheck(url) === "case") {    
@@ -80,15 +76,17 @@ function doWeb(doc, url) {
     } else {
 		var results = ZU.xpath(doc,'//h5/a');
 		var items = new Object();
-		var resultDivs = new Object();
 		var docUrl;
 		for(var i=0, n=results.length; i<n; i++) {
-			docUrl = "http://www.freelawreporter/" + ZU.xpathText(results[i],'.//h5/a[1]/@href');
-			items[docUrl] = ZU.xpathText(results[i], './/h5/a');
+			docUrl = "http://www.freelawreporter/" + results[i].getAttribute('href');
+			items[docUrl] = results[i].textContent;
 		}
 		Zotero.selectItems(items, function(selectedItems) {
 			if(!selectedItems) {
                 return true;
+            }
+            for (var url in selectedItems) {
+                ZU.processDocuments(url, scrapeCase);
             }
         });
     }
