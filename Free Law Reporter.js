@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-10-09 22:53:46"
+	"lastUpdated": "2012-10-11 20:50:27"
 }
 
 var urlCheck = function (url) {
@@ -66,6 +66,19 @@ var scrapeCase = function (doc, url) {
     }
     Item.url = url;
     Item.extra = "{:jurisdiction:us}"
+	var bodies = doc.getElementsByClassName('grid_12');
+	var heads = doc.getElementsByTagName("head");
+    if (heads && bodies) {
+        var head = heads[0];
+        var body = bodies[0];
+	    var extract = Zotero.Utilities.composeDoc(doc, head, body);
+	    var attachment = {
+		    title:"CALI Free Law Reporter transcript",
+		    document: extract,
+		    snapshot:true
+	    };
+        Item.attachments.push(attachment);
+    }
     // Finalise
     Item.complete();
 }
