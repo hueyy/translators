@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-10-11 22:07:19"
+	"lastUpdated": "2012-10-12 01:38:22"
 }
 
 var urlCheck = function (url) {
@@ -50,6 +50,13 @@ var scrapeCase = function (doc, url) {
         case "docketnumber":
             Item.docketNumber = content.replace(/^No.*\s+/, "").replace(/\.$/, "");
             break;
+        case "jurisdiction":
+			var jurisdiction = jurisdiction_names[content];
+			if (!jurisdiction) {
+				jurisdiction = content;
+			}
+            Item.extra = "{:jurisdiction:" + jurisdiction + "}";
+            break;
         case "courtname":
             Item.court = content.replace(/\.$/,"");
             break;
@@ -64,13 +71,15 @@ var scrapeCase = function (doc, url) {
             break;
         }
     }
+	if (!Item.extra) {
+		Item.extra = "{:jurisdiction:us}"
+	}
     Item.url = url;
-    Item.extra = "{:jurisdiction:us}"
 	var bodies = doc.getElementsByClassName('grid_12');
 	var heads = doc.getElementsByTagName("head");
     if (heads && bodies) {
-        head = heads[0];
-        body = bodies[0];
+        var head = heads[0];
+        var body = bodies[0];
         var headAndBody = [head,body];
         var stylesheet = "";
         for (var i = 0, ilen = 2; i < ilen; i += 1) {
@@ -129,8 +138,69 @@ function doWeb(doc, url) {
                 return true;
             }
             for (var url in selectedItems) {
-                ZU.processDocuments(url, scrapeCase);
+                ZU.processDocuments(url, function(doc, url) {
+					Zotero.debug("XXX                 url="+url);
+					Zotero.debug("XXX   doc.location.href="+doc.location.href);
+					scrapeCase(doc, url);
+				});
             }
         });
     }
+}
+
+/*
+ * Jurisdiction values
+ */
+var jurisdiction_names = {
+  "Mississippi": "us;ms", 
+  "Iowa": "us;ia", 
+  "Oklahoma": "us;ok", 
+  "Wyoming": "us;wy", 
+  "Illinois": "us;il", 
+  "North Carolina": "us;nc", 
+  "Georgia": "us;ga", 
+  "Arkansas": "us;ar", 
+  "New Mexico": "us;nm", 
+  "Indiana": "us;in", 
+  "Maryland": "us;md", 
+  "Louisiana": "us;la", 
+  "Texas": "us;tx", 
+  "Arizona": "us;az", 
+  "Wisconsin": "us;wi", 
+  "Michigan": "us;mi", 
+  "Kansas": "us;ks", 
+  "Utah": "us;ut", 
+  "Virginia": "us;va", 
+  "Oregon": "us;or", 
+  "Connecticut": "us;ct", 
+  "District of Columbia": "us;dc", 
+  "New Hampshire": "us;nh", 
+  "Massachusetts": "us;ma", 
+  "Puerto Rico": "us;pr", 
+  "South Carolina": "us;sc", 
+  "California": "us;ca", 
+  "Vermont": "us;vt", 
+  "Delaware": "us;de", 
+  "North Dakota": "us;nd", 
+  "Pennsylvania": "us;pa", 
+  "West Virginia": "us;wv", 
+  "Florida": "us;fl", 
+  "Alaska": "us;ak", 
+  "Kentucky": "us;ky", 
+  "Hawaii": "us;hi", 
+  "Nebraska": "us;ne", 
+  "Ohio": "us;oh", 
+  "Alabama": "us;al", 
+  "Rhode Island": "us;ri", 
+  "South Dakota": "us;sd", 
+  "Colorado": "us;co", 
+  "Idaho": "us;id", 
+  "New Jersey": "us;nj", 
+  "Minnisota": "us;mn", 
+  "Washington": "us;wa", 
+  "New York": "us;ny", 
+  "Tennessee": "us;tn", 
+  "Montana": "us;mo", 
+  "Nevada": "us;nv", 
+  "Maine": "us;me"
 }
