@@ -13,16 +13,15 @@
 }
 
 var urlCheck = function (url) {
-	if (url.indexOf('?uuid=') > -1) {
-		return "case";
-	} else if (url.indexOf('/index.php?') > -1) {
-		return "multiple";
-	}
+    if (url.indexOf('?uuid=') > -1) {
+        return "case";
+    } else if (url.indexOf('/index.php?') > -1) {
+        return "multiple";
+    }
 }
 
 var detectWeb = function (doc, url) {
-	// Icon should show only for search results and law cases
-    Zotero.debug("XXX url: "+url);
+    // Icon should show only for search results and law cases
     return urlCheck(url);
 }
 
@@ -51,10 +50,10 @@ var scrapeCase = function (doc, url) {
             Item.docketNumber = content.replace(/^No.*\s+/, "").replace(/\.$/, "");
             break;
         case "jurisdiction":
-			var jurisdiction = jurisdiction_names[content];
-			if (!jurisdiction) {
-				jurisdiction = content;
-			}
+            var jurisdiction = jurisdiction_names[content];
+            if (!jurisdiction) {
+                jurisdiction = content;
+            }
             Item.extra = "{:jurisdiction:" + jurisdiction + "}";
             break;
         case "courtname":
@@ -71,12 +70,12 @@ var scrapeCase = function (doc, url) {
             break;
         }
     }
-	if (!Item.extra) {
-		Item.extra = "{:jurisdiction:us}"
-	}
+    if (!Item.extra) {
+        Item.extra = "{:jurisdiction:us}"
+    }
     Item.url = url;
-	var bodies = doc.getElementsByClassName('grid_12');
-	var heads = doc.getElementsByTagName("head");
+    var bodies = doc.getElementsByClassName('grid_12');
+    var heads = doc.getElementsByTagName("head");
     if (heads && bodies) {
         var head = heads[0];
         var body = bodies[0];
@@ -110,12 +109,12 @@ var scrapeCase = function (doc, url) {
         body_div.setAttribute("class", "body-spoof");
         html_div.appendChild(body_div)
         body_div.appendChild(body.cloneNode(true));
-	    var extract = Zotero.Utilities.composeDoc(doc, head, html_div);
-	    var attachment = {
-		    title:"CALI Free Law Reporter transcript",
-		    document: extract,
-		    snapshot:true
-	    };
+        var extract = Zotero.Utilities.composeDoc(doc, head, html_div);
+        var attachment = {
+            title:"CALI Free Law Reporter transcript",
+            document: extract,
+            snapshot:true
+        };
         Item.attachments.push(attachment);
     }
     // Finalise
@@ -126,23 +125,21 @@ function doWeb(doc, url) {
     if (urlCheck(url) === "case") {    
         scrapeCase(doc, url);
     } else {
-		var results = ZU.xpath(doc,'//h5/a');
-		var items = new Object();
-		var docUrl;
-		for(var i=0, n=results.length; i<n; i++) {
-			docUrl = "http://www.freelawreporter/" + results[i].getAttribute('href');
-			items[docUrl] = results[i].textContent;
-		}
-		Zotero.selectItems(items, function(selectedItems) {
-			if(!selectedItems) {
+        var results = ZU.xpath(doc,'//h5/a');
+        var items = new Object();
+        var docUrl;
+        for(var i=0, n=results.length; i<n; i++) {
+            docUrl = "http://www.freelawreporter/" + results[i].getAttribute('href');
+            items[docUrl] = results[i].textContent;
+        }
+        Zotero.selectItems(items, function(selectedItems) {
+            if(!selectedItems) {
                 return true;
             }
             for (var url in selectedItems) {
                 ZU.processDocuments(url, function(doc, url) {
-					Zotero.debug("XXX                 url="+url);
-					Zotero.debug("XXX   doc.location.href="+doc.location.href);
-					scrapeCase(doc, url);
-				});
+                    scrapeCase(doc, url);
+                });
             }
         });
     }
