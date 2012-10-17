@@ -3,7 +3,7 @@
 	"translatorType": 4,
 	"label": "Free Law Reporter",
 	"creator": "Frank Bennett",
-	"target": "^https?://(?:www\\.)*freelawreporter\\.org/(?:index.php\\?.*q=|flrdoc.php\\?.*uuid=)",
+	"target": "^https?://(?:www\\.)*freelawreporter\\.(?:org|com)/(?:index.php\\?.*q=|flrdoc.php\\?.*uuid=)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
