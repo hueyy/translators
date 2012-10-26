@@ -280,10 +280,18 @@ var marcRelators = {
 	"trl":"translator"
 };
 
+// Boilerplate
+var recordOriginTmpl = "export from Zotero on %%DATE%% from record at "
+	+ "%%URI%%";
+
 // Item types that are part of a larger work
-var partialItemTypes = ["blogPost", "bookSection", "conferencePaper", "dictionaryEntry",
-	                    "encyclopediaArticle", "forumPost", "journalArticle", "case", "magazineArticle",
-	                    "newspaperArticle", "webpage"];
+// (in MODS the item date is a child of m:part for items with a serialised parent,
+// but a child of m:relatedItem [and sibling of m:part] for items published as a single
+// unit composed of multiple elements)
+var partialContinuous = ["blogPost", "forumPost", "journalArticle", "case", "magazineArticle",
+						"newspaperArticle", "webpage"];
+var partialMonographic = ["bookSection", "conferencePaper", "dictionaryEntry", "encyclopediaArticle"];
+var partialItemTypes = partialContinuous.concat(partialMonographic);
 
 // Namespace array for using ZU.xpath
 var ns = "http://www.loc.gov/mods/v3",
@@ -310,47 +318,110 @@ function detectImport() {
 
 //    titleInfoClone.setAttributeNS("http://www.w3.org/XML/1998/namespace", "lang", "en-US");
 
-function mapPropertySingle(doc, parentElement, elementName, property, attributes) {
-	if(!property && property !== 0) return null;
-	newElement = doc.createElementNS(ns, elementName);
-	if(attributes) {
-		for(var i in attributes) {
-			newElement.setAttribute(i, attributes[i]);
+function getLanguageAndScript (languageTag, baseLanguage) {
+	if (!languageTag) {
+		languageTag = "en";
+	}
+	var ret = {};
+	if (languageTag) {
+		ret.lang = languageTag;
+		var lst = languageTag.split("-");
+		if (lst[0].length < 2 || lst[0].length > 3) {
+			return {};
+		}
+		if (lst.length > 1) {
+			ret.lang = lst[0];
+			if (!baseLanguage || baseLanguage !== ret.lang) {
+				ret.script = lst.join("-");
+			} else {
+				ret.transliteration = lst.join("-");
+			}
 		}
 	}
-	newElement.appendChild(doc.createTextNode(property));
-	parentElement.appendChild(newElement);
-    return newElement;
+	return ret;
 }
 
-function mapProperty(parentElement, elementName, property, attributes) {
-    var item, key;
-    if ("object" === typeof property) {
-        item = property[0];
-        key = property[1];
-        property = property[0][property[1]];
-    }
+function mapPropertySingle(doc, parentElement, elementName, property, attributes) {
+	if(!property && property !== 0) return null;
+	var nodeForAttributes, parentElement, subParentElement;
+	if ("object" === typeof elementName) {
+		subParentElement = doc.createElementNS(ns, elementName[0]);
+		newElement = doc.createElementNS(ns, elementName[1]);
+	} else {
+		newElement = doc.createElementNS(ns, elementName);
+	}
+	if (subParentElement) {
+		topElement = subParentElement;
+		topElement.appendChild(newElement);
+	} else {
+		topElement = newElement;
+	}
+	if(attributes) {
+		for(var i in attributes) {
+			topElement.setAttribute(i, attributes[i]);
+		}
+	}	
+	newElement.appendChild(doc.createTextNode(property));
+	parentElement.appendChild(topElement);
+	return topElement;
+}
+
+function mapProperty(parentElement, elementName, property, attributes, autoType) {
+	var item, fkey, lkey, language, script, langAttributes, masterLanguage;
+	// If property is string, process as a monolingual element.
+	// If property is array, assume first element is data input object and second is key.
+	if ("object" === typeof property) {
+		item = property[0];
+		fkey = property[1];
+		language = property[0].language;
+		property = property[0][property[1]];
+	}
 	if(!property && property !== 0) return null;
 	var doc = parentElement.ownerDocument;
-    var newElement = mapPropertySingle(doc, parentElement, elementName, property, attributes);
-    if (item && item.multi && item.multi._keys[key]) {
-        if (!attributes) {
-            attributes = {};
-        }
-        for (var lang in item.multi._keys[key]) {
-            attributes["xml:lang"] = lang;
-			mapPropertySingle(doc, parentElement, elementName, item.multi._keys[key][lang], attributes);
-        }
-    }
+	if (!attributes) {
+		attributes = {};
+	}
+	if ((item && item.multi && item.multi._keys[fkey])
+		&& elementName.length) {
+
+		langAttributes = getLanguageAndScript(item.language);
+		masterLanguage = langAttributes.lang;
+		for (var lkey in langAttributes) {
+			attributes[lkey] = langAttributes[lkey];
+		}
+	}
+	var newElement = mapPropertySingle(doc, parentElement, elementName, property, attributes);
+
+	// Append multilingual elements only if property parent and key are provided separately.
+	if (item && item.multi && item.multi._keys[fkey]) {
+		// Is this required?
+		if (!masterLanguage) {
+			masterLanguage = "en";
+		}
+		for (var lang in item.multi._keys[fkey]) {
+			langAttributes = getLanguageAndScript(lang, masterLanguage);
+			for (var lkey in langAttributes) {
+				attributes[lkey] = langAttributes[lkey];
+			}
+			if (autoType) {
+				attributes.type = "translated";
+			}
+			// (1) If elementName is array, assume length 2. First element is name of subparent, second is 
+			// name of child. Subparent/child set is repeated for each lang, and attributes are applied to 
+			// each instance of the subparent.
+			// (2) If elementName is string, elementName is repeated within parentElement,
+			// and attributes are applied to elementName object.
+			mapPropertySingle(doc, parentElement, elementName, item.multi._keys[fkey][lang], attributes);
+		}
+	}
 	return newElement;
 }
-
-// '*title', '*shortTitle', '*publicationTitle', '*series', '*seriesTitle', '*seriesText', '*publisher', '*reporter', 'court', '*place','*edition','volume'];
 
 function doExport() {
 	Zotero.setCharacterSet("utf-8");
 	var parser = new DOMParser();
-	var doc = parser.parseFromString('<modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-2.xsd" />', 'application/xml');
+	var doc = parser.parseFromString('<modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" />', 
+              'application/xml');
 	
 	var item;
 	while(item = Zotero.nextItem()) {
@@ -359,31 +430,31 @@ function doExport() {
 		
 		var mods = doc.createElementNS(ns, "mods"),
 			isPartialItem = partialItemTypes.indexOf(item.itemType) !== -1,
+			isPartialContinuous = partialContinuous.indexOf(item.itemType) !== -1,
+			isPartialMonographic = partialMonographic.indexOf(item.itemType) !== -1,
 			recordInfo = doc.createElementNS(ns, "recordInfo"),
 			host = doc.createElementNS(ns, "relatedItem"),
 			series = doc.createElementNS(ns, "relatedItem"),
 			topOrHost = (isPartialItem ? host : mods);
-		
+
 		/** CORE FIELDS **/
 		
 		// XML tag titleInfo; object field title
 		if(item.title) {
-			var titleInfo = doc.createElementNS(ns, "titleInfo");
-			mapProperty(titleInfo, "title", [item, "title"]);
-			mods.appendChild(titleInfo);
+			mapProperty(mods, ["titleInfo", "title"], [item, "title"], {}, true);
 		}
 		
 		if(item.shortTitle) {
-			var titleInfo = doc.createElementNS(ns, "titleInfo");
-			titleInfo.setAttribute("type", "abbreviated");
-			mapProperty(titleInfo, "title", [item, "shortTitle"]);
-			mods.appendChild(titleInfo);
+			mapProperty(mods, ["titleInfo", "title"], [item, "shortTitle"], {type:"abbreviated"}, true);
 		}
 		
 		// XML tag typeOfResource/genre; object field type
 		mapProperty(mods, "typeOfResource", toTypeOfResource[item.itemType]);
-		mapProperty(mods, "genre", item.itemType, {"authority":"local"});
+		mapProperty(mods, "genre", item.itemType, {"authority":"zotero"});
 		mapProperty(topOrHost, "genre", toMarcGenre[item.itemType], {"authority":"marcgt"});
+		// XXX To consider: adding a marcgt authority statement at top level (i.e. only for
+		// isPartialItem=true), similarly mapped from the item type (to companion with the authority
+		// statement above, which will appear under m:relatedItem/m:part in that case).
 		
 		// XML tag genre; object field thesisType, type
 		if(item.thesisType) {
@@ -409,16 +480,42 @@ function doExport() {
 			}
 
 			var name = doc.createElementNS(ns, "name"), namePart;
+			var attributes = {};
+			var langAttributes = getLanguageAndScript(item.language);
+			for (var lkey in langAttributes) {
+				attributes[lkey] = langAttributes[lkey];
+			}
 			
 			if(creator.fieldMode == 1) {
 				name.setAttribute("type", "corporate");
-				
-				mapProperty(name, "namePart", creator.lastName);
+				mapProperty(name, "namePart", creator.lastName, attributes);
+				if (creator.multi && creator.multi._key) {
+					for (var ckey in creator.multi._key) {
+						langAttributes = getLanguageAndScript(ckey, langAttributes.lang);
+						for (var lkey in langAttributes) {
+							attributes[lkey] = langAttributes[lkey];
+						}
+						mapProperty(name, "namePart", creator.multi._key[ckey].lastName, attributes);
+					}
+				}
 			} else {
 				name.setAttribute("type", "personal");
-				
-				mapProperty(name, "namePart", creator.lastName, {"type":"family"});
-				mapProperty(name, "namePart", creator.firstName, {"type":"given"});
+				attributes.type = "family";
+				mapProperty(name, "namePart", creator.lastName, attributes);
+				attributes.type = "given";
+				mapProperty(name, "namePart", creator.firstName, attributes);
+				if (creator.multi && creator.multi._key) {
+					for (var ckey in creator.multi._key) {
+						langAttributes = getLanguageAndScript(ckey, langAttributes.lang);
+						for (var lkey in langAttributes) {
+							attributes[lkey] = langAttributes[lkey];
+						}
+						attributes.type = "family";
+						mapProperty(name, "namePart", creator.multi._key[ckey].lastName, attributes);
+						attributes.type = "given";
+						mapProperty(name, "namePart", creator.multi._key[ckey].firstName, attributes);
+					}
+				}
 			}
 			
 			var role = doc.createElementNS(ns, "role");
@@ -439,6 +536,11 @@ function doExport() {
 		
 		// XML tag recordInfo.recordContentSource; object field source
 		mapProperty(recordInfo, "recordContentSource", item.libraryCatalog);
+
+		var now = new Date();
+		var nowDate = now.getFullYear() + "-" + now.getMonth() + "-" + now.getDate();
+		var recordOrigin = recordOriginTmpl.replace("%%DATE%%",nowDate).replace("%%URI%%",item.uri);
+		mapProperty(recordInfo, "recordOrigin", recordOrigin);
 		
 		// XML tag accessCondition; object field rights
 		mapProperty(mods, "accessCondition", item.rights);
@@ -470,26 +572,9 @@ function doExport() {
 			part.appendChild(extent);
 		}
 		
-		// Assign part if something was assigned
-		if(part.hasChildNodes()) {
-			// For a journal article, bookSection, etc., the part is the host
-			topOrHost.appendChild(part);
-		}
-		
-		var originInfo = doc.createElementNS(ns, "originInfo")
-		
-		// XML tag originInfo; object fields edition, place, publisher, year, date
-		mapProperty(originInfo, "edition", [item, "edition"]);
-		if(item.place) {
-			var place = doc.createElementNS(ns, "place");
-            mapProperty(place, "placeTerm", [item, "place"], {type:"text"});
-			originInfo.appendChild(place);
-		}
-		if(item.publisher) {
-			mapProperty(originInfo, "publisher", [item, "publisher"]);
-		} else if(item.distributor) {
-			mapProperty(originInfo, "distributor", [item, "publisher"]);
-		}
+		// dateType and placement of date value are independent of
+		// one another. We set the dateType first, and perform the
+		// insertion further down.
 		if(item.date) {
 			if(["book", "bookSection"].indexOf(item.itemType) !== -1) {
 				// Assume year is copyright date
@@ -501,6 +586,34 @@ function doExport() {
 				// Assume date is date created
 				var dateType = "dateCreated";
 			}
+		}
+
+		if (item.date && isPartialContinuous) {
+			mapProperty(part, "date", item.date);
+		}
+
+		// Assign part if something was assigned
+		if(part.hasChildNodes()) {
+			// For a journal article, bookSection, etc., the part is the host
+			topOrHost.appendChild(part);
+		}
+		
+		var originInfo = doc.createElementNS(ns, "originInfo")
+
+		// XML tag originInfo; object fields edition, place, publisher, year, date
+		mapProperty(originInfo, "edition", [item, "edition"]);
+		if(item.place) {
+			var place = doc.createElementNS(ns, "place");
+			mapProperty(place, "placeTerm", [item, "place"], {type:"text"});
+			originInfo.appendChild(place);
+		}
+		if(item.publisher) {
+			mapProperty(originInfo, "publisher", [item, "publisher"]);
+		} else if(item.distributor) {
+			mapProperty(originInfo, "distributor", [item, "publisher"]);
+		}
+
+		if (item.date && !isPartialContinuous) {
 			mapProperty(originInfo, dateType, item.date);
 		}
 
@@ -514,11 +627,10 @@ function doExport() {
 			// eXist Solutions points out that these types are more often
 			// continuing than not & will use this internally.
 			// Perhaps comment this out in the main distribution, though.
-			if(["journalArticle", "magazineArticle", "newspaperArticle"].indexOf(item.itemType) !== -1) {
+			if(isPartialContinuous) {
 				mapProperty(originInfo, "issuance", "continuing");
 			}
-			else if (["bookSection", "conferencePaper", "dictionaryEntry",
-					"encyclopediaArticle"].indexOf(item.itemType) !== -1) {
+			else if (isPartialMonographic) {
 				mapProperty(originInfo, "issuance", "monographic");
 			}
 		} else {
@@ -547,21 +659,14 @@ function doExport() {
 		
 		// XML tag relatedItem.titleInfo; object field publication
 		if(item.publicationTitle) {
-			var titleInfo = doc.createElementNS(ns, "titleInfo");
-			mapProperty(titleInfo, "title", [item, "publicationTitle"]);
-			host.appendChild(titleInfo);
+			mapProperty(host, ["titleInfo", "title"], [item, "publicationTitle"], {}, true);
 		} else if (item.reporter) {
-			var titleInfo = doc.createElementNS(ns, "titleInfo");
-			mapProperty(titleInfo, "title", [item, "reporter"]);
-			host.appendChild(titleInfo);
+			mapProperty(host, ["titleInfo", "title"], [item, "reporter"], {}, true);
 		}
 		
 		// XML tag relatedItem.titleInfo; object field journalAbbreviation
 		if(item.journalAbbreviation) {
-			var titleInfo = doc.createElementNS(ns, "titleInfo");
-			titleInfo.setAttribute("type", "abbreviated");
-			mapProperty(titleInfo, "title", item.journalAbbreviation);
-			host.appendChild(titleInfo);
+			mapProperty(host, ["titleInfo", "title"], [item, "journalAbbreviation"], {}, true);
 		}
 		
 		// XML tag classification; object field callNumber
@@ -587,10 +692,13 @@ function doExport() {
 		
 		// XML tag series/titleInfo; object field series, seriesTitle, seriesText, seriesNumber
 		var titleInfo = doc.createElementNS(ns, "titleInfo");
-		mapProperty(titleInfo, "title", [item, "series"]);
-		mapProperty(titleInfo, "title", [item, "seriesTitle"]);
-		mapProperty(titleInfo, "subTitle", [item, "seriesText"]);
-		if(titleInfo.hasChildNodes()) series.appendChild(titleInfo);
+		// For the present, we leave out journal series information.
+		// This may be revisited in future.
+		if (!isPartialContinuous && !(item.seriesTitle || item.seriesText)) {
+			mapProperty(series, ["titleInfo", "title"], [item, "series"], {}, true);
+		}
+		mapProperty(series, ["titleInfo", "title"], [item, "seriesTitle"], {}, true);
+		mapProperty(series, ["titleInfo", "subTitle"], [item, "seriesText"], {}, true);
 		
 		if(item.seriesNumber) {
 			var seriesPart = doc.createElementNS(ns, "part"),
@@ -625,7 +733,7 @@ function doExport() {
 		
 		if(item.language) {
 			var language = doc.createElementNS(ns, "language");
-			mapProperty(language, "languageTerm", item.language, {"type":"text"});
+			mapProperty(language, "languageTerm", item.language, {type:"code", authority:"rfc5646"});
 			mods.appendChild(language);
 		}
 
