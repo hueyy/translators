@@ -757,27 +757,70 @@ function doExport() {
 	Zotero.write(serializer.serializeToString(doc));
 }
 
-function processTitleInfo(titleInfo) {
+function extractLangAndType(node, val) {
+    var ret;
+    if (val) {
+        ret = {val: val};
+        ret.type = node.getAttribute("type");
+        ret.lang = node.getAttribute("transliteration");
+        if (!ret.lang) {
+            ret.lang = node.getAttribute("lang");
+        }
+    }
+    return ret;
+}
+
+function extractTitleInfoTitle(titleInfo) {
 	var title = ZU.xpathText(titleInfo, "m:title[1]", xns).trim();
 	var subtitle = ZU.xpathText(titleInfo, "m:subTitle[1]", xns);
 	if(subtitle) title = title.replace(/:$/,'') + ": "+ subtitle.trim();
 	var nonSort = ZU.xpathText(titleInfo, "m:nonSort[1]", xns);
 	if(nonSort) title = nonSort.trim() + " " + title;
-	return title;
+    return extractLangAndType(titleInfo, title);
 }
 
+function extractTitleInfo(titleInfoNode) {
+    var val = ZU.getTextContent(titleInfoNode);
+    return extractLangAndType(titleInfoNode, val);
+}
+
+// [{val:<string>, type:<string>, lang:<string>}, {val:<string>, type:<string>, lang:<string>}, ...]
+//
+// First in the list is the headline entry. Type is stored only to identify headline
+// entry during normalisation -- it is not used in Zotero records.
+
 function processTitle(contextElement) {
-	// Try to find a titleInfo element with no type specified and a title element as a
-	// child
-	var titleElements = ZU.xpath(contextElement, "m:titleInfo[not(@type)][m:title][1]", xns);
-	if(titleElements.length) return processTitleInfo(titleElements[0]);
-	
-	// That failed, so look for any titleInfo element without no type secified
-	var title = ZU.xpathText(contextElement, "m:titleInfo[not(@type)][1]", xns);
-	if(title) return title;
-	
-	// That failed, so just go for the first title
-	return ZU.xpathText(contextElement, "m:titleInfo[1]", xns);
+    var data = [];
+    // Work from the full list of all top-level titleInfo elements
+    var titleInfoElements = ZU.xpath(contextElement, "m:titleInfo", xns);
+
+    for (var i=0, ilen=titleInfoElements.length; i < ilen; i += 1) {
+        // Collect data from each titleInfo element, by whatever means
+        var d;
+	    // A titleInfo element with a title element as a child is valid
+	    var hasTitleNode = ZU.xpath(titleInfoElements[i], "m:title", xns);
+	    if(hasTitleNode) {
+            d = extractTitleInfoTitle(titleInfoElements[i]);
+        } else {
+	        // That failed, so allow other titleInfo elements which are invalid but possibly informative
+            d = extractTitleInfo(titleInfoElements[i]);
+        }
+        if (d) {
+            data.push(d);
+        }
+    }
+    // normalise before return
+    var notypeNode;
+    for (var i=data.length - 1; i > -1; i += -1) {
+        if (!data[i].type) {
+            notypeNode = data[i];
+            data = data.slice(0, i).concat(data.slice(i + 1));
+        }
+    }
+    if (notypeNode) {
+        data = [notypeNode].concat(data);
+    }
+    return data;
 }
 
 function processGenre(contextElement) {
@@ -1088,6 +1131,15 @@ function getFirstResult(contextNode, xpaths) {
 	}
 }
 
+function localSetMultiField (Item, varname, data) {
+    if (data && data[0]) {
+        ZU.setMultiField(Item, varname, data[0].val, data[0].lang);
+    }
+    for (var i=1, ilen=data.length; i < ilen; i += 1) {
+        ZU.setMultiField(Item, varname, data[i].val, data[i].lang);
+    }
+}
+
 function doImport() {
 	var xml = Zotero.getXML();
 	
@@ -1098,8 +1150,8 @@ function doImport() {
 		var modsElement = modsElements[iModsElements],
 			newItem = new Zotero.Item();
 		
-		// title
-		newItem.title = processTitle(modsElement);
+	    // title
+        localSetMultiField(newItem, "title", processTitle(modsElement));
 		
 		// shortTitle
 		var abbreviatedTitle = ZU.xpath(modsElement, 'm:titleInfo[@type="abbreviated"]', xns);
