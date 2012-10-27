@@ -297,6 +297,9 @@ var partialItemTypes = partialContinuous.concat(partialMonographic);
 var ns = "http://www.loc.gov/mods/v3",
 	xns = {"m":ns};
 
+// Namespace array for using setAttributeNS and getAttributeNS
+var xmlns = "http://www.w3.org/XML/1998/namespace";
+
 function detectImport() {
 	var doc = Zotero.getXML().documentElement;
 	if (!doc) {
@@ -324,6 +327,7 @@ function getLanguageAndScript (languageTag, baseLanguage) {
 	}
 	var ret = {};
 	if (languageTag) {
+        ret["xml:lang"] = languageTag;
 		ret.lang = languageTag;
 		var lst = languageTag.split("-");
 		if (lst[0].length < 2 || lst[0].length > 3) {
@@ -367,7 +371,7 @@ function mapPropertySingle(doc, parentElement, elementName, property, attributes
 }
 
 function mapProperty(parentElement, elementName, property, attributes, autoType) {
-	var item, fkey, lkey, language, script, langAttributes, masterLanguage;
+	var item, fkey, lkey, language, script, langAttributes, masterLanguage, fieldLanguage;
 	// If property is string, process as a monolingual element.
 	// If property is array, assume first element is data input object and second is key.
 	if ("object" === typeof property) {
@@ -376,28 +380,31 @@ function mapProperty(parentElement, elementName, property, attributes, autoType)
 		language = property[0].language;
 		property = property[0][property[1]];
 	}
+
 	if(!property && property !== 0) return null;
+
 	var doc = parentElement.ownerDocument;
 	if (!attributes) {
 		attributes = {};
 	}
-	if ((item && item.multi && item.multi._keys[fkey])
-		&& elementName.length) {
-
-		langAttributes = getLanguageAndScript(item.language);
-		masterLanguage = langAttributes.lang;
-		for (var lkey in langAttributes) {
-			attributes[lkey] = langAttributes[lkey];
-		}
-	}
+    if (fkey) {
+        if (item.multi.main[fkey]) {
+            language = item.multi.main[fkey];
+        }
+	    langAttributes = getLanguageAndScript(language);
+        if (!langAttributes.lang) {
+            langAttributes.lang = "en";
+        }
+	    masterLanguage = langAttributes.lang;
+        Zotero.debug("XXX masterLanguage: "+masterLanguage);
+	    for (var lkey in langAttributes) {
+		    attributes[lkey] = langAttributes[lkey];
+	    }
+    }
 	var newElement = mapPropertySingle(doc, parentElement, elementName, property, attributes);
 
 	// Append multilingual elements only if property parent and key are provided separately.
 	if (item && item.multi && item.multi._keys[fkey]) {
-		// Is this required?
-		if (!masterLanguage) {
-			masterLanguage = "en";
-		}
 		for (var lang in item.multi._keys[fkey]) {
 			langAttributes = getLanguageAndScript(lang, masterLanguage);
 			for (var lkey in langAttributes) {
@@ -485,7 +492,17 @@ function doExport() {
 			for (var lkey in langAttributes) {
 				attributes[lkey] = langAttributes[lkey];
 			}
+
+            for (var key in creator.multi) {
+                Zotero.debug("XXX key: "+key+" = "+creator.multi[key]);
+            }
+            Zotero.debug("XXX creator.main = "+creator.main);
 			
+            if (creator.multi && creator.multi.main) {
+                attributes["xml:lang"] = creator.multi.main;
+                attributes.lang = creator.multi.main;
+            }
+
 			if(creator.fieldMode == 1) {
 				name.setAttribute("type", "corporate");
 				mapProperty(name, "namePart", creator.lastName, attributes);
@@ -666,7 +683,7 @@ function doExport() {
 		
 		// XML tag relatedItem.titleInfo; object field journalAbbreviation
 		if(item.journalAbbreviation) {
-			mapProperty(host, ["titleInfo", "title"], [item, "journalAbbreviation"], {}, true);
+			mapProperty(host, ["titleInfo", "title"], [item, "journalAbbreviation"], {type:"abbreviated"}, true);
 		}
 		
 		// XML tag classification; object field callNumber
@@ -762,9 +779,12 @@ function extractLangAndType(node, val) {
     if (val) {
         ret = {val: val};
         ret.type = node.getAttribute("type");
-        ret.lang = node.getAttribute("transliteration");
-        if (!ret.lang) {
-            ret.lang = node.getAttribute("lang");
+        var attrs = ["xml:lang", "transliteration", "script", "lang"];
+        for (var i=0, ilen=attrs.length; i < ilen; i += 1) {
+            ret.lang = node.getAttribute(attrs[i]);
+            if (ret.lang) {
+                break;
+            }
         }
     }
     return ret;
@@ -810,6 +830,11 @@ function processTitle(contextElement) {
         }
     }
     // normalise before return
+    return purgeNotypeData(data);
+}
+
+
+function purgeNotypeData(data) {
     var notypeNode;
     for (var i=data.length - 1; i > -1; i += -1) {
         if (!data[i].type) {
@@ -822,6 +847,7 @@ function processTitle(contextElement) {
     }
     return data;
 }
+
 
 function processGenre(contextElement) {
 	// Try to get itemType by treating local genre as Zotero item type
@@ -925,7 +951,11 @@ function processItemType(contextElement) {
 
 function processCreator(name, itemType, defaultCreatorType) {
 	var creator = {};
-	var backupName = new Array();
+	var backupName;
+
+    // How to handle this? Store name data under language tags? I guess that's the only way
+    // to go.
+
 	creator.firstName = ZU.xpathText(name, 'm:namePart[@type="given"]', xns, " ") || undefined;
 	creator.lastName = ZU.xpathText(name, 'm:namePart[@type="family"]', xns, " ");
 	
@@ -1124,6 +1154,17 @@ function processIdentifiers(contextElement, newItem) {
 	newItem.DOI = ZU.xpathText(contextElement, 'm:identifier[@type="doi"]', xns);
 }
 
+function processSimpleMultiNodes(nodes) {
+    var data;
+    if (nodes && nodes.length) {
+        data = [];
+        for (var i=0, ilen=nodes.length; i < ilen; i += 1) {
+            data.push(extractLangAndType(nodes[i], ZU.getTextContent(nodes[i])));
+        }
+    }
+    return data;
+}
+
 function getFirstResult(contextNode, xpaths) {
 	for(var i=0; i<xpaths.length; i++) {
 		var results = ZU.xpath(contextNode, xpaths[i], xns);
@@ -1134,13 +1175,16 @@ function getFirstResult(contextNode, xpaths) {
 function localSetMultiField (Item, varname, data) {
     if (data && data[0]) {
         ZU.setMultiField(Item, varname, data[0].val, data[0].lang);
-    }
-    for (var i=1, ilen=data.length; i < ilen; i += 1) {
-        ZU.setMultiField(Item, varname, data[i].val, data[i].lang);
+        for (var i=1, ilen=data.length; i < ilen; i += 1) {
+            ZU.setMultiField(Item, varname, data[i].val, data[i].lang);
+        }
     }
 }
 
 function doImport() {
+
+    // Right, good. The only fields remaining are the creators.
+
 	var xml = Zotero.getXML();
 	
 	var modsElements = ZU.xpath(xml, "/m:mods | /m:modsCollection/m:mods", xns);
@@ -1151,13 +1195,17 @@ function doImport() {
 			newItem = new Zotero.Item();
 		
 	    // title
-        localSetMultiField(newItem, "title", processTitle(modsElement));
-		
-		// shortTitle
-		var abbreviatedTitle = ZU.xpath(modsElement, 'm:titleInfo[@type="abbreviated"]', xns);
-		if(abbreviatedTitle.length) {
-			newItem.shortTitle = processTitleInfo(abbreviatedTitle[0]);
-		}
+        var data = processTitle(modsElement);
+        // (snip out shortTitle if it is present)
+        if (data) {
+            for (var i = data.length - 1; i > -1; i += -1) {
+                if (data[i].type === "abbreviated") {
+                    newItem.shortTitle = data[i].val;
+                    data = data.slice(0, i).concat(data.slice(i + 1));
+                }
+            }
+            localSetMultiField(newItem, "title", data);
+        }
 		
 		// itemType
 		newItem.itemType = processItemType(modsElement);
@@ -1168,6 +1216,7 @@ function doImport() {
 		
 		// creators
 		processCreators(modsElement, newItem, "author");
+
 		// source
 		newItem.source = ZU.xpathText(modsElement, 'm:recordInfo/m:recordContentSource', xns);
 		// accessionNumber
@@ -1185,16 +1234,20 @@ function doImport() {
 			var host = hostNodes[i];
 			
 			// publicationTitle
-			if(!newItem.publicationTitle) newItem.publicationTitle = processTitle(host);
-			
-			// journalAbbreviation
-			if(!newItem.journalAbbreviation) {
-				var titleInfo = ZU.xpath(host, 'm:titleInfo[@type="abbreviated"]', xns);
-				if(titleInfo.length) {
-					newItem.journalAbbreviation = processTitleInfo(titleInfo[0]);
-				}
+			if(!newItem.publicationTitle) {
+                data = processTitle(host);
+                if (data) {
+                    // (snip out journalAbbreviation if it is present)
+                    for (var i = data.length - 1; i > -1; i += -1) {
+                        if (data[i].type === "abbreviated") {
+                            newItem.journalAbbreviation = data[i].val;
+                            data = data.slice(0, i).concat(data.slice(i + 1));
+                        }
+                    }
+                    localSetMultiField(newItem, "publicationTitle", data);
+                }
 			}
-			
+
 			// creators (might be editors)
 			processCreators(host, newItem, "editor");
 			
@@ -1211,12 +1264,14 @@ function doImport() {
 		var seriesNodes = ZU.xpath(modsElement, './/m:relatedItem[@type="series"]', xns);
 		for(var i=0; i<seriesNodes.length; i++) {
 			var seriesNode = seriesNodes[i];
-			var series = ZU.xpathText(seriesNode, 'm:titleInfo/m:title', xns);
+
+            // XXX same set of problems as for the title
+            var data = processTitle(seriesNode);
 			
 			if(ZU.fieldIsValidForType('series', newItem.itemType)) {
-				newItem.series = series;
+                localSetMultiField(newItem, "series", data);
 			} else if(ZU.fieldIsValidForType('seriesTitle', newItem.itemType)) {
-				newItem.seriesTitle = series;
+                localSetMultiField(newItem, "seriesTitle", data);
 			}
 			
 			if(!newItem.seriesText) {
@@ -1285,20 +1340,23 @@ function doImport() {
 		if(originInfo.length) {
 			// edition
 			var editionNodes = ZU.xpath(originInfo, 'm:edition', xns);
-			if(editionNodes.length) newItem.edition = editionNodes[0].textContent;
+            var data = processSimpleMultiNodes(editionNodes);
+            localSetMultiField(newItem, "edition", data);
 			
 			// place
 			var placeNodes = ZU.xpath(originInfo, 'm:place/m:placeTerm[@type="text"]', xns);
-			if(placeNodes.length) newItem.place = placeNodes[0].textContent;
+            data = processSimpleMultiNodes(placeNodes);
+            localSetMultiField(newItem, "place", data);
 			
 			// publisher/distributor
 			var publisherNodes = ZU.xpath(originInfo, 'm:publisher', xns);
-			if(publisherNodes.length) {
-				newItem.publisher = publisherNodes[0].textContent;
+            var data = processSimpleMultiNodes(publisherNodes);
+            if (data) {
+                localSetMultiField(newItem, "publisher", data);
 				if(newItem.itemType == "webpage" && !newItem.publicationTitle) {
-					newItem.publicationTitle = newItem.publisher;
+                    localSetMultiField(newItem, "publicationTitle", data);
 				}
-			}
+            }
 			
 			// date
 			newItem.date = getFirstResult(originInfo, ['m:copyrightDate[@encoding]',
