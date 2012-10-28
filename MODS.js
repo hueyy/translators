@@ -944,22 +944,48 @@ function processItemType(contextElement) {
 	return "document";
 }
 
-function processCreator(name, itemType, defaultCreatorType) {
-	var creator = {};
-	var backupName;
 
-	// How to handle this? Store name data under language tags? I guess that's the only way
-	// to go.
+function extractCreatorData (node) {
+    var ret = {};
+    var nodeType = node.getAttribute("type");
+    if (nodeType === "given") {
+        ret.firstName = ZU.getTextContent(node);
+        ret.otherName = ZU.getTextContent(node);
+    } else if (nodeType == "family") {
+        ret.lastName = ZU.getTextContent(node);
+    } else {
+        ret.otherName = ZU.getTextContent(node);
+    }
+    return ret;
+}
 
-	creator.firstName = ZU.xpathText(name, 'm:namePart[@type="given"]', xns, " ") || undefined;
-	creator.lastName = ZU.xpathText(name, 'm:namePart[@type="family"]', xns, " ");
-	
+
+function composeCreator (creatorDataList, isPersonalName) {
+    var creator = {};
+    var backupName;
+    for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
+        if (creatorDataList[i].firstName) {
+            creator.firstName = creatorDataList[i].firstName;
+        } else if (creatorDataList[i].lastName) {
+            creator.lastName = creatorDataList[i].lastName;
+        }
+    }
 	if(!creator.lastName) {
-		var isPersonalName = name.getAttribute("type") === "personal",
-			backupName = ZU.xpathText(name, 'm:namePart[not(@type="date")][not(@type="termsOfAddress")]', xns, (isPersonalName ? " " : ": "));
+        var backupName = [];
+        for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
+            if (creatorDataList[i].otherName) {
+                backupName.push(creatorDataList[i].otherName);
+            }
+        }
+        var joiner = ": ";
+        if (isPersonalName) {
+            joiner = " ";
+        }
+        backupName = backupName.join(joiner);
 		
-		if(!backupName) return null;
-		
+		if(!backupName) {
+            return null;
+		}
 		if(isPersonalName) {
 			creator = ZU.cleanAuthor(backupName.replace(/[\[\(][^A-Za-z]*[\]\)]/g, ''),
 				"author", true);
@@ -969,38 +995,97 @@ function processCreator(name, itemType, defaultCreatorType) {
 			creator.fieldMode = 1;
 		}
 	}
-	
-	if(!creator.lastName) return null;
+	if(!creator.lastName) {
+        return null;
+    }
+    return creator;
+}
 
+function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
+	// Logically similar to ordinary fields, but we need to keep firstName/lastName
+    // pairs together. For this, we work in two stages, first using an object to
+    // store data by language pair, and then setting the objects on a list that is
+    // normalised before output.
+
+    // Get personal
+    var isPersonalName = name.getAttribute("type") === "personal";
+    
+    // Extract creator type
 	// Look for roles
+    var creatorType;
 	var roles = ZU.xpath(name, 'm:role/m:roleTerm[@type="text" or not(@type)]', xns);
 	var validCreatorsForItemType = ZU.getCreatorsForType(itemType);
 	for(var i=0; i<roles.length; i++) {
 		var roleStr = roles[i].textContent.toLowerCase();
 		if(validCreatorsForItemType.indexOf(roleStr) !== -1) {
-			creator.creatorType = roleStr;
+			creatorType = roleStr;
 		}
 	}
-	
-	if(!creator.creatorType) {
+	if(!creatorType) {
 		// Look for MARC roles
 		var roles = ZU.xpath(name, 'm:role/m:roleTerm[@type="code"][@authority="marcrelator"]', xns);
 		for(var i=0; i<roles.length; i++) {
 			var roleStr = roles[i].textContent.toLowerCase();
-			if(marcRelators[roleStr]) creator.creatorType = marcRelators[roleStr];
+			if(marcRelators[roleStr]) creatorType = marcRelators[roleStr];
 		}
 		
 		// Default to author
-		if(!creator.creatorType) creator.creatorType = defaultCreatorType;
+		if(!creatorType) creatorType = defaultCreatorType;
 	}
+    
+    // Get all namePart elements
+	var creatorNodes = ZU.xpath(name, 'm:namePart[not(@type="date")][not(@type="termsOfAddress")]', xns)
+    
+    // Iterate over the lot
+    var creatorObj = {};
+    var creatorData;
+    for (var i=0, ilen=creatorNodes.length; i < ilen; i += 1) {
+        // Get language of this creator element
+        var language = extractLangAndType(creatorNodes[i], "bogusValue").lang;
+        // Reduce data to JS
+        creatorData = extractCreatorData(creatorNodes[i]);
+        // Save to grouping object only if there is useful data
+        if (creatorData) {
+            if (!creatorObj[language]) {
+                creatorObj[language] = [];
+            }
+            creatorData["xml-lang"] = language;
+            creatorObj[language].push(creatorData);
+        }
+    }
 
+    // Recast grouped creators as a list, placing the group
+    // matching the default language at the front, if there is
+    // a match.
+    //
+    // newItem.language will always have a value at this point,
+    // even if none is assigned in MODS input.
+    var creatorLst = [];
+    if (creatorObj[defaultLanguage]) {
+        creatorLst.push(creatorObj[defaultLanguage]);
+        delete creatorObj[defaultLanguage];
+    }
+    for (var language in creatorObj) {
+        creatorLst.push(creatorObj[language]);
+    }
+
+    // Iterate over node bundles with the original logic
+    var creator = {};
+    var parentCreator = composeCreator(creatorLst[0]);
+    if (creator) {
+        ZU.setMultiCreator(creator, parentCreator, creatorLst[0][0]["xml-lang"], creatorType);
+        for (var i=1, ilen=creatorLst.length; i < ilen; i += 1) {
+            var subCreator = composeCreator(creatorLst[i]);
+            ZU.setMultiCreator(creator, subCreator, creatorLst[i][0]["xml-lang"], creatorType);
+        }
+    }
 	return creator;
 }
 
 function processCreators(contextElement, newItem, defaultCreatorType) {
 	var names = ZU.xpath(contextElement, 'm:name', xns);
 	for(var i=0; i<names.length; i++) {
-		var creator = processCreator(names[i], newItem.itemType, defaultCreatorType);
+		var creator = processCreator(names[i], newItem.itemType, defaultCreatorType, newItem.language);
 		if(creator) newItem.creators.push(creator);
 	}
 }
@@ -1200,8 +1285,51 @@ function doImport() {
 				}
 			}
 			localSetMultiField(newItem, "title", data);
+            // If the trawl for language immediately below turns up empty,
+            // this will be used as default in remaining fields and creators.
+            newItem.language = newItem.multi.main["title"];
 		}
 		
+		// Language
+        // 
+		// create an array of languages
+		var languages = [];
+		var languageNodes = ZU.xpath(modsElement, 'm:language', xns);
+		for(var i=0; i<languageNodes.length; i++) {
+			var code = false,
+				languageNode = languageNodes[i],
+				languageTerms = ZU.xpath(languageNode, 'm:languageTerm', xns);
+				
+			for(var j=0; j<languageTerms.length; j++) {
+				var term = languageTerms[j],
+					termType = term.getAttribute("type");
+				
+				if (termType === "text") {
+					languages.push(term.textContent);
+					code = false;
+					break;
+				// code authorities should be used, not ignored
+				// but we ignore them for now
+				} else if (termType === "code" || term.hasAttribute("authority")) {
+					code = term.textContent;
+				}
+			}
+			// If we have a code or text content of the node
+			// (prefer the former), then we add that
+			if (code || (languageNode.childNodes.length === 1
+					&& languageNode.firstChild.nodeType === 3 /* Node.TEXT_NODE*/
+					&& (code = languageNode.firstChild.nodeValue))) {
+				languages.push(code);
+			}
+		}
+		// join the list separated by semicolons & add it to zotero item
+		newItem.language = languages.join('; ');
+
+        // If we didn't turn up a default language, use "en".
+        if (!newItem.language) {
+            newItem.language = "en";
+        }
+
 		// itemType
 		newItem.itemType = processItemType(modsElement);
 		
@@ -1431,40 +1559,6 @@ function doImport() {
 				if(m) newItem.scale = m[0];
 			}
 		}
-		
-		// Language
-		// create an array of languages
-		var languages = [];
-		var languageNodes = ZU.xpath(modsElement, 'm:language', xns);
-		for(var i=0; i<languageNodes.length; i++) {
-			var code = false,
-				languageNode = languageNodes[i],
-				languageTerms = ZU.xpath(languageNode, 'm:languageTerm', xns);
-				
-			for(var j=0; j<languageTerms.length; j++) {
-				var term = languageTerms[j],
-					termType = term.getAttribute("type");
-				
-				if (termType === "text") {
-					languages.push(term.textContent);
-					code = false;
-					break;
-				// code authorities should be used, not ignored
-				// but we ignore them for now
-				} else if (termType === "code" || term.hasAttribute("authority")) {
-					code = term.textContent;
-				}
-			}
-			// If we have a code or text content of the node
-			// (prefer the former), then we add that
-			if (code || (languageNode.childNodes.length === 1
-					&& languageNode.firstChild.nodeType === 3 /* Node.TEXT_NODE*/
-					&& (code = languageNode.firstChild.nodeValue))) {
-				languages.push(code);
-			}
-		}
-		// join the list separated by semicolons & add it to zotero item
-		newItem.language = languages.join('; ');
 		
 		Zotero.setProgress(iModsElements/nModsElements*100);
 		newItem.complete();
