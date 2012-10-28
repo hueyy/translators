@@ -946,45 +946,45 @@ function processItemType(contextElement) {
 
 
 function extractCreatorData (node) {
-    var ret = {};
-    var nodeType = node.getAttribute("type");
-    if (nodeType === "given") {
-        ret.firstName = ZU.getTextContent(node);
-        ret.otherName = ZU.getTextContent(node);
-    } else if (nodeType == "family") {
-        ret.lastName = ZU.getTextContent(node);
-    } else {
-        ret.otherName = ZU.getTextContent(node);
-    }
-    return ret;
+	var ret = {};
+	var nodeType = node.getAttribute("type");
+	if (nodeType === "given") {
+		ret.firstName = ZU.getTextContent(node);
+		ret.otherName = ZU.getTextContent(node);
+	} else if (nodeType == "family") {
+		ret.lastName = ZU.getTextContent(node);
+	} else {
+		ret.otherName = ZU.getTextContent(node);
+	}
+	return ret;
 }
 
 
 function composeCreator (creatorDataList, isPersonalName) {
-    var creator = {};
-    var backupName;
-    for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
-        if (creatorDataList[i].firstName) {
-            creator.firstName = creatorDataList[i].firstName;
-        } else if (creatorDataList[i].lastName) {
-            creator.lastName = creatorDataList[i].lastName;
-        }
-    }
+	var creator = {};
+	var backupName;
+	for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
+		if (creatorDataList[i].firstName) {
+			creator.firstName = creatorDataList[i].firstName;
+		} else if (creatorDataList[i].lastName) {
+			creator.lastName = creatorDataList[i].lastName;
+		}
+	}
 	if(!creator.lastName) {
-        var backupName = [];
-        for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
-            if (creatorDataList[i].otherName) {
-                backupName.push(creatorDataList[i].otherName);
-            }
-        }
-        var joiner = ": ";
-        if (isPersonalName) {
-            joiner = " ";
-        }
-        backupName = backupName.join(joiner);
+		var backupName = [];
+		for (var i=0, ilen=creatorDataList.length; i<ilen; i += 1) {
+			if (creatorDataList[i].otherName) {
+				backupName.push(creatorDataList[i].otherName);
+			}
+		}
+		var joiner = ": ";
+		if (isPersonalName) {
+			joiner = " ";
+		}
+		backupName = backupName.join(joiner);
 		
 		if(!backupName) {
-            return null;
+			return null;
 		}
 		if(isPersonalName) {
 			creator = ZU.cleanAuthor(backupName.replace(/[\[\(][^A-Za-z]*[\]\)]/g, ''),
@@ -996,23 +996,23 @@ function composeCreator (creatorDataList, isPersonalName) {
 		}
 	}
 	if(!creator.lastName) {
-        return null;
-    }
-    return creator;
+		return null;
+	}
+	return creator;
 }
 
 function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
 	// Logically similar to ordinary fields, but we need to keep firstName/lastName
-    // pairs together. For this, we work in two stages, first using an object to
-    // store data by language pair, and then setting the objects on a list that is
-    // normalised before output.
+	// pairs together. For this, we work in two stages, first using an object to
+	// store data by language pair, and then setting the objects on a list that is
+	// normalised before output.
 
-    // Get personal
-    var isPersonalName = name.getAttribute("type") === "personal";
-    
-    // Extract creator type
+	// Get personal
+	var isPersonalName = name.getAttribute("type") === "personal";
+	
+	// Extract creator type
 	// Look for roles
-    var creatorType;
+	var creatorType;
 	var roles = ZU.xpath(name, 'm:role/m:roleTerm[@type="text" or not(@type)]', xns);
 	var validCreatorsForItemType = ZU.getCreatorsForType(itemType);
 	for(var i=0; i<roles.length; i++) {
@@ -1032,61 +1032,61 @@ function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
 		// Default to author
 		if(!creatorType) creatorType = defaultCreatorType;
 	}
-    
-    // Get all namePart elements
+	
+	// Get all namePart elements
 	var creatorNodes = ZU.xpath(name, 'm:namePart[not(@type="date")][not(@type="termsOfAddress")]', xns)
-    
-    // Iterate over the lot
-    var creatorObj = {};
-    var creatorData;
-    for (var i=0, ilen=creatorNodes.length; i < ilen; i += 1) {
-        // Get language of this creator element
-        var language = extractLangAndType(creatorNodes[i], "bogusValue").lang;
-        // Reduce data to JS
-        creatorData = extractCreatorData(creatorNodes[i]);
-        // Save to grouping object only if there is useful data
-        if (creatorData) {
-            if (!creatorObj[language]) {
-                creatorObj[language] = [];
-            }
-            creatorData["xml-lang"] = language;
-            creatorObj[language].push(creatorData);
-        }
-    }
+	
+	// Iterate over the lot
+	var creatorObj = {};
+	var creatorData;
+	for (var i=0, ilen=creatorNodes.length; i < ilen; i += 1) {
+		// Get language of this creator element
+		var language = extractLangAndType(creatorNodes[i], "bogusValue").lang;
+		// Reduce data to JS
+		creatorData = extractCreatorData(creatorNodes[i]);
+		// Save to grouping object only if there is useful data
+		if (creatorData) {
+			if (!creatorObj[language]) {
+				creatorObj[language] = [];
+			}
+			creatorData["xml-lang"] = language;
+			creatorObj[language].push(creatorData);
+		}
+	}
 
-    // Recast grouped creators as a list, placing the group
-    // matching the default language at the front, if there is
-    // a match.
-    //
-    // newItem.language will always have a value at this point,
-    // even if none is assigned in MODS input.
-    var creatorLst = [];
-    if (creatorObj[defaultLanguage]) {
-        creatorLst.push(creatorObj[defaultLanguage]);
-        delete creatorObj[defaultLanguage];
-    }
-    for (var language in creatorObj) {
-        creatorLst.push(creatorObj[language]);
-    }
+	// Recast grouped creators as a list, placing the group
+	// matching the default language at the front, if there is
+	// a match.
+	//
+	// newItem.language will always have a value at this point,
+	// even if none is assigned in MODS input.
+	var creatorLst = [];
+	if (creatorObj[defaultLanguage]) {
+		creatorLst.push(creatorObj[defaultLanguage]);
+		delete creatorObj[defaultLanguage];
+	}
+	for (var language in creatorObj) {
+		creatorLst.push(creatorObj[language]);
+	}
 
-    // Iterate over node bundles with the original logic
-    var creator = {};
-    var parentCreator = composeCreator(creatorLst[0]);
-    if (creator) {
-        ZU.setMultiCreator(creator, parentCreator, creatorLst[0][0]["xml-lang"], creatorType, defaultLanguage);
-        for (var i=1, ilen=creatorLst.length; i < ilen; i += 1) {
-            var subCreator = composeCreator(creatorLst[i]);
-            ZU.setMultiCreator(creator, subCreator, creatorLst[i][0]["xml-lang"], creatorType, defaultLanguage);
-        }
-    }
+	// Iterate over node bundles with the original logic
+	var creator = {};
+	var parentCreator = composeCreator(creatorLst[0]);
+	if (creator) {
+		ZU.setMultiCreator(creator, parentCreator, creatorLst[0][0]["xml-lang"], creatorType, defaultLanguage);
+		for (var i=1, ilen=creatorLst.length; i < ilen; i += 1) {
+			var subCreator = composeCreator(creatorLst[i]);
+			ZU.setMultiCreator(creator, subCreator, creatorLst[i][0]["xml-lang"], creatorType, defaultLanguage);
+		}
+	}
 	return creator;
 }
 
 function processCreators(contextElement, newItem, defaultCreatorType) {
-    var itemLanguage;
-    if (newItem.language) {
-        itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
-    }
+	var itemLanguage;
+	if (newItem.language) {
+		itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
+	}
 	var names = ZU.xpath(contextElement, 'm:name', xns);
 	for(var i=0; i<names.length; i++) {
 		var creator = processCreator(names[i], newItem.itemType, defaultCreatorType, itemLanguage);
@@ -1257,11 +1257,19 @@ function getFirstResult(contextNode, xpaths) {
 }
 
 function localSetMultiField (newItem, varname, data) {
-    var itemLanguage;
-    if (newItem.language) {
-        itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
-    }
+	var itemLanguage;
+	if (newItem.language) {
+		itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
+	}
 	if (data && data[0]) {
+		// If there is a data item with no language set on it,
+		// move it to the front.
+		for (var i=1, ilen=data.length; i < ilen; i += 1) {
+			if (!data[i].lang) {
+				data = [data[i]].concat(data.slice(0, i).concat(data.slice(i + 1)));
+				break;
+			}
+		}
 		ZU.setMultiField(newItem, varname, data[0].val, data[0].lang, itemLanguage);
 		for (var i=1, ilen=data.length; i < ilen; i += 1) {
 			ZU.setMultiField(newItem, varname, data[i].val, data[i].lang, itemLanguage);
@@ -1293,13 +1301,13 @@ function doImport() {
 				}
 			}
 			localSetMultiField(newItem, "title", data);
-            // If the trawl for language immediately below turns up empty,
-            // this will be used as default in remaining fields and creators.
-            newItem.language = newItem.multi.main["title"];
+			// If the trawl for language immediately below turns up empty,
+			// this will be used as default in remaining fields and creators.
+			newItem.language = newItem.multi.main["title"];
 		}
 		
 		// Language
-        // 
+		// 
 		// create an array of languages
 		var languages = [];
 		var languageNodes = ZU.xpath(modsElement, 'm:language', xns);
@@ -1331,12 +1339,15 @@ function doImport() {
 			}
 		}
 		// join the list separated by semicolons & add it to zotero item
-		newItem.language = languages.join('; ');
+		var languages = languages.join('; ');
+		if (languages) {
+			newItem.language = languages;
+		}
 
-        // If we didn't turn up a default language, use "en".
-        if (!newItem.language) {
-            newItem.language = "en";
-        }
+		// If we didn't turn up a default language, use "en".
+		if (!newItem.language) {
+			newItem.language = "en";
+		}
 
 		// itemType
 		newItem.itemType = processItemType(modsElement);
