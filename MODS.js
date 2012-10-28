@@ -1073,19 +1073,23 @@ function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
     var creator = {};
     var parentCreator = composeCreator(creatorLst[0]);
     if (creator) {
-        ZU.setMultiCreator(creator, parentCreator, creatorLst[0][0]["xml-lang"], creatorType);
+        ZU.setMultiCreator(creator, parentCreator, creatorLst[0][0]["xml-lang"], creatorType, defaultLanguage);
         for (var i=1, ilen=creatorLst.length; i < ilen; i += 1) {
             var subCreator = composeCreator(creatorLst[i]);
-            ZU.setMultiCreator(creator, subCreator, creatorLst[i][0]["xml-lang"], creatorType);
+            ZU.setMultiCreator(creator, subCreator, creatorLst[i][0]["xml-lang"], creatorType, defaultLanguage);
         }
     }
 	return creator;
 }
 
 function processCreators(contextElement, newItem, defaultCreatorType) {
+    var itemLanguage;
+    if (newItem.language) {
+        itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
+    }
 	var names = ZU.xpath(contextElement, 'm:name', xns);
 	for(var i=0; i<names.length; i++) {
-		var creator = processCreator(names[i], newItem.itemType, defaultCreatorType, newItem.language);
+		var creator = processCreator(names[i], newItem.itemType, defaultCreatorType, itemLanguage);
 		if(creator) newItem.creators.push(creator);
 	}
 }
@@ -1252,11 +1256,15 @@ function getFirstResult(contextNode, xpaths) {
 	}
 }
 
-function localSetMultiField (Item, varname, data) {
+function localSetMultiField (newItem, varname, data) {
+    var itemLanguage;
+    if (newItem.language) {
+        itemLanguage = newItem.language.split(/\s*[; ]\s*/)[0];
+    }
 	if (data && data[0]) {
-		ZU.setMultiField(Item, varname, data[0].val, data[0].lang);
+		ZU.setMultiField(newItem, varname, data[0].val, data[0].lang, itemLanguage);
 		for (var i=1, ilen=data.length; i < ilen; i += 1) {
-			ZU.setMultiField(Item, varname, data[i].val, data[i].lang);
+			ZU.setMultiField(newItem, varname, data[i].val, data[i].lang, itemLanguage);
 		}
 	}
 }
