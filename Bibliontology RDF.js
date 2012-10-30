@@ -601,7 +601,20 @@ LiteralProperty.prototype.mapFromItem = function(item, nodes) {
 		}
 	} else if(typeof this.mapping[1] == "string") {		// string case: simple predicate
 		Zotero.RDF.addStatement(nodes[this.mapping[0]],
-			this.mapping[1], item.uniqueFields[this.field], true);
+								this.mapping[1], item.uniqueFields[this.field], true);
+		if (item.multi) {
+			if (item.multi.main[this.field]) {
+				Zotero.RDF.addStatement(nodes[this.mapping[0]],
+				   this.mapping[1], item.uniqueFields[this.field], true, item.multi.main[this.field]);
+			}
+			if (item.multi._lsts && item.multi._lsts[this.field]) {
+				for (var i=0, ilen=item.multi._lsts[this.field].length; i<ilen; i += 1) {
+					var lang = item.multi._lsts[this.field][i];
+					Zotero.RDF.addStatement(nodes[this.mapping[0]],
+					  this.mapping[1], item.multi._keys[this.field][lang], true, lang);
+				}
+			}
+		}
 	} else {										// array case: complex predicate
 		var blankNode = getBlankNode(nodes[this.mapping[0]],
 			this.mapping[1][0], this.mapping[1][1], true);
@@ -691,15 +704,34 @@ CreatorProperty.prototype.mapFromCreator = function(item, creator, nodes) {
 			var mapping = [ITEM, AUTHOR_LIST, n.z+this.field];
 		}
 	}
+
+	var setCreator = function (mode, node, creator, lang) {
+		if(mode == 1) {
+			if(creator.lastName) Zotero.RDF.addStatement(mode, n.foaf+"name", creator.lastName, true, lang);
+		} else {
+			if(creator.firstName) Zotero.RDF.addStatement(node, n.foaf+"givenname", creator.firstName, true, lang);
+			if(creator.lastName) Zotero.RDF.addStatement(node, n.foaf+"surname", creator.lastName, true, lang);
+		}
+	}
 	
 	var creatorNode = Zotero.RDF.newResource();
-	if(creator.fieldMode == 1) {
+	setCreator(creator.fieldMode, creatorNode, creator);
+	if (creator.fieldMode === 1) {
 		Zotero.RDF.addStatement(creatorNode, RDF_TYPE, n.foaf+"Organization");
-		if(creator.lastName) Zotero.RDF.addStatement(creatorNode, n.foaf+"name", creator.lastName, true);
 	} else {
 		Zotero.RDF.addStatement(creatorNode, RDF_TYPE, n.foaf+"Person");
-		if(creator.firstName) Zotero.RDF.addStatement(creatorNode, n.foaf+"givenname", creator.firstName, true);
-		if(creator.lastName) Zotero.RDF.addStatement(creatorNode, n.foaf+"surname", creator.lastName, true);
+	}
+
+	if (creator.multi) {
+		if (creator.multi.main) {
+			setCreator(creator.fieldMode, creatorNode, creator, creator.multi.main);
+			if (creator.multi._lst && creator.multi._lst) {
+				for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+					var lang = creator.multi._lst[i];
+					setCreator(creator.fieldMode, creatorNode, creator.multi._key[lang], lang);
+				}
+			}
+		}
 	}
 	if(creator.birthYear) Zotero.RDF.addStatement(creatorNode, n.foaf+"birthday", creator.birthYear, true);
 	if(creator.shortName) Zotero.RDF.addStatement(creatorNode, n.foaf+"nick", creator.shortName, true);
