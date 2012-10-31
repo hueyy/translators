@@ -8,8 +8,14 @@
 	"maxVersion":"",
 	"priority":50,
 	"browserSupport":"gcs",
-	"configOptions":{"getCollections":"true", "dataMode":"rdf/xml"},
-	"displayOptions":{"exportNotes":true, "exportFileData":false},
+	"configOptions":{
+		"getCollections":"true",
+		"dataMode":"rdf/xml"
+	},
+	"displayOptions":{
+		"exportNotes":true,
+		"exportFileData":false
+	},
 	"inRepository":false,
 	"lastUpdated":"2012-02-17 05:48:39"
 }
@@ -581,13 +587,48 @@ LiteralProperty.prototype.mapToItem = function(newItem, nodes) {
 		var statements = getStatementsByDefinition(this.mapping[1], node);
 		if(!statements) return false;
 		
-		var content = [];
+		var main = [];
+		var keylist = [];
+		var variants = {};
 		for each(var stmt in statements) {
-			content.push(stmt[2].toString());
+			if (stmt[3]) {
+				if (!variants[stmt[3]]) {
+					keylist.push(stmt[3]);
+					variants[stmt[3]] = [];
+				}
+ 				variants[stmt[3]].push(stmt[2].toString());
+			} else {
+				main.push(stmt[2].toString());
+			}
 		}
-		newItem[this.field] = content.join(",");
+		main = main.join(",");
+		for (var lang in variants) {
+			variants[lang] = variants[lang].join(",");
+		}
+		newItem[this.field] = main;
+		newItem.multi._lsts[this.field] = keylist;
+		newItem.multi._keys[this.field] = variants;
 	}
 	return true;
+}
+
+/**
+ * Sets multilingual elements on an ordinary field
+ */
+LiteralProperty.prototype.setMulti = function(node, mapping, item) {
+	if (item.multi) {
+		if (item.multi.main[this.field]) {
+			Zotero.RDF.addStatement(node,
+			  mapping, item.uniqueFields[this.field], true, item.multi.main[this.field]);
+		}
+		if (item.multi._lsts && item.multi._lsts[this.field]) {
+			for (var i=0, ilen=item.multi._lsts[this.field].length; i<ilen; i += 1) {
+				var lang = item.multi._lsts[this.field][i];
+				Zotero.RDF.addStatement(node,
+					  mapping, item.multi._keys[this.field][lang], true, lang);
+			}
+		}
+	}
 }
 
 /**
@@ -602,23 +643,12 @@ LiteralProperty.prototype.mapFromItem = function(item, nodes) {
 	} else if(typeof this.mapping[1] == "string") {		// string case: simple predicate
 		Zotero.RDF.addStatement(nodes[this.mapping[0]],
 								this.mapping[1], item.uniqueFields[this.field], true);
-		if (item.multi) {
-			if (item.multi.main[this.field]) {
-				Zotero.RDF.addStatement(nodes[this.mapping[0]],
-				   this.mapping[1], item.uniqueFields[this.field], true, item.multi.main[this.field]);
-			}
-			if (item.multi._lsts && item.multi._lsts[this.field]) {
-				for (var i=0, ilen=item.multi._lsts[this.field].length; i<ilen; i += 1) {
-					var lang = item.multi._lsts[this.field][i];
-					Zotero.RDF.addStatement(nodes[this.mapping[0]],
-					  this.mapping[1], item.multi._keys[this.field][lang], true, lang);
-				}
-			}
-		}
+		this.setMulti(nodes[this.mapping[0]], this.mapping[1], item);
 	} else {										// array case: complex predicate
 		var blankNode = getBlankNode(nodes[this.mapping[0]],
 			this.mapping[1][0], this.mapping[1][1], true);
 		Zotero.RDF.addStatement(blankNode, this.mapping[1][2], item.uniqueFields[this.field], true);
+		this.setMulti(blankNode, this.mapping[1][2], item);
 	}
 }
 
@@ -635,21 +665,34 @@ CreatorProperty = function(field) {
  */
 CreatorProperty.prototype.mapToCreator = function(creatorNode, zoteroType) {
 	//Zotero.debug("mapping "+Zotero.RDF.getResourceURI(creatorNode)+" to a creator");
-	var lastNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"surname", null);
-	if(lastNameStmt) {		// look for a person with a last name
-		creator = {lastName:lastNameStmt[0][2].toString()};
-		var firstNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"givenname", null);
-		if(firstNameStmt) creator.firstName = firstNameStmt[0][2].toString();
-	} else {
-		var nameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"name", null);
-		if(nameStmt) {		// an organization
-			creator = {lastName:nameStmt[0][2].toString(), fieldMode:1};
-		} else {			// an unnamed entity; ignore it
-			//Zotero.debug("Dropping unnamed creator "+creatorNode.toString());
-			return false;
+	var creator = {};
+	creator.multi = {};
+	creator.multi._lst = [];
+	creator.multi._key = {};
+	var variants = {};
+	var keylist = [];
+	var nameMap = {
+		surname:"lastName",
+		givenname:"firstName",
+		name:"lastName"
+	}
+	for each(var part in ["surname", "givenname", "name"]) {
+		var nameStmts = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+part, null);
+		for each(var stmt in nameStmts) {
+			if (stmt[3]) {
+				if (!variants[stmt[3]]) {
+					keylist.push(stmt[3]);
+					variants[stmt[3]] = {};
+				}
+ 				variants[stmt[3]][nameMap[part]] = stmt[2].toString();
+			} else {
+				creator[nameMap[part]] = stmt[2].toString();
+			}
 		}
 	}
-	
+	creator.multi._lst = keylist;
+	creator.multi._key = variants;
+
 	// birthYear and shortName
 	var birthStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"birthday", null, true);
 	if(birthStmt) creator.birthYear = birthStmt[2].toString();
@@ -665,6 +708,7 @@ CreatorProperty.prototype.mapToCreator = function(creatorNode, zoteroType) {
 	} else {
 		creator.creatorType = this.field;
 	}
+	// XXX still needs cleanup, after default language is known.
 	return creator;
 }
 
@@ -911,6 +955,10 @@ function doImport() {
 		// create item
 		var zoteroType = bestType.zoteroType;
 		var newItem = new Zotero.Item(zoteroType);
+		newItem.multi = {};
+		newItem.multi.main = {};
+		newItem.multi._lsts = {};
+		newItem.multi._keys = {};
 		
 		// handle ordinary properties
 		var allCreators = {}
@@ -1023,6 +1071,47 @@ function doImport() {
 			}
 		}
 		
+		// Fix multilingual fields if necessary
+		for (var field in newItem.multi._keys) {
+			if (newItem[field]) {
+				for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
+					var lang = newItem.multi._lsts[field][i];
+					if (newItem[field] === newItem.multi._keys[field][lang]) {
+						// If there is a field value, look for a match, then give up
+						newItem.multi.main[field] = lang;
+						newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
+						delete newItem.multi._keys[field][lang];
+						break;
+					}
+				}
+			} else {
+				var itemLanguage;
+				if (newItem.language) {
+					// If there is none, but there is an item language, look for a match there
+					var itemLanguage = newItem.language.split(/[; ]+/)[0];
+					var itemLanguageLst = itemLanguage.split("-");
+					for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
+						var lang = newItem.multi._lsts[field][i];
+						var langLst = lang.split("-");
+						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
+							newItem[field] = newItem.multi._keys[field][lang];
+							newItem.multi.main[field] = lang;
+							newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
+							delete newItem.multi._keys[field][lang];
+							break;
+						}
+					}
+				}
+				// If there is none and the above has failed, just take the first
+				if (!newItem[field]) {
+					var lang = newItem.multi._lsts[field][0];
+					newItem[field] = newItem.multi._keys[field][lang];
+					newItem.multi.main[field] = lang;
+					newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(1);
+					delete newItem.multi._keys[field][lang];
+				}
+			}
+		}
 		newItem.complete();
 	}
 }
@@ -1089,3 +1178,4 @@ function doExport() {
 		//Zotero.debug("relations added");
 	}
 }
+
