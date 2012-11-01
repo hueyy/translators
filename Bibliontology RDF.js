@@ -1112,6 +1112,54 @@ function doImport() {
 				}
 			}
 		}
+
+		// Fix multilingual creators if necessary
+		for (var j=0,jlen=newItem.creators.length; j<jlen;j += 1) {
+			var creator = newItem.creators[j];
+			if (creator.lastName) {
+				for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+					var lang = creator.multi._lst[i];
+					if (creator.lastName === creator.multi._key[lang].lastName 
+						&& ((!creator.firstName && !creator.multi._key[lang].firstName)
+							|| creator.firstName === creator.firstName)) {
+
+						creator.multi.main = lang;
+						creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
+						delete creator.multi._key[lang];
+						break;
+					}
+				}
+			} else {
+				var itemLanguage;
+				if (creator.language) {
+					var itemLanguage = newItem.language.split(/[; ]+/)[0];
+					var itemLanguageLst = itemLanguage.split("-");
+					for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+						var lang = creator.multi._lst[i];
+						var langLst = lang.split("-");
+						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
+							for (var key in creator.multi._key[lang]) {
+								creator[key] = creator.multi._key[lang][key];
+							}
+							creator.multi.main = lang;
+							creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
+							delete creator.multi._key[lang];
+							break;
+						}
+					}
+				}
+				if (!creator.lastName) {
+					var lang = creator.multi._lst[0];
+					for (var key in creator.multi._key[lang]) {
+						creator[key] = creator.multi._key[lang][key];
+					}
+					creator = creator.multi._key[lang];
+					creator.multi.main = lang;
+					creator.multi._lst = creator.multi._lst.slice(1);
+					delete creator.multi._key[lang];
+				}
+			}
+		}
 		newItem.complete();
 	}
 }
