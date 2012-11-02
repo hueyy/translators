@@ -403,8 +403,14 @@ function mapProperty(parentElement, elementName, property, attributes, autoType)
 	var newElement = mapPropertySingle(doc, parentElement, elementName, property, attributes);
 
 	// Append multilingual elements only if property parent and key are provided separately.
-	if (item && item.multi && item.multi._keys[fkey]) {
+	if (fkey && item && item.multi && item.multi._keys[fkey]) {
 		for (var lang in item.multi._keys[fkey]) {
+			if (attributes.script) {
+				delete attributes.script;
+			}
+			if (attributes.transliteration) {
+				delete attributes.transliteration;
+			}
 			langAttributes = getLanguageAndScript(lang, masterLanguage);
 			for (var lkey in langAttributes) {
 				attributes[lkey] = langAttributes[lkey];
