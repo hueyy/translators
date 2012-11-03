@@ -769,11 +769,11 @@ CreatorProperty.prototype.mapFromCreator = function(item, creator, nodes) {
 	if (creator.multi) {
 		if (creator.multi.main) {
 			setCreator(creator.fieldMode, creatorNode, creator, creator.multi.main);
-			if (creator.multi._lst && creator.multi._lst) {
-				for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
-					var lang = creator.multi._lst[i];
-					setCreator(creator.fieldMode, creatorNode, creator.multi._key[lang], lang);
-				}
+		}
+		if (creator.multi._lst) {
+			for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+				var lang = creator.multi._lst[i];
+				setCreator(creator.fieldMode, creatorNode, creator.multi._key[lang], lang);
 			}
 		}
 	}
