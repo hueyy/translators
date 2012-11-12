@@ -12,7 +12,7 @@
 	"configOptions": {
 		"dataMode": "rdf/xml"
 	},
-	"lastUpdated": "2012-07-16 05:28:28"
+	"lastUpdated": "2012-09-06 04:04:09"
 }
 
 /*
@@ -715,13 +715,28 @@ function importItem(newItem, node) {
 	}
 
 	// volume
-	result = getFirstResults((container ? container : node), [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
-		       n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
-	setMultiFields("volume", result);
-
+    result = false;
+	if(container) {
+		result = getFirstResults(container, [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
+			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
+	}
+	if(!result) {
+		 result = getFirstResults(node, [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
+			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
+	}
+    if (result) {
+	    setMultiFields("volume", result);
+    }
 	// issue
-	newItem.issue = getFirstResults((container ? container : node), [n.prism+"number", n.prism2_0+"number", n.prism2_1+"number",
-		n.eprints+"number", n.bibo+"issue", n.dcterms+"citation.issue"], true);
+	if(container) {
+		newItem.issue = getFirstResults(container, [n.prism+"number", n.prism2_0+"number", n.prism2_1+"number",
+			n.eprints+"number", n.bibo+"issue", n.dcterms+"citation.issue"], true);
+	}
+	if(!newItem.issue) {
+		newItem.issue = getFirstResults(node, [n.prism+"number", n.prism2_0+"number", n.prism2_1+"number",
+			n.eprints+"number", n.bibo+"issue", n.dcterms+"citation.issue"], true);
+	}
+
 	// these mean the same thing
 	newItem.patentNumber = newItem.number = newItem.issue;
 

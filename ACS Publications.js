@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-14 11:23:04"
+	"lastUpdated": "2012-09-04 23:35:03"
 }
 
 function detectWeb(doc, url) {
@@ -95,9 +95,13 @@ function processCallback(doi, host, downloadFileName) {
 		var post = "doi=" + doi + "&downloadFileName=" + downloadFileName + "&include=abs&format=refman&direct=on&submit=Download+article+citation+data";
 		Zotero.Utilities.HTTP.doPost(baseurl, post,function(text){
 			// Fix the RIS doi mapping
-			text = text.replace("N1  - doi:","M3  - ");
-			//Fix the wrong mapping for journal abbreviations
-			text = text.replace("JO  -", "JA  -");
+			text = text.replace("\nN1  - doi:", "\nM3  - ");
+			// Fix the wrong mapping for journal abbreviations
+			text = text.replace("\nJO  -", "\nJA  -");
+			// Use publication date when available
+			if(text.indexOf("\nDA  -") !== -1) {
+				text = text.replace(/\nY1  - [^\n]*/, "").replace("\nDA  -", "\nY1  -");
+			}
 			Zotero.debug("ris= "+ text);
 			var translator = Zotero.loadTranslator("import");
 			translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
@@ -105,10 +109,10 @@ function processCallback(doi, host, downloadFileName) {
 			translator.setHandler("itemDone", function(obj, item) {
 				var pdfUrl = host + 'doi/pdf/' + doi;
 				var fullTextUrl = host + 'doi/full/' + doi;
-				item.attachments.push(
+				item.attachments = [
 					{title:"ACS Full Text PDF",url:pdfUrl, mimeType:"application/pdf"},
 					{title:"ACS Full Text Snapshot",url:fullTextUrl, mimeType:"text/html"}
-				); 
+				]; 
 				item.complete();
 			});
 			translator.translate();
@@ -143,7 +147,6 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [
-					{},
 					{
 						"title": "ACS Full Text PDF",
 						"mimeType": "application/pdf"
@@ -153,18 +156,20 @@ var testCases = [
 						"mimeType": "text/html"
 					}
 				],
+				"title": "Life Cycle Environmental Assessment of Lithium-Ion and Nickel Metal Hydride Batteries for Plug-In Hybrid and Battery Electric Vehicles",
+				"date": "May 15, 2011",
 				"DOI": "10.1021/es103607c",
+				"publicationTitle": "Environmental Science & Technology",
 				"journalAbbreviation": "Environ. Sci. Technol.",
+				"pages": "4548-4554",
+				"volume": "45",
 				"issue": "10",
-				"abstractNote": "This study presents the life cycle assessment (LCA) of three batteries for plug-in hybrid and full performance battery electric vehicles. A transparent life cycle inventory (LCI) was compiled in a component-wise manner for nickel metal hydride (NiMH), nickel cobalt manganese lithium-ion (NCM), and iron phosphate lithium-ion (LFP) batteries. The battery systems were investigated with a functional unit based on energy storage, and environmental impacts were analyzed using midpoint indicators. On a per-storage basis, the NiMH technology was found to have the highest environmental impact, followed by NCM and then LFP, for all categories considered except ozone depletion potential. We found higher life cycle global warming emissions than have been previously reported. Detailed contribution and structural path analyses allowed for the identification of the different processes and value-chains most directly responsible for these emissions. This article contributes a public and detailed inventory, which can be easily be adapted to any powertrain, along with readily usable environmental performance assessments.\nThis study presents the life cycle assessment (LCA) of three batteries for plug-in hybrid and full performance battery electric vehicles. A transparent life cycle inventory (LCI) was compiled in a component-wise manner for nickel metal hydride (NiMH), nickel cobalt manganese lithium-ion (NCM), and iron phosphate lithium-ion (LFP) batteries. The battery systems were investigated with a functional unit based on energy storage, and environmental impacts were analyzed using midpoint indicators. On a per-storage basis, the NiMH technology was found to have the highest environmental impact, followed by NCM and then LFP, for all categories considered except ozone depletion potential. We found higher life cycle global warming emissions than have been previously reported. Detailed contribution and structural path analyses allowed for the identification of the different processes and value-chains most directly responsible for these emissions. This article contributes a public and detailed inventory, which can be easily be adapted to any powertrain, along with readily usable environmental performance assessments.",
+				"publisher": "American Chemical Society",
+				"abstractNote": "This study presents the life cycle assessment (LCA) of three batteries for plug-in hybrid and full performance battery electric vehicles. A transparent life cycle inventory (LCI) was compiled in a component-wise manner for nickel metal hydride (NiMH), nickel cobalt manganese lithium-ion (NCM), and iron phosphate lithium-ion (LFP) batteries. The battery systems were investigated with a functional unit based on energy storage, and environmental impacts were analyzed using midpoint indicators. On a per-storage basis, the NiMH technology was found to have the highest environmental impact, followed by NCM and then LFP, for all categories considered except ozone depletion potential. We found higher life cycle global warming emissions than have been previously reported. Detailed contribution and structural path analyses allowed for the identification of the different processes and value-chains most directly responsible for these emissions. This article contributes a public and detailed inventory, which can be easily be adapted to any powertrain, along with readily usable environmental performance assessments.",
 				"ISSN": "0013-936X",
 				"url": "http://dx.doi.org/10.1021/es103607c",
-				"libraryCatalog": "ACS Publications",
-				"title": "Life Cycle Environmental Assessment of Lithium-Ion and Nickel Metal Hydride Batteries for Plug-In Hybrid and Battery Electric Vehicles",
-				"date": "2011",
-				"publicationTitle": "Environmental Science & Technology",
-				"pages": "4548-4554",
-				"volume": "45"
+				"accessDate": "September 5, 2012",
+				"libraryCatalog": "ACS Publications"
 			}
 		]
 	},

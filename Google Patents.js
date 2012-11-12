@@ -2,23 +2,19 @@
 	"translatorID": "d71e9b6d-2baa-44ed-acb4-13fe2fe592c0",
 	"label": "Google Patents",
 	"creator": "Adam Crymble, Avram Lyon",
-	"target": "^http://www\\.google\\.[^/]*/(?:patents|search[^/]*[&?]tbm=pts)",
+	"target": "^https?://(www\\.)?google\\.[^/]*/(?:patents|(search|#q)[^/]*[\\&\\?]tbm=pts)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-15 06:29:50"
+	"lastUpdated": "2012-09-23 23:39:06"
 }
 
 function detectWeb(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
-	if(doc.location.href.match(/[?&]q=/)) {
+	if (!doc.getElementsByTagName("body")[0].hasChildNodes()) return;
+	if (doc.location.href.match(/(search.*[?&]q=|#q=.+tbm=pts)/)) {
 		return "multiple";
 	} else if(doc.location.href.match(/[?&]id=/)) {
 		return "patent";
@@ -34,6 +30,7 @@ function associateData (newItem, dataTags, field, zoteroField) {
 }
 
 function scrape(doc, url) {
+	//Z.debug(url)
 	var dataTags = new Object();
 	var newItem = new Zotero.Item("patent");
 
@@ -149,11 +146,11 @@ function doWeb(doc, url) {
 	var host = 'http://' + doc.location.host + "/";
 	
 	if (detectWeb(doc, url) == "multiple") {
-		var items = Zotero.Utilities.getItemArray(doc, doc, /\/patents\?id=/);
+		var items = Zotero.Utilities.getItemArray(doc, doc, /\/patents(\?id=|\/US.+&ei=)/);
 		var trimmed = {};
 		var hit;
 		for (i in items) {
-			hit = i.match(/^https?:\/\/(?:www\.)?google\.[^/]+\/patents\?id=[0-9A-Za-z]+/);
+			hit = i.match(/^https?:\/\/(?:www\.)?google\.[^/]+\/patents\/US.+&ei=/);
 			if (hit && !trimmed[hit[0]]) {
 				trimmed[hit[0]] = items[i];
 			}
@@ -161,13 +158,39 @@ function doWeb(doc, url) {
 		Zotero.selectItems(trimmed, function (items) {
 			var articles = new Array();
 			for (var i in items) {
+				//remove anything that could redirect, make sure language is English
+				i = i.replace(/\?.+/, "?hl=en");
 				articles.push(i);
 			}
 			Zotero.Utilities.processDocuments(articles, scrape, function() {Zotero.done();});
 			Zotero.wait();
 		});			
 	} else {
-		scrape(doc);
+		//make sure we always get the overview page - but only reload the page when necessary
+		var newurl;
+		if (url.match(/printsec=|v=onepage|v=thumbnail|google\.[^(com)]|hl=[^(en)]/)) {
+			//patent pages directly naviageted to from search results have the id somewhere in the URL
+			if (url.match(/[\&\?]id=[0-9A-Za-z\-]+/)) {
+				var id = url.match(/[\&\?]id=[0-9A-Za-z\-\_]+/)[0].replace(/\&/, "?");
+				newurl = host + "patents" + id;
+			} else {
+				//these URLs are navigated to from the patent page - they usually have the form patents/US12345
+				newurl = url.replace(/\?.*/, "");
+			}
+		//convert the page to the English version so scraping works
+		//do this by either changing the language to hl=en
+		if (newurl.match(/google\.[^(com)]|hl=[^(en)]/)){
+			if (newurl.search(/hl=[^(en)]/)!=-1){
+				newurl = newurl.replace(/hl=[a-z]+/, "hl=en")
+			}
+			else{
+				newurl = newurl + "&hl=en";
+			}
+		}
+			ZU.processDocuments(newurl, scrape, function () {
+				Zotero.done();
+			})
+		} else scrape(doc, url);
 	}
 }
 
@@ -294,6 +317,46 @@ var testCases = [
 				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.google.com/patents?id=PGk-AAAAEBAJ&printsec=abstract#v=onepage&q&f=false",
+		"items": [
+			{
+				"itemType": "patent",
+				"creators": [
+					{
+						"firstName": "O'Dean P.",
+						"lastName": "Judd",
+						"creatorType": "inventor"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Google Patents PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"abstractNote": "A device and method for optically pumping a gaseous laser using blackbody radiation produced by a plasma channel which is formed from an electrical discharge between two electrodes spaced at opposite longitudinal ends of the laser. A preionization device which can comprise a laser or electron beam accelerator produces a preionization beam which is sufficient to cause an electrical discharge between the electrodes to initiate the plasma channel along the preionization path. The optical pumping energy is supplied by a high voltage power supply rather than by the preionization beam. High output optical intensities are produced by the laser due to the high temperature blackbody radiation produced by the plasma channel, in the same manner as an exploding wire type laser. However, unlike the exploding wire type laser, the disclosed invention can be operated in a repetitive manner by utilizing a repetitive pulsed preionization device.",
+				"country": "United States",
+				"extra": "U.S. Classification: 372/70\nInternational Classification: : H01S  3091",
+				"patentNumber": "4390992",
+				"filingDate": "Jul 17, 1981",
+				"assignee": "The United States of America as represented by the United States Department of Energy",
+				"url": "http://www.google.com/patents?id=PGk-AAAAEBAJ",
+				"issueDate": "Jun 28, 1983",
+				"title": "Plasma channel optical pumping device and method"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"defer": true,
+		"url": "http://www.google.fr/#q=ordinateur&hl=fr&prmd=imvns&source=lnms&tbm=pts&sa=X&ei=oJJfUJKgBOiU2gWqwIHYCg&ved=0CBIQ_AUoBQ&tbo=1&prmdo=1&bav=on.2,or.r_gc.r_pw.r_qf.&fp=ec5bd0c9391b4cc0&biw=1024&bih=589",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

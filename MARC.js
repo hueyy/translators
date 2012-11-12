@@ -1,15 +1,15 @@
 {
 	"translatorID": "a6ee60df-1ddc-4aae-bb25-45e0537be973",
+	"translatorType": 1,
 	"label": "MARC",
 	"creator": "Simon Kornblith, Sylvain Machefert",
 	"target": "marc",
 	"minVersion": "2.1.9",
-	"maxVersion": "",
+	"maxVersion": null,
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 1,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2012-04-11 14:15:49"
+	"lastUpdated": "2012-08-07 22:26:11"
 }
 
 function detectImport() {
@@ -37,8 +37,8 @@ function clean(value) {
 	value = value.replace(/[\s\.\,\/\:;]+$/, '');
 	value = value.replace(/ +/g, ' ');
 	
-	var char1 = value[0];
-	var char2 = value[value.length-1];
+	var char1 = value.substr(0, 1);
+	var char2 = value.substr(value.length-1);
 	if((char1 == "[" && char2 == "]") || (char1 == "(" && char2 == ")")) {
 		// chop of extraneous characters
 		return value.substr(1, value.length-2);
@@ -97,8 +97,8 @@ record.prototype.importBinary = function(record) {
 	var directory = directory.substr(24);
 	
 	// get various data
-	this.indicatorLength = parseInt(this.leader[10], 10);
-	this.subfieldCodeLength = parseInt(this.leader[11], 10);
+	this.indicatorLength = parseInt(this.leader.substr(10, 1), 10);
+	this.subfieldCodeLength = parseInt(this.leader.substr(11, 1), 10);
 	var baseAddress = parseInt(this.leader.substr(12, 5), 10);
 	
 	// get record data
@@ -109,7 +109,7 @@ record.prototype.importBinary = function(record) {
 	// can strip the nulls later.
 	this.content = "";
 	for(i=0; i<contentTmp.length; i++) {
-		this.content += contentTmp[i];
+		this.content += contentTmp.substr(i, 1);
 		if(contentTmp.charCodeAt(i) > 0x00FFFF) {
 			this.content += "\x00\x00\x00";
 		} else if(contentTmp.charCodeAt(i) > 0x0007FF) {
@@ -217,7 +217,7 @@ record.prototype._associateDBField = function(item, fieldNo, part, fieldName, ex
 		for(var i in field) {
 			var value = false;
 			for(var j=0; j<part.length; j++) {
-				var myPart = part[j];
+				var myPart = part.substr(j, 1);
 				if(field[i][myPart]) {
 					if(value) {
 						value += " "+field[i][myPart];
@@ -251,7 +251,7 @@ record.prototype._associateNotes = function(item, fieldNo, part) {
 
 	for(var i in field) {
 		for(var j=0; j<part.length; j++) {
-			var myPart = part[j];
+			var myPart = part.substr(j, 1);
 			if(field[i][myPart]) {
 				texts.push(clean(field[i][myPart]));
 			}
@@ -268,7 +268,7 @@ record.prototype._associateTags = function(item, fieldNo, part) {
 	
 	for(var i in field) {
 		for(var j=0; j<part.length; j++) {
-			var myPart = part[j];
+			var myPart = part.substr(j, 1);
 			if(field[i][myPart]) {
 				item.tags.push(clean(field[i][myPart]));
 			}
@@ -280,7 +280,7 @@ record.prototype._associateTags = function(item, fieldNo, part) {
 record.prototype.translate = function(item) {
 	// get item type
 	if(this.leader) {
-		var marcType = this.leader[6];
+		var marcType = this.leader.substr(6, 1);
 		if(marcType == "g") {
 			item.itemType = "film";
 		} else if(marcType == "e" || marcType == "f") {

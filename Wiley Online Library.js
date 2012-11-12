@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsb",
-	"lastUpdated": "2012-07-14 11:59:58"
+	"browserSupport": "gcsib",
+	"lastUpdated": "2012-09-24 18:41:54"
 }
 
 /*
@@ -1038,11 +1038,6 @@ var testCases = [
 				"shortTitle": "Volume for Winners and Losers"
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://onlinelibrary.wiley.com/search-web/cochrane/mainSearch?uuid=a64d3e12-92c6-413c-8064-3aa95d6f7f9c&searchKey=a64d3e12-92c6-413c-8064-3aa95d6f7f9c&clearHistory=&mode=startsearch&products=all&Query5=&Query4=&FromYear=&Query3=&Query2=&Query1=alcohol+health+promotion&ToYear=&zones5=tables&zones4=abstract&zones3=author&zones2=article-title&zones1=%28article-title%2Cabstract%2Ckeywords%29&opt4=AND&opt3=AND&opt2=AND&unitstatus=none&opt1=OR&",
-		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/
