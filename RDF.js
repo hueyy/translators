@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 1,
 	"browserSupport": "gcs",
-	"lastUpdated": "2012-09-06 04:04:09"
+	"lastUpdated": "2012-11-13 03:46:30"
 }
 
 /*
@@ -640,7 +640,7 @@ function importItem(newItem, node) {
 
 	// title
 	var result = getFirstResults(node, [n.dc+"title", n.dcterms+"title",
-		n.eprints+"title", n.vcard2+"fn", n.og+"title"], false);
+		  n.eprints+"title", n.vcard2+"fn", n.og+"title"], false, true);
 	setMultiFields('title', result);
 	if(!newItem.itemType) {
 		if(!newItem.title) {	// require the title
@@ -671,7 +671,8 @@ function importItem(newItem, node) {
 
 	// XXX fixme
 	// publicationTitle -- first try PRISM, then DC
-	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.dc+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	result = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.dc+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	setMultiFields('publicationTitle', result);
 
 	// rights
 	newItem.rights = getFirstResults(node, [n.prism+"copyright", n.prism2_0+"copyright", n.prism2_1+"copyright", n.dc+"rights", n.dcterms+"rights"], true);
