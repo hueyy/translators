@@ -752,7 +752,7 @@ CreatorProperty.prototype.mapFromCreator = function(item, creator, nodes) {
 
 	var setCreator = function (mode, node, creator, lang) {
 		if(mode == 1) {
-			if(creator.lastName) Zotero.RDF.addStatement(mode, n.foaf+"name", creator.lastName, true, lang);
+			if(creator.lastName) Zotero.RDF.addStatement(node, n.foaf+"name", creator.lastName, true, lang);
 		} else {
 			if(creator.firstName) Zotero.RDF.addStatement(node, n.foaf+"givenname", creator.firstName, true, lang);
 			if(creator.lastName) Zotero.RDF.addStatement(node, n.foaf+"surname", creator.lastName, true, lang);
