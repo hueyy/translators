@@ -721,6 +721,7 @@ CreatorProperty.prototype.mapToCreators = function(node, zoteroType) {
 	var statements = getStatementsByDefinition(this.mapping[2], node);
 	if(statements) {
 		for each(var stmt in statements) {
+            Zotero.debug("XXX stmt[2]: "+stmt[2]+", zoteroType: "+zoteroType);
 			var creator = this.mapToCreator(stmt[2], zoteroType);
 			if(creator) {
 				creators.push(creator);
