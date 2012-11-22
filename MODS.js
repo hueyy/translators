@@ -15,7 +15,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gv",
-	"lastUpdated": "2012-07-15 01:57:05"
+	"lastUpdated": "2012-11-22 19:00:23"
 }
 
 var fromMarcGenre = {
@@ -939,6 +939,21 @@ function processItemType(contextElement) {
 			return modsInternetMediaTypes[internetMediaTypeStr];
 		};
 	}
+	
+	var hasHost = false;
+	var periodical = false;
+	
+	// Try to get genre data from host
+	var hosts = ZU.xpath(contextElement, 'm:relatedItem[@type="host"]', xns);
+	for(var i=0; i<hosts.length; i++) {
+		type = processGenre(hosts[i]);
+		if(type) return type;
+	}
+		
+	// Figure out if it's a periodical
+	var periodical = ZU.xpath(contextElement, 
+		'm:relatedItem[@type="host"]/m:originInfo/m:issuance[text()="continuing" or text()="serial"]',
+		xns).length;
 
 	// As a last resort, if it has a host, let's set it to book chapter, so we can import
 	// more info. Otherwise default to document
@@ -1058,6 +1073,18 @@ function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
 			creatorData["xml-lang"] = language;
 			creatorObj[language].push(creatorData);
 		}
+	}
+	
+	if(!creator.creatorType) {
+		// Look for MARC roles
+		var roles = ZU.xpath(name, 'm:role/m:roleTerm[@type="code"][@authority="marcrelator"]', xns);
+		for(var i=0; i<roles.length; i++) {
+			var roleStr = roles[i].textContent.toLowerCase();
+			if(marcRelators[roleStr]) creator.creatorType = marcRelators[roleStr];
+		}
+		
+		// Default to author
+		if(!creator.creatorType) creator.creatorType = defaultCreatorType;
 	}
 
 	// Recast grouped creators as a list, placing the group
@@ -1355,6 +1382,9 @@ function doImport() {
 			newItem.language = "en";
 		}
 
+		// itemType
+		newItem.itemType = processItemType(modsElement);
+		
 		// itemType
 		newItem.itemType = processItemType(modsElement);
 		
