@@ -15,7 +15,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gv",
-	"lastUpdated": "2012-07-15 01:57:05"
+	"lastUpdated": "2012-11-23 00:00:00"
 }
 
 var fromMarcGenre = {
