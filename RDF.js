@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 1,
 	"browserSupport": "gcs",
-	"lastUpdated": "2012-11-13 03:46:30"
+	"lastUpdated": "2012-11-21 04:16:53"
 }
 
 /*
@@ -1113,5 +1113,6 @@ var exports = {
 	"doImport":doImport,
 	"detectType":detectType,
 	"getNodes":getNodes,
-	"defaultUnknownType":false
+	"defaultUnknownType":false,
+	"itemType": false
 };
