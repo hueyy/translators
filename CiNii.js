@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-10-07 14:05:00"
+	"lastUpdated": "2012-11-24 13:12:41"
 }
 
 function detectWeb(doc, url) {
@@ -313,7 +313,7 @@ var testCases = [
 				"publicationTitle": "生産研究",
 				"ISSN": "0037105X",
 				"publisher": "東京大学",
-				"date": "2002",
+				"date": "November 2002",
 				"volume": "54",
 				"issue": "6",
 				"pages": "384-387",
