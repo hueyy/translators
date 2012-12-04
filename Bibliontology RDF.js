@@ -17,7 +17,7 @@
 		"exportFileData":false
 	},
 	"inRepository":false,
-	"lastUpdated":"2012-02-17 05:48:39"
+	"lastUpdated":"2012-11-26 15:52:17"
 }
 
 var n = {
@@ -833,7 +833,7 @@ function detectImport() {
 	var rdfTypes = Zotero.RDF.getStatementsMatching(null, RDF_TYPE, null);
 	if(rdfTypes) {
 		for each(var rdfType in rdfTypes) {
-			if(rdfType[2].uri && rdfType[2].uri.substr(0, BIBO_NS_LENGTH) == n.bibo) return true;
+			if(typeof rdfType[2] === "object" && Z.RDF.getResourceURI(rdfType[2]).substr(0, BIBO_NS_LENGTH) == n.bibo) return true;
 		}
 	}
 	return false;
@@ -904,8 +904,10 @@ function doImport() {
 	var itemNodes = {};
 	for each(var rdfType in rdfTypes) {
 		[itemNode, predicateNode, objectNode] = rdfType;
-		if(!objectNode.uri || !collapsedTypes[objectNode.uri]) continue;
-		itemNodes[Zotero.RDF.getResourceURI(itemNode)] = itemNode;
+		if(typeof objectNode !== "object") continue;
+		var uri = Zotero.RDF.getResourceURI(itemNode);
+		if(!uri) continue;
+		itemNodes[uri] = itemNode;
 	}
 	
 	// Look through found items to see if their rdf:type matches a Zotero item type URI, and if so,
@@ -928,9 +930,11 @@ function doImport() {
 		var bestTypeScore = -9999;
 		var bestType, score, nodes, bestNodes;
 		for each(var rdfType in itemRDFTypes) {
-			if(!rdfType[2].uri) continue;
+			if(typeof rdfType[2] !== "object") continue;
+			var collapsedTypesForItem = collapsedTypes[Z.RDF.getResourceURI(rdfType[2])];
+			if(!collapsedTypesForItem) continue;
 			
-			for each(var type in collapsedTypes[rdfType[2].uri]) {
+			for each(var type in collapsedTypesForItem) {
 				[score, nodes] = type.getMatchScore(itemNode);
 				//Zotero.debug("Type "+type.zoteroType+" has score "+score);
 				
