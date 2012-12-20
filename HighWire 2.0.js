@@ -8,8 +8,8 @@
 	"priority": 200,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsv",
-	"lastUpdated": "2012-09-27 15:22:10"
+	"browserSupport": "gcs",
+	"lastUpdated": "2012-12-19 01:27:39"
 }
 
 /*
@@ -160,8 +160,10 @@ function doWeb(doc, url) {
 			var titlex = './/h4';
 		} else if ( url.indexOf("content/early/recent") != -1 ||
 					doc.title.indexOf("Early Edition") != -1) {
+						
 			var searchx = '//div[contains(@class, "is-early-release") or \
-								contains(@class, "from-current-issue")]';
+								contains(@class, "from-current-issue")] \
+								|//div[contains(@class, "toc-level level3")]//ul[@class="cit-list"]/div';
 			var titlex = './/span[contains(@class, "cit-title")]';
 		} else if (url.indexOf("content/by/section") != -1 ||
 					url.match(/cgi\/collection\/./)) {
@@ -178,10 +180,9 @@ function doWeb(doc, url) {
 		var linkx = '(.//a)[1]/@href';
 		var searchres = ZU.xpath(doc, searchx);
 		var items = new Object();
-
+		//Z.debug(searchres.length)
 		for(var i=0, n=searchres.length; i<n; i++) {
 			next_res = searchres[i];
-
 			title = ZU.xpathText(next_res, titlex);
 			link = ZU.xpathText(next_res, linkx);
 			if(link && title) {
@@ -818,7 +819,7 @@ var testCases = [
 				"issue": "1",
 				"url": "http://www.bjj.boneandjoint.org.uk/content/94-B/1/10",
 				"pages": "10-15",
-				"ISSN": "0301-620X, 2044-5377",
+				"ISSN": "2049-4394, 2049-4408",
 				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "www.bjj.boneandjoint.org.uk",
 				"abstractNote": "The most frequent cause of failure after total hip replacement in all reported arthroplasty registries is peri-prosthetic osteolysis. Osteolysis is an active biological process initiated in response to wear debris. The eventual response to this process is the activation of macrophages and loss of bone.\nActivation of macrophages initiates a complex biological cascade resulting in the final common pathway of an increase in osteolytic activity. The biological initiators, mechanisms for and regulation of this process are beginning to be understood. This article explores current concepts in the causes of, and underlying biological mechanism resulting in peri-prosthetic osteolysis, reviewing the current basic science and clinical literature surrounding the topic."
