@@ -1,23 +1,23 @@
 {
-	"translatorID":"14763d25-8ba0-45df-8f52-b8d1108e7ac9",
-	"translatorType":3,
-	"label":"Bibliontology RDF",
-	"creator":"Simon Kornblith",
-	"target":"rdf",
-	"minVersion":"2.0",
-	"maxVersion":"",
-	"priority":50,
-	"browserSupport":"gcs",
-	"configOptions":{
-		"getCollections":"true",
-		"dataMode":"rdf/xml"
+	"translatorID": "14763d25-8ba0-45df-8f52-b8d1108e7ac9",
+	"translatorType": 3,
+	"label": "Bibliontology RDF",
+	"creator": "Simon Kornblith",
+	"target": "rdf",
+	"minVersion": "2.0",
+	"maxVersion": "",
+	"priority": 50,
+	"inRepository": true,
+	"browserSupport": "gcs",
+	"configOptions": {
+		"dataMode": "rdf/xml",
+		"getCollections": "true"
 	},
-	"displayOptions":{
-		"exportNotes":true,
-		"exportFileData":false
+	"displayOptions": {
+		"exportNotes": true,
+		"exportFileData": false
 	},
-	"inRepository":false,
-	"lastUpdated":"2012-11-26 15:52:17"
+	"lastUpdated": "2012-12-04 00:25:03"
 }
 
 var n = {
@@ -86,7 +86,7 @@ var TYPES = {
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"MessageBoard"],
 							 																					 	[n.rdf+"type", n.bibo+"Website"]]]],
 	"film":					[[[n.rdf+"type", n.bibo+"Film"]],					null,								null],
-	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								null],
+	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Proceedings"]]]],
 	"instantMessage":		[[[n.rdf+"type", n.sioct+"InstantMessage"],
 							  [n.rdf+"type", n.bibo+"PersonalCommunication"]], 	null,								null],
 	"interview":			[[[n.rdf+"type", n.bibo+"Interview"]],				null,								null],
@@ -1231,4 +1231,3 @@ function doExport() {
 		//Zotero.debug("relations added");
 	}
 }
-
