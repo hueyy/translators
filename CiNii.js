@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-11-24 13:12:41"
+	"lastUpdated": "2013-01-07 03:53:17"
 }
 
 function detectWeb(doc, url) {
@@ -187,116 +187,5 @@ function doWeb(doc, url) {
 }
 /** BEGIN TEST CASES **/
 var testCases = [
-	{
-		"type": "web",
-		"url": "http://ci.nii.ac.jp/search?q=test&range=0&count=20&sortorder=1&type=0",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
-		"items": [
-			{
-				"itemType": "journalArticle",
-				"creators": [
-					{
-						"firstName": "謙一=Kenichi Ohi",
-						"lastName": "大井",
-						"creatorType": "author"
-					},
-					{
-						"lastName": "伊野",
-						"creatorType": "author",
-						"multi": {
-							"_lst": [
-								"en"
-							],
-							"_key": {
-								"en": {
-									"lastName": "Fumihiko",
-									"creatorType": "author",
-									"firstName": "Ino"
-								}
-							}
-						},
-						"firstName": "文彦"
-					},
-					{
-						"firstName": "拓海=Takumi Ito",
-						"lastName": "伊藤",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Li",
-						"lastName": "Yushun",
-						"creatorType": "author"
-						"lastName": "萩原",
-						"creatorType": "author",
-						"multi": {
-							"_lst": [
-								"en"
-							],
-							"_key": {
-								"en": {
-									"lastName": "Kenichi",
-									"creatorType": "author",
-									"firstName": "Hagihara"
-								}
-							}
-						},
-						"firstName": "兼一"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [],
-				"itemID": "http://ci.nii.ac.jp/naid/110008803112#article",
-				"title": "遺伝子配列に対するペアワイズアライメントのGPUによる高速化",
-				"multi": {
-					"main": {},
-					"_lsts": {
-						"title": [
-							"en"
-						],
-						"publicationTitle": [
-							"en"
-						],
-						"reporter": [
-							"en"
-						],
-						"publisher": [
-							"en"
-						]
-					},
-					"_keys": {
-						"title": {
-							"en": "GPU-Accelerated Pairwise Alignment for Genome Sequences"
-						},
-						"publicationTitle": {
-							"en": "IPSJ SIG technical reports"
-						},
-						"reporter": {
-							"en": "IPSJ SIG technical reports"
-						},
-						"publisher": {
-							"en": "Information Processing Society of Japan (IPSJ)"
-						}
-					}
-				},
-				"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring",
-				"publicationTitle": "生産研究",
-				"ISSN": "0037105X",
-				"publisher": "東京大学",
-				"date": "November 2002",
-				"volume": "54",
-				"issue": "6",
-				"pages": "384-387",
-				"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
-				"libraryCatalog": "CiNii",
-				"accessDate": "CURRENT_TIMESTAMP"
-			}
-		]
-	}
 ]
 /** END TEST CASES **/
