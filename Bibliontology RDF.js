@@ -34,6 +34,7 @@ var n = {
 	res:"http://purl.org/vocab/resourcelist/schema#",
 	sc:"http://umbel.org/umbel/sc/",
 	sioct:"http://rdfs.org/sioc/types#",
+	mlz:"http://citationstylist.org/rdfschema/temp/",
 	z:"http://www.zotero.org/namespaces/export#"
 };
 
@@ -86,6 +87,7 @@ var TYPES = {
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"MessageBoard"],
 							 																					 	[n.rdf+"type", n.bibo+"Website"]]]],
 	"film":					[[[n.rdf+"type", n.bibo+"Film"]],					null,								null],
+	"gazette":				[[[n.rdf+"type", n.mlz+"Gazette"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Proceedings"]]]],
 	"instantMessage":		[[[n.rdf+"type", n.sioct+"InstantMessage"],
 							  [n.rdf+"type", n.bibo+"PersonalCommunication"]], 	null,								null],
@@ -96,6 +98,7 @@ var TYPES = {
 	"magazineArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Magazine"]]]],
 	"manuscript":			[[[n.rdf+"type", n.bibo+"Manuscript"]],				null,								null],
+	"classic":			[[[n.rdf+"type", n.mlz+"Classic"]],				null,								null],
 	"map":					[[[n.rdf+"type", n.bibo+"Map"]],					null,								null],
 	"newspaperArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Newspaper"]]]],
@@ -103,13 +106,16 @@ var TYPES = {
 	"patent":				[[[n.rdf+"type", n.bibo+"Patent"]],					null,								null],
 	"podcast":				[[[n.rdf+"type", n.z+"Podcast"],
 							  [n.rdf+"type", n.bibo+"AudioDocument"]],			null,								null],
+	"periodical":			[[[n.rdf+"type", n.bibo+"Journal"]],				null,								null],
 	"presentation":			[[[n.rdf+"type", n.bibo+"Slideshow"]],				null,								null],
 	"radioBroadcast":		[[[n.rdf+"type", n.po+"AudioDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"Radio"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
+	"regulation":				[[[n.rdf+"type", n.mlz+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"report":				[[[n.rdf+"type", n.bibo+"Report"]],					null,								null],
 	"statute":				[[[n.rdf+"type", n.bibo+"Statute"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"thesis":				[[[n.rdf+"type", n.bibo+"Thesis"]],					null,								null],
+	"treaty":				[[[n.rdf+"type", n.bibo+"Treaty"]],				null,								null],
 	"tvBroadcast":			[[[n.rdf+"type", n.bibo+"AudioVisualDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"TV"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
@@ -1189,6 +1195,7 @@ function doExport() {
 	// now that we've collected our items, start building the RDF
 	for each(var item in items) {
 		// set type on item node
+        Zotero.debug("BBB itemType: "+item.itemType);
 		var type = new Type(item.itemType, TYPES[item.itemType]);
 		var nodes = type.createNodes(item);
 		
