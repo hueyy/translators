@@ -659,7 +659,8 @@ function importItem(newItem, node) {
 		}
 	}
 
-	newItem.itemType = detectType(newItem, node, ret);
+	var itemType = detectType(newItem, node, ret);
+	newItem.itemType = exports.itemType || itemType;
 	var container = ret.container;
 	var isPartOf = ret.isPartOf;
 
@@ -696,10 +697,9 @@ function importItem(newItem, node) {
 
 	// XXX fixme
 	// publicationTitle -- first try PRISM, then DC
-	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication",
-		 n.dc+"source", n.dc1_0+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	result = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.dc+"source", n.dc1_0+"source", n.dcterms+"source", n.og+"site_name"], false, true);
 	setMultiFields('publicationTitle', result);
-	
+
 	// rights
 	newItem.rights = getFirstResults(node, [n.prism+"copyright", n.prism2_0+"copyright", n.prism2_1+"copyright", n.dc+"rights", n.dc1_0+"rights", n.dcterms+"rights"], true);
 	
@@ -742,16 +742,18 @@ function importItem(newItem, node) {
 	}
 
 	// volume
+    result = false;
 	if(container) {
 		result = getFirstResults(container, [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
-			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], true);
+			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
 	}
 	if(!result) {
 		 result = getFirstResults(node, [n.prism+"volume", n.prism2_0+"volume", n.prism2_1+"volume",
-			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], true);
+			n.eprints+"volume", n.bibo+"volume", n.dcterms+"citation.volume"], false, true);
 	}
-	setMultiFields("volume", result);
-
+    if (result) {
+	    setMultiFields("volume", result);
+    }
 	// issue
 	if(container) {
 		newItem.issue = getFirstResults(container, [n.prism+"number", n.prism2_0+"number", n.prism2_1+"number",
@@ -893,11 +895,12 @@ function importItem(newItem, node) {
 
 	// archiveLocation
 	newItem.archiveLocation = getFirstResults(node, [n.dc+"coverage", n.dc1_0+"coverage", n.dcterms+"coverage"], true);
-	
+
 	// abstract
 	newItem.abstractNote = getFirstResults(node, [n.eprints+"abstract", n.prism+"teaser", n.prism2_0+"teaser", n.prism2_1+"teaser", n.og+"description",
 		n.bibo+"abstract", n.dcterms+"abstract", n.dc+"description.abstract", n.dcterms+"description.abstract", n.dc1_0+"description"], true);
-	
+
+	// XXX fixme
 	// type
 	var type = getFirstResults(node, [n.dc+"type", n.dc1_0+"type", n.dcterms+"type"], true);
 	// these all mean the same thing

@@ -200,41 +200,9 @@ var testCases = [
 				"itemType": "journalArticle",
 				"creators": [
 					{
-<<<<<<< HEAD
 						"firstName": "謙一=Kenichi Ohi",
 						"lastName": "大井",
 						"creatorType": "author"
-					},
-					{
-						"firstName": "輿助=Yosuke Shimawaki",
-						"lastName": "嶋脇",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "拓海=Takumi Ito",
-						"lastName": "伊藤",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Li",
-						"lastName": "Yushun",
-						"creatorType": "author"
-=======
-						"lastName": "岡田",
-						"creatorType": "author",
-						"multi": {
-							"_lst": [
-								"en"
-							],
-							"_key": {
-								"en": {
-									"lastName": "Keisuke",
-									"creatorType": "author",
-									"firstName": "Okada"
-								}
-							}
-						},
-						"firstName": "啓佑"
 					},
 					{
 						"lastName": "伊野",
@@ -254,6 +222,14 @@ var testCases = [
 						"firstName": "文彦"
 					},
 					{
+						"firstName": "拓海=Takumi Ito",
+						"lastName": "伊藤",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Li",
+						"lastName": "Yushun",
+						"creatorType": "author"
 						"lastName": "萩原",
 						"creatorType": "author",
 						"multi": {
@@ -269,7 +245,6 @@ var testCases = [
 							}
 						},
 						"firstName": "兼一"
->>>>>>> Initial checkin of multilingual translators.
 					}
 				],
 				"notes": [],

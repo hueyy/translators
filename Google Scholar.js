@@ -247,6 +247,12 @@ function scrapeArticleResults(doc, articles) {
 						}
 
 						//attach files linked on the right
+
+                        // my rev
+						//	'.//div[contains(@class,"gs_ri")]\
+						//	//a[./node()[starts-with(text(),"[")]]');
+
+
 						var pdf = ZU.xpath(article.result,
 							'./div[contains(@class,"gs_fl")]\
 								//a[.//span[@class="gs_ctg2"]]');
@@ -463,7 +469,10 @@ function doWeb(doc, url) {
 		var items = new Object();
 		var resultDivs = new Object();
 		var bibtexUrl;
+
 		for(var i=0, n=results.length; i<n; i++) {
+			// my rev
+            //	'.//div[@class="gs_ri"]//a[contains(@href,"q=info:") or contains(@href,"q=related:")][1]/@href')
 			bibtexUrl = ZU.xpathText(results[i],
 					'.//div[@class="gs_fl"]/a[contains(@href,"q=info:") or contains(@href,"q=related:")][1]/@href')
 				.replace(/\/scholar.*?\?/,'/scholar.bib?')
