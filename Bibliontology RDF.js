@@ -93,12 +93,12 @@ var TYPES = {
 							  [n.rdf+"type", n.bibo+"PersonalCommunication"]], 	null,								null],
 	"interview":			[[[n.rdf+"type", n.bibo+"Interview"]],				null,								null],
 	"journalArticle":		[[[n.rdf+"type", n.bibo+"AcademicArticle"]], 		[true, n.dcterms+"isPartOf",
-																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Journal"]]]],
+																				 [[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Journal"]]]],
 	"letter":				[[[n.rdf+"type", n.bibo+"Letter"]],					null,								null],
 	"magazineArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Magazine"]]]],
 	"manuscript":			[[[n.rdf+"type", n.bibo+"Manuscript"]],				null,								null],
-	"classic":			[[[n.rdf+"type", n.mlz+"Classic"]],				null,								null],
+	"classic":				[[[n.rdf+"type", n.mlz+"Classic"]],					null,								null],
 	"map":					[[[n.rdf+"type", n.bibo+"Map"]],					null,								null],
 	"newspaperArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Newspaper"]]]],
@@ -111,11 +111,11 @@ var TYPES = {
 	"radioBroadcast":		[[[n.rdf+"type", n.po+"AudioDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"Radio"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
-	"regulation":				[[[n.rdf+"type", n.mlz+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
+	"regulation":			[[[n.rdf+"type", n.mlz+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"report":				[[[n.rdf+"type", n.bibo+"Report"]],					null,								null],
 	"statute":				[[[n.rdf+"type", n.bibo+"Statute"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"thesis":				[[[n.rdf+"type", n.bibo+"Thesis"]],					null,								null],
-	"treaty":				[[[n.rdf+"type", n.bibo+"Treaty"]],				null,								null],
+	"treaty":				[[[n.rdf+"type", n.bibo+"Treaty"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"tvBroadcast":			[[[n.rdf+"type", n.bibo+"AudioVisualDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"TV"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
@@ -190,7 +190,7 @@ var FIELDS = {
 	"rights":				[USERITEM,		n.dcterms+"rights"],
 	"series":				[CONTAINER_SERIES,	n.dcterms+"title"],
 	"volume":				[SUBCONTAINER,	n.bibo+"volume"],
-	"issue":				[SUBCONTAINER,	n.bibo+"issue"],
+	"issue" :				[SUBCONTAINER,	n.bibo+"issue"],
 	"edition":				[SUBCONTAINER,	n.bibo+"edition"],
 	"place":				[CONTAINER,		[n.dcterms+"publisher", [[n.rdf+"type", n.foaf+"Organization"]], n.address+"localityName"]],
 	"country":				[CONTAINER,		[n.dcterms+"publisher", [[n.rdf+"type", n.foaf+"Organization"]], n.address+"countryName"]],
@@ -224,6 +224,18 @@ var FIELDS = {
 	"publicationTitle":		[CONTAINER,		n.dcterms+"title"],
 	"ISSN":					[CONTAINER,		n.bibo+"issn"],
 	"date":					[SUBCONTAINER,	n.dcterms+"date"],
+	"openingDate":			[ITEM,	n.mlz+"openingDate"],
+	"adoptionDate":			[ITEM,	n.mlz+"adoptonDate"],
+	"signingDate":			[ITEM,	n.mlz+"signingDate"],
+	"signingDate":			[ITEM,	n.mlz+"signingDate"],
+	"publicationDate":		[ITEM,	n.mlz+"publicationDate"],
+	"priorityDate":			[ITEM,	n.mlz+"priorityDate"],
+	"jurisdiction":			[ITEM,	n.mlz+"jurisdiction"],
+	"reign":				[ITEM,	n.mlz+"reign"],
+	"regnalYear":			[ITEM,	n.mlz+"regnalYear"],
+	"meetingNumber":		[ITEM,		n.mlz+"meetingNumber"],
+	"resolutionLabel":		[ITEM,		n.mlz+"resolutionLabel"],
+	"assemblyNumber":		[ITEM,		n.mlz+"assemblyNumber"],
 	"section":				[ITEM,			n.bibo+"section"],
 	"callNumber":			[SUBCONTAINER,	n.bibo+"lccn"],
 	"archiveLocation":		[ITEM,			n.dcterms+"source"],
@@ -232,8 +244,8 @@ var FIELDS = {
 	"journalAbbreviation":	[CONTAINER,		n.bibo+"shortTitle"],
 	"DOI":					[ITEM,			n.bibo+"doi"],
 	"accessDate":			[USERITEM,		n.z+"accessDate"],
-	"seriesTitle":			[ITEM_SERIES,	n.dcterms+"title"],
-	"seriesText":			[ITEM_SERIES,	n.dcterms+"description"],
+	"seriesTitle":			[CONTAINER_SERIES,	n.dcterms+"title"],
+	"seriesText":			[CONTAINER_SERIES,	n.dcterms+"description"],
 	"seriesNumber":			[CONTAINER_SERIES,		n.bibo+"number"],
 	"code":					[CONTAINER,		n.dcterms+"title"],
 	"session":				[ITEM,			[n.bibo+"presentedAt", [[n.rdf+"type", n.bibo+"Conference"]], n.dcterms+"title"]],
@@ -913,17 +925,20 @@ function doImport() {
 		if(typeof objectNode !== "object") continue;
 		var uri = Zotero.RDF.getResourceURI(itemNode);
 		if(!uri) continue;
+        Zotero.debug("BBB GOT ONE NODE");
 		itemNodes[uri] = itemNode;
 	}
 	
 	// Look through found items to see if their rdf:type matches a Zotero item type URI, and if so,
 	// subject to further processing
 	for each(var itemNode in itemNodes) {
+        Zotero.debug("BBB itemNode: "+Zotero.RDF.getResourceURI(itemNode));
 		// check whether the relationship to another item precludes us from extracting this as
 		// top-level
 		var skip = false;
 		for each(var arc in Zotero.RDF.getArcsIn(itemNode)) {
 			if(SAME_ITEM_RELATIONS.indexOf(arc) !== -1) {
+                var uri = Zotero.RDF.getResourceURI(itemNode);
 				skip = true;
 				break;
 			}
@@ -931,12 +946,15 @@ function doImport() {
 		if(skip) continue;
 		
 		var itemRDFTypes = Zotero.RDF.getStatementsMatching(itemNode, RDF_TYPE, null);
+
 		
 		// score types by the number of triples they share with our types
 		var bestTypeScore = -9999;
-		var bestType, score, nodes, bestNodes;
+		var bestType, score, nodes;
+        var bestNodes = [];
 		for each(var rdfType in itemRDFTypes) {
 			if(typeof rdfType[2] !== "object") continue;
+            Zotero.debug("BBB ==> "+Z.RDF.getResourceURI(rdfType[2]));
 			var collapsedTypesForItem = collapsedTypes[Z.RDF.getResourceURI(rdfType[2])];
 			if(!collapsedTypesForItem) continue;
 			
@@ -945,26 +963,36 @@ function doImport() {
 				//Zotero.debug("Type "+type.zoteroType+" has score "+score);
 				
 				// check if this is the best we can do
+
+                // Aha, maybe. The highest-scoring node set between parent and child trumps.
+                // So the child (Journal) goes through, and the parent (Issue) is dropped.
+                // Better if we catenate?
+
 				if(score > bestTypeScore) {
 					bestTypeScore = score;
 					bestType = type;
-					bestNodes = nodes;
+                    bestNodes = nodes;
 				}
 			}
 		}
+
+        Zotero.debug("BBB bestTypeScore: "+bestTypeScore);
 		
 		// skip if this doesn't fit any type very well
 		if(bestTypeScore < 1) {
-			//Zotero.debug("No good type mapping; best type was "+bestType.zoteroType+" with score "+bestTypeScore);
 			continue;
 		}
 		
-		//Zotero.debug("Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
+        if (bestType) {
+		    Zotero.debug("BBBz Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
+        }
+
 		nodes = bestNodes;
 		bestType.getItemSeriesNodes(nodes);
 		
 		// create item
 		var zoteroType = bestType.zoteroType;
+        Zotero.debug("BBB bestType.zoteroType: "+zoteroType);
 		var newItem = new Zotero.Item(zoteroType);
 		newItem.multi = {};
 		newItem.multi.main = {};
@@ -977,6 +1005,7 @@ function doImport() {
 			var propertiesHandled = {};
 			var properties = Zotero.RDF.getArcsOut(nodes[i]);
 			for each(var property in properties) {
+                // XXXXX Not getting volume etc. in properties for journalArticle type
 				// only handle each property once
 				if(propertiesHandled[property]) continue;
 				propertiesHandled[property] = true;
@@ -1195,7 +1224,6 @@ function doExport() {
 	// now that we've collected our items, start building the RDF
 	for each(var item in items) {
 		// set type on item node
-        Zotero.debug("BBB itemType: "+item.itemType);
 		var type = new Type(item.itemType, TYPES[item.itemType]);
 		var nodes = type.createNodes(item);
 		
