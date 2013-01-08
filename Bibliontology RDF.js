@@ -64,9 +64,9 @@ var n = {
  
 //	ZOTERO TYPE				ITEM CLASS											SUBCONTAINER CLASS					CONTAINER CLASS
 var TYPES = {
-	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								null],
+	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Website"]]]],
 	"attachment":			[[[n.rdf+"type", n.z+"Attachment"]], 				null, 								null],
-	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								null],
+	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"CollectedDocument"]]]],
 	"bill":					[[[n.rdf+"type", n.bibo+"Bill"]],					null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],					
 	"blogPost":				[[[n.rdf+"type", n.sioct+"BlogPost"],
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"Weblog"],
@@ -87,7 +87,7 @@ var TYPES = {
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"MessageBoard"],
 							 																					 	[n.rdf+"type", n.bibo+"Website"]]]],
 	"film":					[[[n.rdf+"type", n.bibo+"Film"]],					null,								null],
-	"gazette":				[[[n.rdf+"type", n.mlz+"Gazette"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
+	"gazette":				[[[n.rdf+"type", n.bibo+"Gazette"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Proceedings"]]]],
 	"instantMessage":		[[[n.rdf+"type", n.sioct+"InstantMessage"],
 							  [n.rdf+"type", n.bibo+"PersonalCommunication"]], 	null,								null],
@@ -98,7 +98,7 @@ var TYPES = {
 	"magazineArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Magazine"]]]],
 	"manuscript":			[[[n.rdf+"type", n.bibo+"Manuscript"]],				null,								null],
-	"classic":				[[[n.rdf+"type", n.mlz+"Classic"]],					null,								null],
+	"classic":				[[[n.rdf+"type", n.bibo+"Classic"]],				null,								null],
 	"map":					[[[n.rdf+"type", n.bibo+"Map"]],					null,								null],
 	"newspaperArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Newspaper"]]]],
@@ -111,7 +111,7 @@ var TYPES = {
 	"radioBroadcast":		[[[n.rdf+"type", n.po+"AudioDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"Radio"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
-	"regulation":			[[[n.rdf+"type", n.mlz+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
+	"regulation":			[[[n.rdf+"type", n.bibo+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"report":				[[[n.rdf+"type", n.bibo+"Report"]],					null,								null],
 	"statute":				[[[n.rdf+"type", n.bibo+"Statute"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"thesis":				[[[n.rdf+"type", n.bibo+"Thesis"]],					null,								null],
@@ -190,6 +190,7 @@ var FIELDS = {
 	"rights":				[USERITEM,		n.dcterms+"rights"],
 	"series":				[CONTAINER_SERIES,	n.dcterms+"title"],
 	"volume":				[SUBCONTAINER,	n.bibo+"volume"],
+	"yearAsVolume":			[SUBCONTAINER,	n.mlz+"yearAsVolume"],
 	"issue" :				[SUBCONTAINER,	n.bibo+"issue"],
 	"edition":				[SUBCONTAINER,	n.bibo+"edition"],
 	"place":				[CONTAINER,		[n.dcterms+"publisher", [[n.rdf+"type", n.foaf+"Organization"]], n.address+"localityName"]],
@@ -229,10 +230,12 @@ var FIELDS = {
 	"signingDate":			[ITEM,	n.mlz+"signingDate"],
 	"signingDate":			[ITEM,	n.mlz+"signingDate"],
 	"publicationDate":		[ITEM,	n.mlz+"publicationDate"],
+	"originalDate":			[ITEM,	n.mlz+"originalDate"],
 	"priorityDate":			[ITEM,	n.mlz+"priorityDate"],
 	"jurisdiction":			[ITEM,	n.mlz+"jurisdiction"],
 	"reign":				[ITEM,	n.mlz+"reign"],
 	"regnalYear":			[ITEM,	n.mlz+"regnalYear"],
+	"opus":					[ITEM,	n.mlz+"opus"],
 	"meetingNumber":		[ITEM,		n.mlz+"meetingNumber"],
 	"resolutionLabel":		[ITEM,		n.mlz+"resolutionLabel"],
 	"assemblyNumber":		[ITEM,		n.mlz+"assemblyNumber"],
@@ -938,7 +941,6 @@ function doImport() {
 		var skip = false;
 		for each(var arc in Zotero.RDF.getArcsIn(itemNode)) {
 			if(SAME_ITEM_RELATIONS.indexOf(arc) !== -1) {
-                var uri = Zotero.RDF.getResourceURI(itemNode);
 				skip = true;
 				break;
 			}
@@ -950,8 +952,7 @@ function doImport() {
 		
 		// score types by the number of triples they share with our types
 		var bestTypeScore = -9999;
-		var bestType, score, nodes;
-        var bestNodes = [];
+		var bestType, score, nodes, bestNodes;
 		for each(var rdfType in itemRDFTypes) {
 			if(typeof rdfType[2] !== "object") continue;
             Zotero.debug("BBB ==> "+Z.RDF.getResourceURI(rdfType[2]));
