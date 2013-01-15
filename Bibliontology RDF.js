@@ -17,7 +17,7 @@
 		"exportNotes": true,
 		"exportFileData": false
 	},
-	"lastUpdated": "2012-12-04 00:25:03"
+	"lastUpdated": "2013-01-08 16:27:23"
 }
 
 var n = {
@@ -232,10 +232,12 @@ var FIELDS = {
 	"publicationDate":		[ITEM,	n.mlz+"publicationDate"],
 	"originalDate":			[ITEM,	n.mlz+"originalDate"],
 	"priorityDate":			[ITEM,	n.mlz+"priorityDate"],
+	"newsCaseDate":			[ITEM,	n.mlz+"newsCaseDate"],
 	"jurisdiction":			[ITEM,	n.mlz+"jurisdiction"],
 	"reign":				[ITEM,	n.mlz+"reign"],
 	"regnalYear":			[ITEM,	n.mlz+"regnalYear"],
 	"opus":					[ITEM,	n.mlz+"opus"],
+	"supplementName":		[ITEM,	n.mlz+"supplementName"],
 	"meetingNumber":		[ITEM,		n.mlz+"meetingNumber"],
 	"resolutionLabel":		[ITEM,		n.mlz+"resolutionLabel"],
 	"assemblyNumber":		[ITEM,		n.mlz+"assemblyNumber"],
