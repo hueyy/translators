@@ -427,12 +427,11 @@ function detectWeb(doc, url) {
 function processItem(citeinfo, container_title, count, isNeutralCite, doc) {
 	var item = new  Zotero.Item("case");
 	item.itemID = "" + count;
-	item.extra = "";
 	var info = citeinfo[container_title];
 	if (container_title && !isNeutralCite) {
 		item.reporter = container_title;
 		if (info.collection_number) {
-			item.extra += "{:collection-number:" + info.collection_number + "}";
+			item.yearAsVolume = info.collection_number;
 		}
 	}
 	if (isNeutralCite) {
@@ -440,10 +439,10 @@ function processItem(citeinfo, container_title, count, isNeutralCite, doc) {
 							  url:doc.location.href});
 	}
 	if (info.jurisdiction) {
-		item.extra += "{:jurisdiction:" + info.jurisdiction + "}";
+		item.jurisdiction = info.jurisdiction;
 	}
 	if (info.issue) {
-		item.extra += "{:issue:" + info.issue + "}";
+		item.issue = info.issue;
 	}
 	item.title = info.title;
 	item.volume = info.volume;
