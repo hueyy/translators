@@ -65,7 +65,6 @@ var n = {
 //	ZOTERO TYPE				ITEM CLASS											SUBCONTAINER CLASS					CONTAINER CLASS
 var TYPES = {
 	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Website"]]]],
-	"attachment":			[[[n.rdf+"type", n.z+"Attachment"]], 				null, 								null],
 	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"CollectedDocument"]]]],
 	"bill":					[[[n.rdf+"type", n.bibo+"Bill"]],					null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],					
 	"blogPost":				[[[n.rdf+"type", n.sioct+"BlogPost"],
@@ -295,6 +294,9 @@ var FIELDS = {
 	"abstractNote":			[ITEM,			n.dcterms+"abstract"],
 	"type":					[ITEM,			n.dcterms+"type"],
 	"medium":				[ITEM,			n.dcterms+"medium"],
+	"mimeType":				[ITEM,			n.link+"type"],
+	"charset":				[ITEM,			n.link+"charset"],
+	"path":					[ITEM,			n.rdf+"resource"],
 	"title":				[ITEM,			n.dcterms+"title"],
 	"shortTitle":			[ITEM,			n.bibo+"shortTitle"],
 	"numPages":				[ITEM,			n.bibo+"numPages"],
@@ -342,6 +344,8 @@ var CREATORS = {
 var SAME_ITEM_RELATIONS = [n.dcterms+"isPartOf", n.dcterms+"isVersionOf", n.bibo+"affirmedBy",
 						   n.bibo+"presentedAt", n.bibo+"presents", n.bibo+"reproducedIn",
 						   n.bibo+"reviewOf", n.bibo+"translationOf", n.bibo+"transcriptOf"];
+
+var ATTACHMENT_FIELDS = ["title", "mimeType", "url", "charset", "path"];
 
 /** COMMON FUNCTIONS **/
 
@@ -950,7 +954,6 @@ function doImport() {
 		
 		var itemRDFTypes = Zotero.RDF.getStatementsMatching(itemNode, RDF_TYPE, null);
 
-		
 		// score types by the number of triples they share with our types
 		var bestTypeScore = -9999;
 		var bestType, score, nodes, bestNodes;
@@ -1208,20 +1211,13 @@ function doImport() {
 				var attachmentStmts = Zotero.RDF.getStatementsMatching(linkURI, n.rdf+"type", n.z+"Attachment");
 				if (attachmentStmts) {
 					var attachmentNode = attachmentStmts[0][0];
-					// Just extract the field content, bang it onto an object, append that
-					// to the item's attachments segment, and you're done.
 					var attachment = {};
-					var titleStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.dcterms+"title", null, true);
-					if (titleStmt) {
-						attachment.title = titleStmt[0][2];
-					}
-					var pathStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.rdf+"resource", null, true);
-					if (pathStmt) {
-						attachment.path = pathStmt[0][2];
-					}
-					var mimeStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.link+"type", null, true);
-					if (mimeStmt) {
-						attachment.mimeType = mimeStmt[0][2];
+					for each(var key in ATTACHMENT_FIELDS) {
+						var field = FIELDS[key];
+						var stmt = Zotero.RDF.getStatementsMatching(attachmentNode, field[1], null, true);
+						if (stmt) {
+							attachment[key] = stmt[0][2];
+						}
 					}
 					newItem.attachments.push(attachment);
 				}
@@ -1267,7 +1263,7 @@ function doExport() {
 		for each(var attachment in item.attachments) {
 			var attachmentNode = "#item_"+attachment.itemID;
 			Zotero.RDF.addStatement(attachmentNode, RDF_TYPE, n.z+"Attachment", false);
-			// Values in the third element must be defined.
+			// Only attached files export correctly at the moment.
 			if (attachment.defaultPath) {
 				Zotero.RDF.addStatement(attachmentNode, n.rdf+"resource", attachment.defaultPath, true);
 			}
