@@ -65,6 +65,7 @@ var n = {
 //	ZOTERO TYPE				ITEM CLASS											SUBCONTAINER CLASS					CONTAINER CLASS
 var TYPES = {
 	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Website"]]]],
+    "attachment":           [[[n.rdf+"type", n.z+"Attachment"]],                null, 								null],
 	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"CollectedDocument"]]]],
 	"bill":					[[[n.rdf+"type", n.bibo+"Bill"]],					null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],					
 	"blogPost":				[[[n.rdf+"type", n.sioct+"BlogPost"],
@@ -882,6 +883,9 @@ function doImport() {
 	
 	// collapse Zotero-to-BIBO type mappings
 	for(var zoteroType in TYPES) {
+        if (zoteroType === "attachment") {
+            continue;
+        }
 		var type = new Type(zoteroType, TYPES[zoteroType]);
 		for each(var pair in TYPES[zoteroType][0]) {
 			if(!collapsedTypes[pair[1]]) {
@@ -1261,11 +1265,15 @@ function doExport() {
 		}
 		//Zotero.debug("fields added");
 		for each(var attachment in item.attachments) {
+            Zotero.debug("PPP hello attachment!");
 			var attachmentNode = "#item_"+attachment.itemID;
 			Zotero.RDF.addStatement(attachmentNode, RDF_TYPE, n.z+"Attachment", false);
 			// Only attached files export correctly at the moment.
 			if (attachment.defaultPath) {
 				Zotero.RDF.addStatement(attachmentNode, n.rdf+"resource", attachment.defaultPath, true);
+                if (attachment.saveFile) {
+			        attachment.saveFile(attachment.defaultPath, true);
+                }
 			}
 			if (attachment.title) {
 				Zotero.RDF.addStatement(attachmentNode, n.dcterms+"title", attachment.title, true);
@@ -1274,7 +1282,6 @@ function doExport() {
 				Zotero.RDF.addStatement(attachmentNode, n.link+"type", attachment.mimeType, true);
 			}
 			Zotero.RDF.addStatement(nodes[ITEM], n.link+"link", attachmentNode);
-			attachment.saveFile(attachment.defaultPath, true);
 		}
 		
 		// add creators
