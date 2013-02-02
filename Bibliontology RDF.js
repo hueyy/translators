@@ -15,7 +15,7 @@
 	},
 	"displayOptions": {
 		"exportNotes": true,
-		"exportFileData": false
+		"exportFileData": true
 	},
 	"lastUpdated": "2013-01-08 16:27:23"
 }
@@ -302,6 +302,8 @@ var FIELDS = {
 	"issuingAuthority":		[ITEM,			[n.bibo+"issuer", [[n.rdf+"type", n.foaf+"Organization"]], n.foaf+"name"]],
 	"filingDate":			[ITEM,			n.dcterms+"dateSubmitted"]
 };
+
+// Zotero.RDF.addStatement(nodes[USERITEM], n.link+"link", "#item_"+attachment.itemID, false);
 
 var AUTHOR_LIST = 1;
 var EDITOR_LIST = 2;
@@ -744,7 +746,6 @@ CreatorProperty.prototype.mapToCreators = function(node, zoteroType) {
 	var statements = getStatementsByDefinition(this.mapping[2], node);
 	if(statements) {
 		for each(var stmt in statements) {
-            Zotero.debug("XXX stmt[2]: "+stmt[2]+", zoteroType: "+zoteroType);
 			var creator = this.mapToCreator(stmt[2], zoteroType);
 			if(creator) {
 				creators.push(creator);
@@ -930,14 +931,12 @@ function doImport() {
 		if(typeof objectNode !== "object") continue;
 		var uri = Zotero.RDF.getResourceURI(itemNode);
 		if(!uri) continue;
-        Zotero.debug("BBB GOT ONE NODE");
 		itemNodes[uri] = itemNode;
 	}
 	
 	// Look through found items to see if their rdf:type matches a Zotero item type URI, and if so,
 	// subject to further processing
 	for each(var itemNode in itemNodes) {
-        Zotero.debug("BBB itemNode: "+Zotero.RDF.getResourceURI(itemNode));
 		// check whether the relationship to another item precludes us from extracting this as
 		// top-level
 		var skip = false;
@@ -957,7 +956,7 @@ function doImport() {
 		var bestType, score, nodes, bestNodes;
 		for each(var rdfType in itemRDFTypes) {
 			if(typeof rdfType[2] !== "object") continue;
-            Zotero.debug("BBB ==> "+Z.RDF.getResourceURI(rdfType[2]));
+			
 			var collapsedTypesForItem = collapsedTypes[Z.RDF.getResourceURI(rdfType[2])];
 			if(!collapsedTypesForItem) continue;
 			
@@ -967,35 +966,34 @@ function doImport() {
 				
 				// check if this is the best we can do
 
-                // Aha, maybe. The highest-scoring node set between parent and child trumps.
-                // So the child (Journal) goes through, and the parent (Issue) is dropped.
-                // Better if we catenate?
+				// Aha, maybe. The highest-scoring node set between parent and child trumps.
+				// So the child (Journal) goes through, and the parent (Issue) is dropped.
+				// Better if we catenate?
 
 				if(score > bestTypeScore) {
 					bestTypeScore = score;
 					bestType = type;
-                    bestNodes = nodes;
+					bestNodes = nodes;
 				}
 			}
 		}
 
-        Zotero.debug("BBB bestTypeScore: "+bestTypeScore);
+		Zotero.debug("bestTypeScore: "+bestTypeScore);
 		
 		// skip if this doesn't fit any type very well
 		if(bestTypeScore < 1) {
 			continue;
 		}
 		
-        if (bestType) {
-		    Zotero.debug("BBBz Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
-        }
+		if (bestType) {
+			Zotero.debug("Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
+		}
 
 		nodes = bestNodes;
 		bestType.getItemSeriesNodes(nodes);
 		
 		// create item
 		var zoteroType = bestType.zoteroType;
-        Zotero.debug("BBB bestType.zoteroType: "+zoteroType);
 		var newItem = new Zotero.Item(zoteroType);
 		newItem.multi = {};
 		newItem.multi.main = {};
@@ -1008,7 +1006,7 @@ function doImport() {
 			var propertiesHandled = {};
 			var properties = Zotero.RDF.getArcsOut(nodes[i]);
 			for each(var property in properties) {
-                // XXXXX Not getting volume etc. in properties for journalArticle type
+				// XXXXX Not getting volume etc. in properties for journalArticle type
 				// only handle each property once
 				if(propertiesHandled[property]) continue;
 				propertiesHandled[property] = true;
@@ -1202,7 +1200,34 @@ function doImport() {
 					delete creator.multi._key[lang];
 				}
 			}
+			// Add attachments
+			// The kindest thing than can be said about this is that it works.
+			var linkStmts = Zotero.RDF.getStatementsMatching(nodes[ITEM], n.link+"link", null);
+			for each(var linkStmt in linkStmts) {
+				var linkURI = Zotero.RDF.getResourceURI(linkStmt[2]);
+				var attachmentStmts = Zotero.RDF.getStatementsMatching(linkURI, n.rdf+"type", n.z+"Attachment");
+				if (attachmentStmts) {
+					var attachmentNode = attachmentStmts[0][0];
+					// Just extract the field content, bang it onto an object, append that
+					// to the item's attachments segment, and you're done.
+					var attachment = {};
+					var titleStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.dcterms+"title", null, true);
+					if (titleStmt) {
+						attachment.title = titleStmt[0][2];
+					}
+					var pathStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.rdf+"resource", null, true);
+					if (pathStmt) {
+						attachment.path = pathStmt[0][2];
+					}
+					var mimeStmt = Zotero.RDF.getStatementsMatching(attachmentNode, n.link+"type", null, true);
+					if (mimeStmt) {
+						attachment.mimeType = mimeStmt[0][2];
+					}
+					newItem.attachments.push(attachment);
+				}
+			}
 		}
+		// Push to an array of items instead, so attachments can be added.
 		newItem.complete();
 	}
 }
@@ -1223,7 +1248,8 @@ function doExport() {
 	}
 	var autoTags = {};
 	var userTags = {};
-	
+	var attachments = {};
+
 	// now that we've collected our items, start building the RDF
 	for each(var item in items) {
 		// set type on item node
@@ -1238,6 +1264,22 @@ function doExport() {
 			property.mapFromItem(item, nodes);
 		}
 		//Zotero.debug("fields added");
+		for each(var attachment in item.attachments) {
+			var attachmentNode = "#item_"+attachment.itemID;
+			Zotero.RDF.addStatement(attachmentNode, RDF_TYPE, n.z+"Attachment", false);
+			// Values in the third element must be defined.
+			if (attachment.defaultPath) {
+				Zotero.RDF.addStatement(attachmentNode, n.rdf+"resource", attachment.defaultPath, true);
+			}
+			if (attachment.title) {
+				Zotero.RDF.addStatement(attachmentNode, n.dcterms+"title", attachment.title, true);
+			}
+			if (attachment.mimeType) {
+				Zotero.RDF.addStatement(attachmentNode, n.link+"type", attachment.mimeType, true);
+			}
+			Zotero.RDF.addStatement(nodes[ITEM], n.link+"link", attachmentNode);
+			attachment.saveFile(attachment.defaultPath, true);
+		}
 		
 		// add creators
 		var creatorLists = [];
@@ -1247,7 +1289,7 @@ function doExport() {
 			property.mapFromCreator(item, creator, nodes);
 		}
 		//Zotero.debug("creators added");
-		
+
 		// add tags
 		for each(var tag in item.tags) {
 			var tagCollection = tag.type == 0 ? userTags : autoTags;
@@ -1267,5 +1309,6 @@ function doExport() {
 		
 		type.addNodeRelations(nodes);
 		//Zotero.debug("relations added");
+
 	}
 }
