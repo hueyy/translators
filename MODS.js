@@ -388,14 +388,19 @@ function mapProperty(parentElement, elementName, property, attributes, autoType)
 		attributes = {};
 	}
 	if (fkey) {
+        Zotero.debug("PPP   item.multi.main[fkey]="+item.multi.main[fkey]);
 		if (item.multi.main[fkey]) {
 			language = item.multi.main[fkey];
 		}
+        Zotero.debug("PPP   langAttributes(0)="+langAttributes);
 		langAttributes = getLanguageAndScript(language);
+        Zotero.debug("PPP   langAttributes(1)="+langAttributes);
 		if (!langAttributes.lang) {
 			langAttributes.lang = "en";
 		}
+        Zotero.debug("PPP   langAttributes(2)="+langAttributes);
 		masterLanguage = langAttributes.lang;
+        Zotero.debug("PPP   masterLanguage="+masterLanguage);
 		for (var lkey in langAttributes) {
 			attributes[lkey] = langAttributes[lkey];
 		}
@@ -619,7 +624,9 @@ function doExport() {
 		var originInfo = doc.createElementNS(ns, "originInfo")
 
 		// XML tag originInfo; object fields edition, place, publisher, year, date
+        Zotero.debug("PPP edition start");
 		mapProperty(originInfo, "edition", [item, "edition"]);
+        Zotero.debug("PPP edition done");
 		if(item.place) {
 			var place = doc.createElementNS(ns, "place");
 			mapProperty(place, "placeTerm", [item, "place"], {type:"text"});
