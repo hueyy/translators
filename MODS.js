@@ -1075,18 +1075,6 @@ function processCreator(name, itemType, defaultCreatorType, defaultLanguage) {
 		}
 	}
 	
-	if(!creator.creatorType) {
-		// Look for MARC roles
-		var roles = ZU.xpath(name, 'm:role/m:roleTerm[@type="code"][@authority="marcrelator"]', xns);
-		for(var i=0; i<roles.length; i++) {
-			var roleStr = roles[i].textContent.toLowerCase();
-			if(marcRelators[roleStr]) creator.creatorType = marcRelators[roleStr];
-		}
-		
-		// Default to author
-		if(!creator.creatorType) creator.creatorType = defaultCreatorType;
-	}
-
 	// Recast grouped creators as a list, placing the group
 	// matching the default language at the front, if there is
 	// a match.
