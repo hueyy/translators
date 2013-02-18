@@ -1,15 +1,15 @@
 {
-    "target": "http://(?:www.)*courts.go.jp/search", 
-    "creator": "Frank Bennett", 
-    "browserSupport": "gcsbv", 
-    "maxVersion": "", 
-    "lastUpdated": "2013-02-17 03:46:30", 
-    "label": "courts.go.jp", 
-    "priority": 100, 
-    "inRepository": true, 
-    "translatorType": 4, 
-    "minVersion": "2.1", 
-    "translatorID": "f4d6dd3c-960f-4289-9b07-02e44aae112a"
+	"translatorID": "f4d6dd3c-960f-4289-9b07-02e44aae112a",
+	"translatorType": 4,
+	"label": "courts.go.jp",
+	"creator": "Frank Bennett",
+	"target": "http://(?:www.)*courts.go.jp/search",
+	"minVersion": "2.1",
+	"maxVersion": "",
+	"priority": 100,
+	"inRepository": true,
+	"browserSupport": "gcsbv",
+	"lastUpdated": "2013-02-16 21:22:04"
 }
 
 /**
@@ -682,7 +682,7 @@ FW.Scraper({
 
 FW.MultiScraper({
 itemType         : 'multiple',
-detect           : FW.Url().match(/\/jhsp[_0-9]+\.action$/),
+detect           : FW.Url().match(/\/jhsp[_0-9]+\.action(?:;|$)/),
 choices          : {
     titles:  FW.Xpath("//div[@id='list']/table/tbody/tr/td[2]").addFilter(
         function (s) {
