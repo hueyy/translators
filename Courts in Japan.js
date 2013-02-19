@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2013-02-16 21:22:04"
+	"lastUpdated": "2013-02-18 06:10:12"
 }
 
 /**
@@ -676,13 +676,21 @@ FW.Scraper({
                 }
                 item.dateDecided = (""+year) + "-" + (""+month) + "-" + (""+day);
             }
+            // Break out the elements of the docket number and store as appropriate
+            var m = item.docketNumber.match(/(平成|昭和|大正|明治)([0-9]+)\(([^)]+)\)(.*)/);
+            if (m) {
+                item.reign = m[1];
+                item.yearAsVolume = m[2];
+                item.reporterVolume = m[3];
+                item.docketNumber = m[4];
+            }
         }
     }}
 });
 
 FW.MultiScraper({
 itemType         : 'multiple',
-detect           : FW.Url().match(/\/jhsp[_0-9]+\.action(?:;|$)/),
+detect           : FW.Url().match(/\/jhsp[_0-9]+(List[0-9]*|\.action)(?:;|$)/),
 choices          : {
     titles:  FW.Xpath("//div[@id='list']/table/tbody/tr/td[2]").addFilter(
         function (s) {
