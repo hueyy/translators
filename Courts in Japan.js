@@ -644,7 +644,7 @@ FW.Scraper({
     itemType: 'case',
     detect: FW.Url().match(/\/jhsp[_0-9]+(?:\.action)*\?.*hanreiid/),
     docketNumber: FW.Xpath("//div[contains(.,'事件番号')]/following-sibling::div").text().trim(),
-    abstractNote: FW.Xpath("//div[contains(.,'事件名')]/following-sibling::div").text().trim(),
+    abstractNote: FW.Xpath("//div[contains(.,'事件名') or contains(.,'法廷名')]/following-sibling::div").text().trim(),
     dateDecided: FW.Xpath("//div[contains(.,'裁判年月日')]/following-sibling::div").text().trim(),
     court: FW.Xpath("//div[contains(.,'裁判所名')]/following-sibling::div").text().trim(),
     attachments: [
@@ -680,8 +680,8 @@ FW.Scraper({
             var m = item.docketNumber.match(/(平成|昭和|大正|明治)([0-9]+)\(([^)]+)\)(.*)/);
             if (m) {
                 item.reign = m[1];
-                item.yearAsVolume = m[2];
-                item.reporterVolume = m[3];
+                item.filingDate = m[2];
+                item.callNumber = m[3];
                 item.docketNumber = m[4];
             }
         }
