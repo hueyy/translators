@@ -644,9 +644,9 @@ FW.Scraper({
     itemType: 'case',
     detect: FW.Url().match(/\/jhsp[_0-9]+(?:\.action)*\?.*hanreiid/),
     docketNumber: FW.Xpath("//div[contains(.,'事件番号')]/following-sibling::div").text().trim(),
-    abstractNote: FW.Xpath("//div[contains(.,'事件名') or contains(.,'法廷名')]/following-sibling::div").text().trim(),
+    abstractNote: FW.Xpath("//div[contains(.,'事件名')]/following-sibling::div").text().trim(),
     dateDecided: FW.Xpath("//div[contains(.,'裁判年月日')]/following-sibling::div").text().trim(),
-    court: FW.Xpath("//div[contains(.,'裁判所名')]/following-sibling::div").text().trim(),
+    court: FW.Xpath("//div[contains(.,'裁判所名') or contains(.,'法廷名')]/following-sibling::div").text().trim(),
     attachments: [
         {
             url: FW.Xpath("//div[contains(.,'全文')]/following-sibling::div/a").key("href").text(),
