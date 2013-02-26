@@ -683,6 +683,25 @@ FW.Scraper({
                 item.filingDate = m[2];
                 item.callNumber = m[3];
                 item.docketNumber = m[4];
+                item.notes = [
+                    {
+                        "note":"Summary of "
+                            + item.court + " "
+                            + item.reign
+                            + item.filingDate + "("
+                            + item.callNumber + ")"
+                            + item.docketNumber + " ("
+                            + item.dateDecided + ")\n"
+                            + "<h2>Procedural History</h2>"
+                            + "<p>[writeme]</p>"
+                            + "<h2>Facts</h2>"
+                            + "<p>[writeme]</p>"
+                            + "<h2>Decision</h2>"
+                            + "<p>[writeme]</p>"
+                            + '<div><b>Summarised for <a href="www.zotero.org/groups/148698">Japanese Judgments and Rulings by</a></b></div>'
+                            + "<p>[contributor name here]</p>"
+                    }
+                ];
             }
         }
     }}
