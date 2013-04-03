@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-12-13 17:42:57"
+	"lastUpdated": "2013-03-31 00:17:59"
 }
 
 function detectWeb(doc, url) {
@@ -153,6 +153,8 @@ function scrape (doc, url) {
   	var post = "recordIds=" + arnumber + "&fromPage=&citations-format=citation-abstract&download-format=download-bibtex";
   	Zotero.Utilities.HTTP.doPost(get, post, function(text) {
   		text = ZU.unescapeHTML(text.replace(/(&[^\s;]+) and/g, '$1;'));
+		//remove empty tag - we can take this out once empty tags are ignored
+		text = text.replace(/(keywords=\{.+);\}/, "$1}");	
 		var translator = Zotero.loadTranslator("import");
 		// Calling the BibTeX translator
 		translator.setTranslator("9cb70025-a888-4a29-a210-93ec52da40d4");
@@ -344,6 +346,10 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
+					"Turing machines",
+					"computational complexity",
+					"deterministic automata",
+					"fuzzy set theory",
 					"deterministic fuzzy Turing machines",
 					"fixed finite subset",
 					"fuzzy languages",
@@ -351,11 +357,13 @@ var testCases = [
 					"fuzzy sets",
 					"nondeterministic fuzzy Turing machines",
 					"nondeterministic polynomial time-bounded computation",
-					"Turing machines",
-					"computational complexity",
-					"deterministic automata",
-					"fuzzy set theory",
-					""
+					"Deterministic fuzzy Turing machine (DFTM)",
+					"fuzzy computational complexity",
+					"fuzzy grammar",
+					"fuzzy recursive language",
+					"fuzzy recursively enumerable (f.r.e.) language",
+					"nondeterministic fuzzy Turing machine (NFTM)",
+					"universal fuzzy Turing machine (FTM)"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -366,10 +374,10 @@ var testCases = [
 				],
 				"publicationTitle": "IEEE Transactions on Fuzzy Systems",
 				"title": "Fuzzy Turing Machines: Variants and Universality",
-				"date": "dec.  2008",
+				"date": "2008",
 				"volume": "16",
 				"issue": "6",
-				"pages": "1491 -1502",
+				"pages": "1491-1502",
 				"abstractNote": "In this paper, we study some variants of fuzzy Turing machines (FTMs) and universal FTM. First, we give several formulations of FTMs, including, in particular, deterministic FTMs (DFTMs) and nondeterministic FTMs (NFTMs). We then show that DFTMs and NFTMs are not equivalent as far as the power of recognizing fuzzy languages is concerned. This contrasts sharply with classical TMs. Second, we show that there is no universal FTM that can exactly simulate any FTM on it. But if the membership degrees of fuzzy sets are restricted to a fixed finite subset A of [0,1], such a universal machine exists. We also show that a universal FTM exists in some approximate sense. This means, for any prescribed accuracy, that we can construct a universal machine that simulates any FTM with the given accuracy. Finally, we introduce the notions of fuzzy polynomial time-bounded computation and nondeterministic fuzzy polynomial time-bounded computation, and investigate their connections with polynomial time-bounded computation and nondeterministic polynomial time-bounded computation.",
 				"DOI": "10.1109/TFUZZ.2008.2004990",
 				"ISSN": "1063-6706",
@@ -409,7 +417,39 @@ var testCases = [
 					}
 				],
 				"notes": [],
-				"tags": [],
+				"tags": [
+					"geophysical image processing",
+					"geophysical techniques",
+					"image classification",
+					"image matching",
+					"image resolution",
+					"remote sensing",
+					"adaptation algorithm",
+					"angular effects",
+					"cross-domain image processing techniques",
+					"data acquisition conditions",
+					"destination domain",
+					"graph matching method",
+					"multitemporal very high resolution image classification",
+					"nonlinear deformation",
+					"nonlinear transform",
+					"remote sensing",
+					"source domain",
+					"transfer learning mapping",
+					"vector quantization",
+					"Adaptation models",
+					"Entropy",
+					"Manifolds",
+					"Remote sensing",
+					"Support vector machines",
+					"Transforms",
+					"Vector quantization",
+					"Domain adaptation",
+					"model portability",
+					"multitemporal classification",
+					"support vector machine (SVM)",
+					"transfer learning"
+				],
 				"seeAlso": [],
 				"attachments": [
 					{
@@ -422,11 +462,11 @@ var testCases = [
 					}
 				],
 				"publicationTitle": "IEEE Transactions on Geoscience and Remote Sensing",
-				"title": "Graph matching for adaptation in remote sensing",
-				"date": "2012",
-				"volume": "PP",
-				"issue": "99",
-				"pages": "1 -13",
+				"title": "Graph Matching for Adaptation in Remote Sensing",
+				"date": "2013",
+				"volume": "51",
+				"issue": "1",
+				"pages": "329-341",
 				"abstractNote": "We present an adaptation algorithm focused on the description of the data changes under different acquisition conditions. When considering a source and a destination domain, the adaptation is carried out by transforming one data set to the other using an appropriate nonlinear deformation. The eventually nonlinear transform is based on vector quantization and graph matching. The transfer learning mapping is defined in an unsupervised manner. Once this mapping has been defined, the samples in one domain are projected onto the other, thus allowing the application of any classifier or regressor in the transformed domain. Experiments on challenging remote sensing scenarios, such as multitemporal very high resolution image classification and angular effects compensation, show the validity of the proposed method to match-related domains and enhance the application of cross-domains image processing techniques.",
 				"DOI": "10.1109/TGRS.2012.2200045",
 				"ISSN": "0196-2892",

@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsv",
-	"lastUpdated": "2012-10-22 15:38:16"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2013-02-06 23:57:46"
 }
 
 /*
@@ -207,7 +207,7 @@ function doWeb(doc, url) {
 	var articles = new Array();
 	if(detectWeb(doc, url) == "multiple") { 
 		var items = {};
-		var titles = doc.evaluate('//td/div/a[contains(@onclick, "moreurl")]', doc, null, XPathResult.ANY_TYPE, null);
+		var titles = doc.evaluate('//div/h2/a[contains(@onclick, "moreurl")]', doc, null, XPathResult.ANY_TYPE, null);
 		var title;
 		while (title = titles.iterateNext()) {
 			items[title.href] = title.textContent;
@@ -219,8 +219,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, scrapeAndParse, function () {
-			});
+			Zotero.Utilities.processDocuments(articles, scrapeAndParse);
 		});
 	}
  	else {

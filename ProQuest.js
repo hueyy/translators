@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-11-02 06:45:39"
+	"lastUpdated": "2013-03-13 21:04:33"
 }
 
 /*
@@ -310,6 +310,7 @@ function scrape(doc, url, type, pdfUrl) {
 			//alternative tags
 			case 'Subject':
 			case 'Journal subject':
+			case 'Publication subject':
 				altKeywords.push(value);
 			break;
 
@@ -351,15 +352,16 @@ function scrape(doc, url, type, pdfUrl) {
 	}
 
 	item.url = url;
-
-	if(place.publicationPlace) {
+	if (item.itemType=="thesis" && place.schoolLocation) {
+		item.place = place.schoolLocation;
+	}
+	
+	else if(place.publicationPlace) {
 		item.place = place.publicationPlace;
 		if(place.publicationCountry) {
 			item.place = item.place + ', ' + place.publicationCountry;
 		}
-	} else if(place.schoolLocation) {
-		item.place = place.schoolLocation;
-	}
+	} 
 
 	item.date = dates.pop();
 
@@ -1418,6 +1420,10 @@ var testCases = [
 				"attachments": [
 					{
 						"title": "Snapshot"
+					},
+ 					{
+						"title": "Full Text PDF",  
+						"mimeType": "application/pdf"
 					}
 				],
 				"title": "Microsatellite variation and significant population genetic structure of endangered finless porpoises (Neophocaena phocaenoides) in Chinese coastal waters and the Yangtze River",

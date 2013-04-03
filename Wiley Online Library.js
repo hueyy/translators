@@ -2,14 +2,14 @@
 	"translatorID": "fe728bc9-595a-4f03-98fc-766f1d8d0936",
 	"label": "Wiley Online Library",
 	"creator": "Sean Takats, Michael Berkowitz, Avram Lyon and Aurimas Vinckevicius",
-	"target": "^https?://onlinelibrary\\.wiley\\.com[^\\/]*/(?:book|doi|advanced/search|search-web/cochrane)",
+	"target": "^https?://onlinelibrary\\.wiley\\.com[^\\/]*/(?:book|doi|advanced/search|search-web/cochrane|cochranelibrary/search)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-11-19 11:07:31"
+	"lastUpdated": "2013-03-13 10:14:17"
 }
 
 /*
@@ -209,9 +209,9 @@ function scrapeBibTeX(doc, url, pdfUrl) {
 		scrapeEM(doc, url, pdfUrl);
 		return;
 	}
-
-	var baseUrl = url.match(/https?:\/\/[^\/]+/);
-	var postUrl = baseUrl[0] + '/documentcitationdownloadformsubmit';
+	//leaving this here in case it's still needed
+	//var baseUrl = url.match(/https?:\/\/[^\/]+/); 
+	var postUrl = '/documentcitationdownloadformsubmit';
 	var body = 'doi=' + encodeURIComponent(doi) + 
 				'&fileFormat=BIBTEX' +
 				'&hasAbstract=CITATION_AND_ABSTRACT';
@@ -334,6 +334,7 @@ function scrape(doc, url, pdfUrl) {
 function detectWeb(doc, url) {	
 	if( url.indexOf('/issuetoc') != -1 ||
 		url.indexOf('/results') != -1 ||
+		url.indexOf('/search') != -1 ||
 		url.indexOf('/mainSearch?') != -1) {
 		return 'multiple';
 	} else {

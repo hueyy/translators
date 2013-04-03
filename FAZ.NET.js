@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-09-27 23:59:07"
+	"lastUpdated": "2013-03-13 20:43:55"
 }
 
 /*
@@ -47,8 +47,9 @@ function detectWeb(doc, url) {
 function doWeb(doc, url) {
 	var arts = new Array();
 	if (detectWeb(doc, url) == "multiple") {
-		var items = new Object();
-		var titles = doc.evaluate('//a[@class="TeaserHeadLink"]', doc, null, XPathResult.ANY_TYPE, null);
+		var items = new Object;
+		//make sure we don't get media objects
+		var titles = doc.evaluate('//div[not(div[contains(@class, "MediaLink")])]/a[@class="TeaserHeadLink"]', doc, null, XPathResult.ANY_TYPE, null);
 		var title;
 		while (title = titles.iterateNext()) {
 			items[title.href] = title.textContent.trim();
@@ -60,10 +61,7 @@ function doWeb(doc, url) {
 			for (var itemurl in items) {
 				arts.push(itemurl);
 			}
-			ZU.processDocuments(arts, scrape, function () {
-				Zotero.done();
-			});
-			Zotero.wait();
+			ZU.processDocuments(arts, scrape);
 		});
 	} else {
 		scrape(doc);
@@ -82,18 +80,16 @@ function scrape(doc) {
 	}
 
 	//some authors are in /a, some aren't we need to distinguish to get this right
-	if (ZU.xpathText(doc, '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[@class="caps"]/a') != null) {
-		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[@class="caps"]/a';
+	if (ZU.xpathText(doc, '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[contains(@class, "caps")]/a') != null) {
+		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[contains(@class, "caps")]/a';
 	} else {
-		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class ="Autor"]/span[@class="caps"]';
+		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class ="Autor"]/span[contains(@class, "caps")]';
 	};
-	var authors = ZU.xpathText(doc, xpath);
-	if (authors != null) {
-		authors = authors.replace(/,.+/, "").split(/ und /)
+	var authors = ZU.xpath(doc, xpath);
+	
 		for (i in authors) {
-			newArticle.creators.push(Zotero.Utilities.cleanAuthor(authors[i], "author"));
+			newArticle.creators.push(Zotero.Utilities.cleanAuthor(authors[i].textContent, "author"));
 		}
-	}
 
 	newArticle.publicationTitle = "FAZ.NET";
 

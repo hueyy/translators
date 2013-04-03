@@ -2,14 +2,14 @@
 	"translatorID": "dfec8317-9b59-4cc5-8771-cdcef719d171",
 	"label": "Springer Science+Business Media",
 	"creator": "Aurimas Vinckevicius",
-	"target": "^https?://[^/]+/(((content|\\d+)/)?[-\\d]+/\\d+/S?\\d+|search/results)",
+	"target": "^https?://[^/]+/(((content|\\d+)/)?[-\\d]+/[A-Z]?\\d+/[A-Z]?\\d+|search/results|inst/\\d+\\?)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 250,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-12-19 01:40:13"
+	"lastUpdated": "2013-02-07 13:54:57"
 }
 
 /*
@@ -36,13 +36,13 @@ function getItems(doc, url) {
 	var host = url.match(/^http:\/\/(?:[^/]+\.)?([^\.\/]+\.[^\.\/]+)(?:\/|$)/i);
 	if(!host) return;
 	host = host[1];
-
-	return ZU.xpath(doc, '//table[@id="articles-list"]\
-					//p[.//strong/a[contains(@href,"' + host + '/")]]\
-					[not(.//span[@class="article-title"])]');
-}
+	return ZU.xpath(doc, '//table[@class="articles-feed" or @id="articles-list"]\
+					//p[.//strong/a[contains(@href,"' + host + '/") and text()]]');
+	}
 
 function scrape(doc) {
+	//get pmid from link to pubmed
+	var pmid = ZU.xpathText(doc, '//div[@id="article-info"]/div[@id="associated-material-links"]//a[contains(@href, "/pubmed/")]/@href');
 	var translator = Zotero.loadTranslator("web");
 	//embedded metadata
 	translator.setTranslator("951c027d-74ac-47d4-a107-9c3069ab7b48");
@@ -51,23 +51,22 @@ function scrape(doc) {
 	translator.setHandler("itemDone", function(obj, item) {
 		item.abstractNote = item.extra;
 		delete item.extra;
+		//once we have a PMID field put this there.
+		if (pmid) item.extra = "PMID: " + pmid.match(/\d+/)[0]
 
-		//if there is no pdf link in the meta tags, try to find it in the body
-		var havePdf = false;
-		for(var i=0, n=item.attachments.length; !havePdf && i<n; i++) {
-			havePdf = item.attachments[i].mimeType == 'application/pdf';
-		}
-
-		if(!havePdf) {
-			var pdfUrl = ZU.xpath(doc, 
-			'//div[@id="viewing-options-links"]//a[text()="PDF" or text()="View PDF"]/@href');				
-			if(pdfUrl.length) {
-				item.attachments.push({
-					title: 'Full Text PDF',
-					url: pdfUrl[0].href,
-					mimeType: 'application/pdf'
-				});
-			}
+		//BMC doesn't always put correct links to PDFs in the meta tags
+		//if we can scrape this from the page, use that
+		var pdfUrl = ZU.xpath(doc, '//div[@id="viewing-options-links"]//a[text()="PDF" or text()="View PDF"]');
+		if(pdfUrl.length) {
+			item.attachments = [{
+				title: 'Full Text PDF',
+				url: pdfUrl[0].href,
+				mimeType: 'application/pdf'
+			},
+			{
+				title: "Snapshot",
+				document: doc
+			}];
 		}
 
 		//sometimes there's no url specified in the meta tags,
@@ -240,11 +239,11 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"title": "Snapshot"
-					},
-					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
+					},
+					{
+						"title": "Snapshot"
 					}
 				],
 				"itemID": "http://www.nanoscalereslett.com/content/6/1/530/abstract",
@@ -264,8 +263,6 @@ var testCases = [
 				"date": "2011-09-23",
 				"DOI": "10.1186/1556-276X-6-530",
 				"ISSN": "1556-276X",
-				"url": "http://www.nanoscalereslett.com/content/6/1/530/abstract",
-				"abstractNote": "Nanoscale potassium niobate (KNbO3) powders of orthorhombic structure were synthesized using the sol-gel method. The heat-treatment temperature of the gels had a pronounced effect on KNbO3 particle size and morphology. Field emission scanning electron microscopy and transmission electron microscopy were used to determine particle size and morphology. The average KNbO3 grain size was estimated to be less than 100 nm, and transmission electron microscopy images indicated that KNbO3 particles had a brick-like morphology. Synchrotron X-ray diffraction was used to identify the room-temperature structures using Rietveld refinement. The ferroelectric orthorhombic phase was retained even for particles smaller than 50 nm. The orthorhombic to tetragonal and tetragonal to cubic phase transitions of nanocrystalline KNbO3 were investigated using temperature-dependent powder X-ray diffraction. Differential scanning calorimetry was used to examine the temperature dependence of KNbO3 phase transition. The Curie temperature and phase transition were independent of particle size, and Rietveld analyses showed increasing distortions with decreasing particle size.",
 				"reportType": "Nano Express",
 				"letterType": "Nano Express",
 				"manuscriptType": "Nano Express",
@@ -276,8 +273,11 @@ var testCases = [
 				"postType": "Nano Express",
 				"audioFileType": "Nano Express",
 				"language": "en",
+				"abstractNote": "Nanoscale potassium niobate (KNbO3) powders of orthorhombic structure were synthesized using the sol-gel method. The heat-treatment temperature of the gels had a pronounced effect on KNbO3 particle size and morphology. Field emission scanning electron microscopy and transmission electron microscopy were used to determine particle size and morphology. The average KNbO3 grain size was estimated to be less than 100 nm, and transmission electron microscopy images indicated that KNbO3 particles had a brick-like morphology. Synchrotron X-ray diffraction was used to identify the room-temperature structures using Rietveld refinement. The ferroelectric orthorhombic phase was retained even for particles smaller than 50 nm. The orthorhombic to tetragonal and tetragonal to cubic phase transitions of nanocrystalline KNbO3 were investigated using temperature-dependent powder X-ray diffraction. Differential scanning calorimetry was used to examine the temperature dependence of KNbO3 phase transition. The Curie temperature and phase transition were independent of particle size, and Rietveld analyses showed increasing distortions with decreasing particle size.",
+				"url": "http://www.nanoscalereslett.com/content/6/1/530/abstract",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nanoscalereslett.com"
+				"libraryCatalog": "www.nanoscalereslett.com",
+				"extra": "PMID: 21943345"
 			}
 		]
 	},
@@ -401,7 +401,8 @@ var testCases = [
 				"abstractNote": "Nicotinic acetylcholine receptors (nAChR) have been identified on a variety of cells of the immune system and are generally considered to trigger anti-inflammatory events. In the present study, we determine the nAChR inventory of rat alveolar macrophages (AM), and investigate the cellular events evoked by stimulation with nicotine.",
 				"url": "http://respiratory-research.com/content/11/1/133/abstract",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "respiratory-research.com"
+				"libraryCatalog": "respiratory-research.com",
+				"extra": "PMID: 20920278"
 			}
 		]
 	},
@@ -490,7 +491,8 @@ var testCases = [
 				"abstractNote": "Numerous popular media sources have developed lists of",
 				"url": "http://journal.chemistrycentral.com/content/5/1/5/abstract",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "journal.chemistrycentral.com"
+				"libraryCatalog": "journal.chemistrycentral.com",
+				"extra": "PMID: 21299842"
 			}
 		]
 	},
@@ -522,11 +524,11 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"title": "Snapshot"
-					},
-					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
+					},
+					{
+						"title": "Snapshot"
 					}
 				],
 				"itemID": "http://genomebiology.com/2003/4/7/223/abstract",
@@ -559,6 +561,7 @@ var testCases = [
 				"url": "http://genomebiology.com/2003/4/7/223/abstract",
 				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "genomebiology.com",
+				"extra": "PMID: 12844354",
 				"shortTitle": "Poly(A)-binding proteins"
 			}
 		]
@@ -653,7 +656,81 @@ var testCases = [
 				"abstractNote": "Global profiling of in vivo protein-DNA interactions using ChIP-based technologies has evolved rapidly in recent years. Although many genome-wide studies have identified thousands of ERα binding sites and have revealed the associated transcription factor (TF) partners, such as AP1, FOXA1 and CEBP, little is known about ERα associated hierarchical transcriptional regulatory networks.",
 				"url": "http://www.biomedcentral.com/1752-0509/4/170/abstract",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.biomedcentral.com"
+				"libraryCatalog": "www.biomedcentral.com",
+				"extra": "PMID: 21167036"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.biomedcentral.com/inst/45208?page=5&itemsPerPage=25",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.jfootankleres.com/content/1/S1/O4",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Smita",
+						"lastName": "Rao",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Charles L.",
+						"lastName": "Saltzman",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "H. John",
+						"lastName": "Yack",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					},
+					{
+						"title": "Snapshot"
+					}
+				],
+				"itemID": "http://www.jfootankleres.com/content/1/S1/O4",
+				"title": "Plantar fascia thickness and first metatarsal mobility in patients with diabetes and neuropathy",
+				"publicationTitle": "Journal of Foot and Ankle Research",
+				"rights": "2008 Rao et al; licensee BioMed Central Ltd.",
+				"volume": "1",
+				"issue": "Suppl 1",
+				"number": "Suppl 1",
+				"patentNumber": "Suppl 1",
+				"pages": "O4",
+				"publisher": "BioMed Central Ltd",
+				"institution": "BioMed Central Ltd",
+				"company": "BioMed Central Ltd",
+				"label": "BioMed Central Ltd",
+				"distributor": "BioMed Central Ltd",
+				"date": "2008-09-26",
+				"DOI": "10.1186/1757-1146-1-S1-O4",
+				"ISSN": "1757-1146",
+				"reportType": "Oral presentation",
+				"letterType": "Oral presentation",
+				"manuscriptType": "Oral presentation",
+				"mapType": "Oral presentation",
+				"thesisType": "Oral presentation",
+				"websiteType": "Oral presentation",
+				"presentationType": "Oral presentation",
+				"postType": "Oral presentation",
+				"audioFileType": "Oral presentation",
+				"language": "en",
+				"url": "http://www.jfootankleres.com/content/1/S1/O4",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"libraryCatalog": "www.jfootankleres.com"
 			}
 		]
 	}

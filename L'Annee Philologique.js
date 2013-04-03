@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "g",
-	"lastUpdated": "2012-09-23 13:59:39"
+	"browserSupport": "gcsb",
+	"lastUpdated": "2013-03-30 13:44:21"
 }
 
 /*
@@ -67,9 +67,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				arts.push(i);
 			}
-			Zotero.Utilities.processDocuments(arts, scrape, function () {
-				Zotero.done();
-			});
+			Zotero.Utilities.processDocuments(arts, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -80,11 +78,12 @@ function scrape(doc, url) {
 	var num = url.match(/&num=\d+/)[0].replace(/^&/, "");
 	var critere = encodeURIComponent(ZU.xpathText(doc, '//input[@id="critere"]/@value'));
 	var get = 'http://www.annee-philologique.com/index.php?do=export_ris&' + num;
-	//Z.debug(get)
+	Z.debug(get)
 	var post = num + '&js_actif=1&critere=' + critere + '&noticesformat=noticesformat3&mailExport=&inputnbselect=0&inputnbnotselect=4&inputumcourant=1';
-	//Z.debug(post);
+	Z.debug(post);
 	Zotero.Utilities.HTTP.doPost(get, post, function (text) {
 		//Z.debug(text)
+		text=text.trim()
 		var translator = Zotero.loadTranslator("import");
 		translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
 		translator.setString(text);

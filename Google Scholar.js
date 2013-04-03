@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-11-01 08:10:06"
+	"lastUpdated": "2013-03-14 21:29:25"
 }
 
 /*
@@ -79,11 +79,22 @@ function setGSPCookie(doc, cookie) {
 function setCookieThroughPrefs(doc, callback) {
 	url = doc.location.href.replace(/hl\=[^&]*&?/, "")
 			.replace("scholar?",
-				"scholar_setprefs?hl=en&scis=yes&scisf=4&submit=Save+Preferences&");
+				"scholar_settings?");
 	ZU.doGet(url, function(scisigDoc) {
 		var scisig = /<input\s+type="?hidden"?\s+name="?scisig"?\s+value="([^"]+)"/
 					.exec(scisigDoc);
-		url = url + "&scisig="+scisig[1];
+		if(!scisig) {
+			Z.debug('Could not locate scisig');
+			var form = scisigDoc.match(/<form.+?<\/form>/ig);
+			if(!form) {
+				Z.debug('No forms found on page.');
+				Z.debug(scisigDoc);
+			} else {
+				Z.debug(form.join('\n\n'));
+			}
+		}
+		url = url.replace("scholar_settings?", "scholar_setprefs?")
+			+ "&scis=yes&scisf=4&submit=&scisig="+scisig[1];
 		//set prefernces
 		Z.debug('Submitting settings to Google Scholar: ' + url);
 		ZU.doGet(url, function(response) { callback(doc); });
@@ -100,6 +111,7 @@ function prepareCookie(doc, callback) {
 		}
 		callback(doc);
 	} else {
+		Z.debug("Attempting to set cookie through GS Settings page");
 		//some proxies do not pass cookies through, so we need to set this by
 		//going to the preferences page
 		setCookieThroughPrefs(doc, callback);
