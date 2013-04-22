@@ -34,7 +34,6 @@ function doExport() {
         mem.init(item);
         Zotero.write("{ |");
         var library_id = item.LibraryID ? item.LibraryID : 0;
-		mem.set(item.title,",","(no title)");
 		if (item.creators.length >0){
   			mem.set(item.creators[0].lastName);
         	if (item.creators.length > 2) mem.set("et al.", ",");
@@ -43,6 +42,7 @@ function doExport() {
         else {
 			mem.set(false, "anon.",",");
         }
+		mem.set(item.title,",","(no title)");
         mem.setlaw(item.authority, ",");
         mem.setlaw(item.volume);
         mem.setlaw(item.reporter);
