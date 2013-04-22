@@ -17,7 +17,7 @@
 
 // legal types are weird
 var LEGAL_TYPES = ["patent","case","statute","bill","treaty","regulation","gazette"];
-var mem = new function () {
+var Mem = function () {
     var isLegal = false;
 	var lst = [];
     this.init = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.itemType)>-1)};
@@ -25,6 +25,8 @@ var mem = new function () {
 	this.setlaw = function (str, punc) { if (!punc) {punc=""}; if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
 }
+var mem = new Mem();
+var memdate = new Mem();
 
 function doExport() {
     var item;
@@ -45,9 +47,13 @@ function doExport() {
         mem.setlaw(item.volume);
         mem.setlaw(item.reporter);
         mem.setlaw(item.pages);
+        memdate.setlaw(item.court,",");
 	    var date = Zotero.Utilities.strToDate(item.date);
         var dateS = (date.year) ? date.year : item.date;
-        Zotero.write(" " + mem.get() + " | | |");
+        memdate.set(dateS,"","no date");
+        Zotero.write(" " + mem.get() + "(" + memdate.get() + ") | | |");
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
+
+{ | Village of Euclid v. Ambler Realty Co., 272 US 365 | | |zotero://select/items/0_ITZNBM7J}
