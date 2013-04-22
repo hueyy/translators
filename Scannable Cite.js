@@ -20,11 +20,10 @@ var LEGAL_TYPES = ["legislation","legal_case","patent","bill","treaty","regulati
 var mem = new function () {
     var isLegal = false;
 	var lst = [];
-    this.check = function (item) { isLegal = (LEGAL_TYPES.indexOf(item.type)>-1) };
+    this.reset = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1) };
 	this.set = function (str, slug) { if (str) {lst.push(str)} else if (!isLegal) {lst.push(slug)}};
 	this.setlaw = function (str, punc) { if (!punc) {punc = ""}; if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
-	this.reset = function () {lst = []};
 }
 
 function doExport() {
@@ -52,3 +51,4 @@ function doExport() {
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
+{ |Village of Euclid v. Ambler Realty Co. anon.| | |zotero://select/items/0_ITZNBM7J}
