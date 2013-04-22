@@ -21,7 +21,7 @@ var mem = new function () {
     var isLegal = false;
 	var lst = [];
     this.init = init;
-    function init (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1);Zotero.debug("XXX (1): "+isLegal); };
+    function init (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.itemType)>-1);Zotero.debug("XXX (1): "+isLegal); };
 	this.set = set;
     function set (str, slug) { if (str) {lst.push(str)} else if (!isLegal) {lst.push(slug)}};
 	this.setlaw = setlaw;
