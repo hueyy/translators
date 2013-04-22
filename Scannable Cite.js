@@ -35,12 +35,12 @@ function doExport() {
         Zotero.write("{ |");
         var library_id = item.LibraryID ? item.LibraryID : 0;
 		if (item.creators.length >0){
-  			mem.set(item.creators[0].lastName);
+  			mem.set(item.creators[0].lastName,",");
         	if (item.creators.length > 2) mem.set("et al.", ",");
         	else if (item.creators.length == 2) mem.set("&amp; " + item.creators[1].lastName, ",");
 		}
         else {
-			mem.set(false, "anon.",",");
+			mem.set(false, ",","anon.");
         }
 		mem.set(item.title,",","(no title)");
         mem.setlaw(item.authority, ",");
