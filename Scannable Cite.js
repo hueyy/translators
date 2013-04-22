@@ -16,7 +16,7 @@
 }
 
 // legal types are weird
-var LEGAL_TYPES = ["legislation","legal_case","patent","bill","treaty","regulation"];
+var LEGAL_TYPES = ["patent","case","statute","bill","treaty","regulation","gazette"];
 var mem = new function () {
     var isLegal = false;
 	var lst = [];
