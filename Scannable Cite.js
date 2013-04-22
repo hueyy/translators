@@ -51,9 +51,7 @@ function doExport() {
 	    var date = Zotero.Utilities.strToDate(item.date);
         var dateS = (date.year) ? date.year : item.date;
         memdate.set(dateS,"","no date");
-        Zotero.write(" " + mem.get() + "(" + memdate.get() + ") | | |");
+        Zotero.write(" " + mem.get() + " (" + memdate.get() + ") | | |");
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
-
-{ | Village of Euclid v. Ambler Realty Co., 272 US 365 | | |zotero://select/items/0_ITZNBM7J}
