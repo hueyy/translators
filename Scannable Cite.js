@@ -51,5 +51,3 @@ function doExport() {
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
-
-{ |Village of Euclid v. Ambler Realty Co. anon.| | |zotero://select/items/0_ITZNBM7J}
