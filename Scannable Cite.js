@@ -21,7 +21,7 @@ var Mem = function () {
     var isLegal = false;
 	var lst = [];
     this.init = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.itemType)>-1)};
-	this.set = function (str, punc, slug) { if (!punc) {punc=""}; if (str) {lst.push(str + punc)} else if (!isLegal) {lst.push(slug)}};
+	this.set = function (str, punc, slug) { if (!punc) {punc=""}; if (str) {lst.push((str + punc))} else if (!isLegal) {lst.push(slug)}};
 	this.setlaw = function (str, punc) { if (!punc) {punc=""}; if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
 }
@@ -55,3 +55,4 @@ function doExport() {
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
+
