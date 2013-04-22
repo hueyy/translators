@@ -20,12 +20,9 @@ var LEGAL_TYPES = ["patent","case","statute","bill","treaty","regulation","gazet
 var mem = new function () {
     var isLegal = false;
 	var lst = [];
-    this.init = init;
-    function init (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.itemType)>-1);Zotero.debug("XXX (1): "+isLegal); };
-	this.set = set;
-    function set (str, slug) { if (str) {lst.push(str)} else if (!isLegal) {lst.push(slug)}};
-	this.setlaw = setlaw;
-    function setlaw (str, punc) { if (!punc) {punc = ""}; Zotero.debug("XXX (2): "+isLegal); if (str && isLegal) {lst.push(str + punc)}};
+    this.init = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.itemType)>-1)};
+	this.set = function (str, punc, slug) { if (!punc) {punc=""}; if (str) {lst.push(str + punc)} else if (!isLegal) {lst.push(slug)}};
+	this.setlaw = function (str, punc) { if (!punc) {punc=""}; if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
 }
 
@@ -35,22 +32,22 @@ function doExport() {
         mem.init(item);
         Zotero.write("{ |");
         var library_id = item.LibraryID ? item.LibraryID : 0;
-		mem.set(item.title,"(no title)");
+		mem.set(item.title,",","(no title)");
 		if (item.creators.length >0){
   			mem.set(item.creators[0].lastName);
-        	if (item.creators.length > 2) mem.set("et al.");
-        	else if (item.creators.length == 2) mem.set("&amp; " + item.creators[1].lastName);
+        	if (item.creators.length > 2) mem.set("et al.", ",");
+        	else if (item.creators.length == 2) mem.set("&amp; " + item.creators[1].lastName, ",");
 		}
         else {
-			mem.set(false, "anon.");
+			mem.set(false, "anon.",",");
         }
         mem.setlaw(item.authority, ",");
         mem.setlaw(item.volume);
-        mem.setlaw(item['container-title']);
-        mem.setlaw(item.page);
+        mem.setlaw(item.reporter);
+        mem.setlaw(item.pages);
 	    var date = Zotero.Utilities.strToDate(item.date);
         var dateS = (date.year) ? date.year : item.date;
-        Zotero.write( mem.get() + "| | |");
+        Zotero.write(" " + mem.get() + " | | |");
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
