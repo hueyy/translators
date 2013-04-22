@@ -20,7 +20,7 @@ var LEGAL_TYPES = ["legislation","legal_case","patent","bill","treaty","regulati
 var mem = new function () {
     var isLegal = false;
 	var lst = [];
-    this.reset = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1) };
+    this.init = function (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1) };
 	this.set = function (str, slug) { if (str) {lst.push(str)} else if (!isLegal) {lst.push(slug)}};
 	this.setlaw = function (str, punc) { if (!punc) {punc = ""}; if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
@@ -29,7 +29,7 @@ var mem = new function () {
 function doExport() {
     var item;
     while (item = Zotero.nextItem()) {
-        mem.reset();
+        mem.init(item);
         Zotero.write("{ |");
         var library_id = item.LibraryID ? item.LibraryID : 0;
 		mem.set(item.title,"(no title)");
