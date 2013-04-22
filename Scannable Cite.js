@@ -48,8 +48,7 @@ function doExport() {
         mem.setlaw(item.page);
 	    var date = Zotero.Utilities.strToDate(item.date);
         var dateS = (date.year) ? date.year : item.date;
-        Zotero.write( mem.get + "| | |");
+        Zotero.write( mem.get() + "| | |");
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
-
