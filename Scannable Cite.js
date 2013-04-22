@@ -21,11 +21,11 @@ var mem = new function () {
     var isLegal = false;
 	var lst = [];
     this.init = init;
-    function init (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1) };
+    function init (item) { lst = []; isLegal = (LEGAL_TYPES.indexOf(item.type)>-1);Zotero.debug("XXX (1): "+isLegal); };
 	this.set = set;
     function set (str, slug) { if (str) {lst.push(str)} else if (!isLegal) {lst.push(slug)}};
 	this.setlaw = setlaw;
-    function setlaw (str, punc) { if (!punc) {punc = ""}; if (str && isLegal) {lst.push(str + punc)}};
+    function setlaw (str, punc) { if (!punc) {punc = ""}; Zotero.debug("XXX (2): "+isLegal); if (str && isLegal) {lst.push(str + punc)}};
 	this.get = function () { return lst.join(" ") };
 }
 
@@ -54,3 +54,4 @@ function doExport() {
         Zotero.write("zotero://select/items/" + library_id + "_" + item.key + "}");
     }
 }
+{ |Village of Euclid v. Ambler Realty Co. anon.| | |zotero://select/items/0_ITZNBM7J}
