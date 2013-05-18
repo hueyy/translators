@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcs",
-	"lastUpdated": "2013-03-08 21:43:08"
+	"browserSupport": "gcsbv",
+	"lastUpdated": "2013-05-10 05:23:14"
 }
 
 /* sample URLs: http://libraries.nc-pals.org

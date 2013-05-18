@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-12-13 16:47:51"
+	"lastUpdated": "2013-04-06 10:59:04"
 }
 
 function detectWeb(doc, url) {
@@ -34,7 +34,7 @@ function downloadFunction(text, url, prefs) {
 	}
 
 	//fix DOI
-	text = text.replace(/^(?:L3)(\s\s?-)/gm, 'DO$1');
+	text = text.replace(/^L3(\s\s?-)/gm, 'DO$1');
 
 	// There are cases where the RIS type isn't good--
 	// there is sometimes better data in M3
@@ -51,7 +51,10 @@ function downloadFunction(text, url, prefs) {
 			break;
 		}
 	}
-
+	//remove M3 so it does not interfere with DOI.
+	//hopefully EBCSOhost doesn't use this for anything useful
+	text = text.replace(/^M3\s\s?-.*/gm, '');
+	
 	// load translator for RIS
 	var translator = Zotero.loadTranslator("import");
 	translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
@@ -102,7 +105,9 @@ function downloadFunction(text, url, prefs) {
 		} else if(!an) {	//we'll need this later
 			an = item.callNumber;
 		}
-
+/** Not sure what the original test case for this was where the import was improved,
+ * but it breaks import from
+ * http://search.ebscohost.com/login.aspx?direct=true&db=bth&AN=39564295&site=ehost-live
 		if (m = text.match(/^Y1\s+-(.*)$/m)) {
 			var year = m[1].match(/\d{4}/);
 			var extra = m[1].match(/\/([^\/]+)$/);
@@ -115,7 +120,7 @@ function downloadFunction(text, url, prefs) {
 		// Frequently have dates like "Spring2009";
 		// need to insert space to keep Zotero happy
 		if(item.date) item.date = item.date.replace(/([a-z])([0-9]{4})$/,"$1 $2");
-
+*/
 		// Keep the stable link as a link attachment
 		if(item.url) {
 			// Trim the ⟨=cs suffix -- EBSCO can't find the record with it!

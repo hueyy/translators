@@ -13,8 +13,8 @@
 	},
 	"inRepository": true,
 	"translatorType": 3,
-	"browserSupport": "gcs",
-	"lastUpdated": "2012-12-10 17:06:06"
+	"browserSupport": "gcsv",
+	"lastUpdated": "2013-05-08 23:03:38"
 }
 
 /*This Translator mirrors closely Aurimas Vinckevicius' RIS translator
@@ -31,10 +31,10 @@ function detectImport() {
 	while((line = Zotero.read()) !== false) {
 		line = line.replace(/^\s+/, "");
 		if(line != "") {
-			if(line.substr(0, 6).match(/^RT\s+./)) {
+			if(line.search(/^RT\s+./) != -1) {
 				return true;
 			} else {
-				if(i++ > 3) {
+				if(i++ > 150) { //skip preamble
 					return false;
 				}
 			}
@@ -504,30 +504,14 @@ function processTag(item, entry) {
 				}
 			break;
 			case "attachments":
-				switch(zField[1]) {
-					case 'PDF':
-						value = {
-							url: value,
-							mimeType: "application/pdf",
-							title:"Full Text (PDF)",
-							downloadable:true
-						};
-					break;
-					case 'HTML':
-						value = {
-							url: value,
-							mimeType: "text/html",
-							title: "Full Text (HTML)",
-							downloadable:true
-						};
-					break;
-					default:
-						value = {
-							url:value,
-							title:"Image",	//maybe just Attachment?
-							downloadable:true
-						};
-				}
+				var domain = value.match(/^https?:\/\/([^\/]+)/i);
+				domain = domain ? domain[1] + ' ' : '';
+				value = {
+					url:value,
+					title: domain + 'Link',
+					mimeType: 'text/html',
+					downloadable:true
+				};
 			break;
 			case "unsupported":	//unsupported fields
 				//we can convert a RIS tag to something more useful though
@@ -1061,59 +1045,37 @@ var testCases = [
 		"input": "RT Dissertation\nSR Electronic(1)\nID 2118\nA1 Catrambone, C.D.\nT1 Effect of a case management intervention on symptoms of asthma in high risk children\nYR 2000\nSP 141\nK1 Case Management Asthma -- Therapy -- In Infancy and Childhood Treatment Outcomes -- In Infancy and Childhood (Minor): Prospective Studies Comparative Studies Infant Child Adolescence Outpatients Asthma -- Symptoms\nAB Statement of the problem. One approach to addressing the health care needs of patients with chronic medical problems is case management. Little is known about the effectiveness of case management in the treatment of children with asthma. Few randomized controlled studies of asthma case management have been conducted. In these studies, follow-up was limited to a one-year period. The purpose of this study was to determine the effectiveness of a one-year primary-care based asthma case management (ACM) strategy on symptoms of asthma in high risk children at 15 and 18 months post-intervention. Methods. Twenty-eight parent caregivers of children with asthma aged 1 to 15 years, who participated in the ACM intervention the year prior to the start of this study, agreed to participate. The ACM group ( n = 15) received one year of asthma case management and the usual care ( UC) group ( n = 13) received one year of routine outpatient care. Results. Child asthma symptoms, affects on parent lifestyle, and health system utilization were assessed. Based on caregiver four-week recall, the ACM group experienced fewer annual wheezing days compared to the UC group. 25.17 (36.55) versus 71.61 (80.01) that was statistically significant (p = 0.03). There were no statistically significant differences between the ACM and UC groups in the cumulative 18-month estimate of child night-time coughing and awakening, parent night-time awakening due to the child's asthma symptoms and worrying, parent change in plans and missed work, and asthma-related physician office visits, emergency department visits, and hospitalizations. Conclusion. A primary-care based asthma case management intervention was effective in reducing annual wheezing days in high-risk children with asthma when followed up to 18 months.\nNO Update Code: 20011116\nPB Rush University, College of Nursing\nPP Oceanside, CA, USA\nSN 0-599-73664-X\nAN 2001107680\nLA English\nSF CINAHL; doctoral dissertation; research\nOL English (30)",
 		"items": [
 			{
-				"itemType": "bookSection",
+				"itemType": "thesis",
 				"creators": [
 					{
-						"lastName": "Stansfeld",
-						"firstName": "Stephen",
+						"lastName": "Catrambone",
+						"firstName": "C.D.",
 						"creatorType": "author"
-					},
-					{
-						"lastName": "Fuhrer",
-						"firstName": "Rebecca",
-						"creatorType": "author"
-					},
-					{
-						"lastName": "Gulford",
-						"firstName": "C.T.",
-						"creatorType": "editor"
 					}
 				],
 				"notes": [
 					{
-						"note": "<p>Williston, VT, US: BMJ Books. xi, 304 pp.; PO: Human; FE: References; TA: Psychology: Professional & Research; UD: 20020306; A1: 20020306</p>"
+						"note": "<p>Update Code: 20011116</p>"
 					},
 					{
-						"note": "The following values have no corresponding Zotero field:<br/>SR Electronic(1)<br/>ID 206<br/>IS 3<br/>AD U London, Queen Mary's School of Medicine & Dentistry, London, England<br/>AN 2002-00714-006<br/>CL 3200 Psychological & Physical Disorders<br/>OL English (30)<br/>",
+						"note": "The following values have no corresponding Zotero field:<br/>SR Electronic(1)<br/>ID 2118<br/>SN 0-599-73664-X<br/>AN 2001107680<br/>SF CINAHL; doctoral dissertation; research<br/>OL English (30)<br/>",
 						"tags": [
 							"_RW import"
 						]
 					}
 				],
 				"tags": [
-					"Etiology",
-					"Heart Disorders",
-					"Major Depression",
-					"Psychosocial Factors",
-					"Risk Factors",
-					"Anxiety",
-					"Prediction",
-					"coronary heart disease",
-					"psychosocial risk factors",
-					"Plants Red Blue"
+					"Case Management Asthma -- Therapy -- In Infancy and Childhood Treatment Outcomes -- In Infancy and Childhood (Minor): Prospective Studies Comparative Studies Infant Child Adolescence Outpatients Asthma -- Symptoms"
 				],
 				"seeAlso": [],
 				"attachments": [],
-				"title": "Depression and coronary heart disease",
-				"volume": "1",
-				"pages": "101-123",
-				"abstractNote": "(From the chapter) This chapter discusses the evidence for the proposition that depression is an aetiological factor in coronary heart disease, and 2 of the possible pathways by which this might occur: 1 in which social factors predict coronary heart disease, and depression and its associated psychophysiological changes are an intervening step; and the 2nd in which social factors predict coronary heart disease and depression, but depression is not on the pathway. This is followed by a discussion of anxiety as an aetiological factor in coronary heart disease. ( PsycINFO Database Record ( c) 2002 APA, all rights reserved)",
-				"bookTitle": "Stress and the heart: Psychosocial pathways to coronary heart disease",
-				"publisher": "BMJ Books",
-				"place": "Williston, VT, US",
-				"ISBN": "0727912771 (paperback)",
+				"title": "Effect of a case management intervention on symptoms of asthma in high risk children",
+				"numPages": "141",
+				"abstractNote": "Statement of the problem. One approach to addressing the health care needs of patients with chronic medical problems is case management. Little is known about the effectiveness of case management in the treatment of children with asthma. Few randomized controlled studies of asthma case management have been conducted. In these studies, follow-up was limited to a one-year period. The purpose of this study was to determine the effectiveness of a one-year primary-care based asthma case management (ACM) strategy on symptoms of asthma in high risk children at 15 and 18 months post-intervention. Methods. Twenty-eight parent caregivers of children with asthma aged 1 to 15 years, who participated in the ACM intervention the year prior to the start of this study, agreed to participate. The ACM group ( n = 15) received one year of asthma case management and the usual care ( UC) group ( n = 13) received one year of routine outpatient care. Results. Child asthma symptoms, affects on parent lifestyle, and health system utilization were assessed. Based on caregiver four-week recall, the ACM group experienced fewer annual wheezing days compared to the UC group. 25.17 (36.55) versus 71.61 (80.01) that was statistically significant (p = 0.03). There were no statistically significant differences between the ACM and UC groups in the cumulative 18-month estimate of child night-time coughing and awakening, parent night-time awakening due to the child's asthma symptoms and worrying, parent change in plans and missed work, and asthma-related physician office visits, emergency department visits, and hospitalizations. Conclusion. A primary-care based asthma case management intervention was effective in reducing annual wheezing days in high-risk children with asthma when followed up to 18 months.",
+				"university": "Rush University, College of Nursing",
+				"place": "Oceanside, CA, USA",
 				"language": "English",
-				"date": "2002"
+				"date": "2000"
 			}
 		]
 	},
@@ -1122,59 +1084,103 @@ var testCases = [
 		"input": "RT Journal Article\nSR Electronic(1)\nID 271\nA1 Allan,Steven\nA1 Gilbert,Paul\nT1 Anger and anger expression in relation to perceptions of social rank, entrapment and depressive symptoms\nJF Personality & Individual Differences\nYR 2002\nFD Feb\nVO 32\nIS 3\nSP 551\nOP 565\nK1 Anger\nK1 Self Report\nK1 Status\nK1 Depression (Emotion)\nK1 Symptoms\nK1 self-report measures\nK1 anger expression\nK1 social rank\nK1 entrapment\nK1 depressive symptoms\nAB Explored the relationship between self-report measures of anger and anger expression with those of social rank (unfavorable social comparison and submissive behavior) and feelings of entrapment in a student population (197 Ss, mean age 23.4 yrs). The authors further investigated if the social rank/status of the target of one's anger affects anger experience and expression. Students were given C. D. Spielberger's (1988) State-Trait Anger Expression Inventory measure of anger and asked to complete it in 3 ways. First, in the normal way, and then 2 further times after reading 2 scenarios that involved lending an important and needed book which the lender fails to return, where the lender was either an up rank/authority figure (one's tutor) or a down rank, fellow student. It was found that self-perceptions of unfavorable rank (inferior self-perceptions and submissive behavior) and feeling trapped significantly affect anger suppression. It was also found that the rank of the target significantly affects anger expression and that people who respond angrily to criticism tend to show more down rank-anger when they are frustrated by a lower rank target and modulate their anger according to the rank of the person they are angry with. ( PsycINFO Database Record ( c) 2002 APA, all rights reserved)\nNO PO: Human; Male; Female; Adulthood (18 yrs & older); FE: References; Peer Reviewed; UD: 20020227; F1: 0191-8869,32,3,551-565,2002; A1: 20020227\nPB Elsevier Science, England, [URL:http:// www.elsevier.nl]\nSN 0191-8869\nAD Kingsway Hosp, Dept of Clinical Psychology, Derby, United Kingdom; [mailto: stev.allan@hotmail.com]\nAN 2002-00282-017\nLA English\nCL 3120 Personality Traits & Processes\nSF Print (Paper); Journal Article; Empirical Study\nLK http:// bmj.com/content/vol325/issue7371/twib.shtml#325/7371/0\nOL English (30)",
 		"items": [
 			{
-				"itemType": "bookSection",
+				"itemType": "journalArticle",
 				"creators": [
 					{
-						"lastName": "Stansfeld",
-						"firstName": "Stephen",
+						"lastName": "Allan",
+						"firstName": "Steven",
 						"creatorType": "author"
 					},
 					{
-						"lastName": "Fuhrer",
-						"firstName": "Rebecca",
+						"lastName": "Gilbert",
+						"firstName": "Paul",
 						"creatorType": "author"
-					},
-					{
-						"lastName": "Gulford",
-						"firstName": "C.T.",
-						"creatorType": "editor"
 					}
 				],
 				"notes": [
 					{
-						"note": "<p>Williston, VT, US: BMJ Books. xi, 304 pp.; PO: Human; FE: References; TA: Psychology: Professional & Research; UD: 20020306; A1: 20020306</p>"
+						"note": "<p>PO: Human; Male; Female; Adulthood (18 yrs & older); FE: References; Peer Reviewed; UD: 20020227; F1: 0191-8869,32,3,551-565,2002; A1: 20020227</p>"
 					},
 					{
-						"note": "The following values have no corresponding Zotero field:<br/>SR Electronic(1)<br/>ID 206<br/>IS 3<br/>AD U London, Queen Mary's School of Medicine & Dentistry, London, England<br/>AN 2002-00714-006<br/>CL 3200 Psychological & Physical Disorders<br/>OL English (30)<br/>",
+						"note": "The following values have no corresponding Zotero field:<br/>SR Electronic(1)<br/>ID 271<br/>PB Elsevier Science, England, [URL:http:// www.elsevier.nl]<br/>AD Kingsway Hosp, Dept of Clinical Psychology, Derby, United Kingdom; [mailto: stev.allan@hotmail.com]<br/>AN 2002-00282-017<br/>CL 3120 Personality Traits & Processes<br/>SF Print (Paper); Journal Article; Empirical Study<br/>OL English (30)<br/>",
 						"tags": [
 							"_RW import"
 						]
 					}
 				],
 				"tags": [
-					"Etiology",
-					"Heart Disorders",
-					"Major Depression",
-					"Psychosocial Factors",
-					"Risk Factors",
-					"Anxiety",
-					"Prediction",
-					"coronary heart disease",
-					"psychosocial risk factors",
-					"Plants Red Blue"
+					"Anger",
+					"Self Report",
+					"Status",
+					"Depression (Emotion)",
+					"Symptoms",
+					"self-report measures",
+					"anger expression",
+					"social rank",
+					"entrapment",
+					"depressive symptoms"
 				],
 				"seeAlso": [],
-				"attachments": [],
-				"title": "Depression and coronary heart disease",
-				"volume": "1",
-				"pages": "101-123",
-				"abstractNote": "(From the chapter) This chapter discusses the evidence for the proposition that depression is an aetiological factor in coronary heart disease, and 2 of the possible pathways by which this might occur: 1 in which social factors predict coronary heart disease, and depression and its associated psychophysiological changes are an intervening step; and the 2nd in which social factors predict coronary heart disease and depression, but depression is not on the pathway. This is followed by a discussion of anxiety as an aetiological factor in coronary heart disease. ( PsycINFO Database Record ( c) 2002 APA, all rights reserved)",
-				"bookTitle": "Stress and the heart: Psychosocial pathways to coronary heart disease",
-				"publisher": "BMJ Books",
-				"place": "Williston, VT, US",
-				"ISBN": "0727912771 (paperback)",
-				"language": "English",
-				"date": "2002"
+				"attachments": [
+					{
+						"url": "http:// bmj.com/content/vol325/issue7371/twib.shtml#325/7371/0",
+						"title": " bmj.com Link",
+						"mimeType": "text/html",
+						"downloadable": true
+					}
+				],
+				"title": "Anger and anger expression in relation to perceptions of social rank, entrapment and depressive symptoms",
+				"publicationTitle": "Personality & Individual Differences",
+				"date": "Feb 2002",
+				"volume": "32",
+				"issue": "3",
+				"pages": "551-565",
+				"abstractNote": "Explored the relationship between self-report measures of anger and anger expression with those of social rank (unfavorable social comparison and submissive behavior) and feelings of entrapment in a student population (197 Ss, mean age 23.4 yrs). The authors further investigated if the social rank/status of the target of one's anger affects anger experience and expression. Students were given C. D. Spielberger's (1988) State-Trait Anger Expression Inventory measure of anger and asked to complete it in 3 ways. First, in the normal way, and then 2 further times after reading 2 scenarios that involved lending an important and needed book which the lender fails to return, where the lender was either an up rank/authority figure (one's tutor) or a down rank, fellow student. It was found that self-perceptions of unfavorable rank (inferior self-perceptions and submissive behavior) and feeling trapped significantly affect anger suppression. It was also found that the rank of the target significantly affects anger expression and that people who respond angrily to criticism tend to show more down rank-anger when they are frustrated by a lower rank target and modulate their anger according to the rank of the person they are angry with. ( PsycINFO Database Record ( c) 2002 APA, all rights reserved)",
+				"ISSN": "0191-8869",
+				"language": "English"
+			}
+		]
+	},
+	{
+		"type": "import",
+		"input": "Refworks Export Tagged Format\n\nCharacter Set=utf-8\n\nTag legend\n*****\nRT=Reference Type\nSR=Source Type\nID=Reference Identifier\nA1=Primary Authors\nT1=Primary Title\nJF=Periodical Full\nJO=Periodical Abbrev\nYR=Publication Year\nFD=Publication Data,Free Form\nVO=Volume\nIS=Issue\nSP=Start Page\nOP=Other Pages\nK1=Keyword\nAB=Abstract\nNO=Notes\nA2=Secondary Authors\nT2=Secondary Title\nED=Edition\nPB=Publisher\nPP=Place of Publication\nA3=Tertiary Authors\nA4=Quaternary Authors\nA5=Quinary Authors\nT3=Tertiary Title\nSN=ISSN/ISBN\nAV=Availability\nAD=Author Address\nAN=Accession Number\nLA=Language\nCL=Classification\nSF=Subfile/Database\nOT=Original Foreign Title\nLK=Links\nDO=Document Object Index\nCN=Call Number\nDB=Database\nDS=Data Source\nIP=Identifying Phrase\nRD=Retrieved Date\nST=Shortened Title\nU1=User 1\nU2=User 2\nU3=User 3\nU4=User 4\nU5=User 5\nU6=User 6\nU7=User 7\nU8=User 8\nU9=User 9\nU10=User 10\nU11=User 11\nU12=User 12\nU13=User 13\nU14=User 14\nU15=User 15\nUL=URL\nSL=Sponsoring Library\nLL=Sponsoring Library Location\nCR=Cited References\nWT=Website Title\nA6=Website Editor\nWV=Website Version\nWP=Date of Electronic Publication\nOL=Output Language\nPMID=PMID\nPMCID=PMCID\n\n*****\nFont Attribute Legend\nStart Bold = \nEnd Bold = \nStart Underline = \nEnd Underline = \nStart Italic = \nEnd Italic = \nStart SuperScript = \nEnd SuperScript = \nStart SubScript = \nEnd SubScript = \n\n*****\nBEGIN EXPORTED REFERENCES\n\n\n\n\nRT Journal Article\nSR Electronic(1)\nID 1220\nA1 Brennan,Timothy\nT1 The Empire's New Clothes\nJF Critical Inquiry\nYR 2003\nFD 01/01\nVO 29\nIS 2\nSP 337\nOP 367\nNO doi: 10.1086/374030\nLK http://www.journals.uchicago.edu/doi/abs/10.1086/374030\nOL Unknown(0)",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"lastName": "Brennan",
+						"firstName": "Timothy",
+						"creatorType": "author"
+					}
+				],
+				"notes": [
+					{
+						"note": "<p>doi: 10.1086/374030</p>"
+					},
+					{
+						"note": "The following values have no corresponding Zotero field:<br/>SR Electronic(1)<br/>ID 1220<br/>OL Unknown(0)<br/>",
+						"tags": [
+							"_RW import"
+						]
+					}
+				],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"url": "http://www.journals.uchicago.edu/doi/abs/10.1086/374030",
+						"title": "www.journals.uchicago.edu Link",
+						"mimeType": "text/html",
+						"downloadable": true
+					}
+				],
+				"title": "The Empire's New Clothes",
+				"publicationTitle": "Critical Inquiry",
+				"date": "January 01 2003",
+				"volume": "29",
+				"issue": "2",
+				"pages": "337-367"
 			}
 		]
 	}

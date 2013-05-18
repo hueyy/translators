@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsb",
-	"lastUpdated": "2013-03-30 13:44:21"
+	"browserSupport": "gcsib",
+	"lastUpdated": "2013-04-17 03:09:28"
 }
 
 /*
@@ -95,10 +95,11 @@ function scrape(doc, url) {
 				if (!item.creators[i].firstName) {
 					var author;
 					//Assume the first word is the last Name - that's the best we can do here
-					var author = item.creators[i].lastName.match(/(\S+)(\s.+)/)
-					if (author[2]) {
-						item.creators[i].firstName = author[2]
-						item.creators[i].lastName = author[1]
+					var author = item.creators[i].lastName.match(/(\S+)\s+(.+)/)
+					if (author) {
+						item.creators[i].firstName = author[2];
+						item.creators[i].lastName = author[1];
+						delete item.creators[i].fieldMode;
 					}
 				}
 			}
@@ -118,7 +119,7 @@ function scrape(doc, url) {
 var testCases = [
 	{
 		"type": "web",
-		"url": "www.annee-philologique.com/aph/index.php?do=uneNotice&id=31-02979",
+		"url": "http://www.annee-philologique.com/aph/index.php?do=uneNotice&id=31-02979",
 		"items": [
 			{
 				"itemType": "book",

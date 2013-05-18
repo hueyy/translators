@@ -2,7 +2,7 @@
 	"translatorID": "fcf41bed-0cbc-3704-85c7-8062a0068a7a",
 	"label": "NCBI PubMed",
 	"creator": "Simon Kornblith, Michael Berkowitz, Avram Lyon, and Rintze Zelle",
-	"target": "https?://[^/]*(www|preview)[\\.\\-]ncbi[\\.\\-]nlm[\\.\\-]nih[\\.\\-]gov[^/]*/(books|pubmed|sites/pubmed|sites/entrez|entrez/query\\.fcgi\\?.*db=PubMed)",
+	"target": "https?://[^/]*(www|preview)[\\.\\-]ncbi[\\.\\-]nlm[\\.\\-]nih[\\.\\-]gov[^/]*/(books|pubmed|sites/pubmed|sites/entrez|entrez/query\\.fcgi\\?.*db=PubMed|myncbi/browse/collection/|myncbi/collections/)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 13,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2013-03-12 00:36:04"
+	"lastUpdated": "2013-04-29 06:08:14"
 }
 
 /*****************************
@@ -60,7 +60,13 @@ function getUID(doc) {
 
 //retrieves a list of result nodes from a search results page (perhaps others too)
 function getResultList(doc) {
-	return ZU.xpath(doc, '//div[@class="rprt"][.//p[@class="title"]]');
+	var results = ZU.xpath(doc, '//div[./div[@class="rslt"][./p[@class="title"] or ./h1]]');
+	if(results.length) return results;
+	
+	//My Bibliography
+	results = ZU.xpath(doc, '//li[@class="citationListItem"]\
+		[./div[@class="chkBoxLeftCol"]/input[@ref-system="pubmed"]]');
+	return results;
 }
 
 function detectWeb(doc, url) {
@@ -68,7 +74,7 @@ function detectWeb(doc, url) {
 	if (items.length > 0 && url.indexOf("/books/") == -1) {
 		return "multiple";
 	}
-
+	
 	if(!getUID(doc)) {
 		return;
 	}
@@ -98,9 +104,12 @@ function doWeb(doc, url) {
 		var items = {};
 		var title, uid;
 		for(var i=0, n=results.length; i<n; i++) {
-			title = ZU.xpathText(results[i], './/p[@class="title"]');
+			title = ZU.xpathText(results[i], '(.//p[@class="title"]|.//h1)[1]')
+				|| ZU.xpathText(results[i], './div[@class="docsumRightcol"]/a'); //My Bibliography
 			uid = ZU.xpathText(results[i], './/input[starts-with(@id,"UidCheckBox")]/@value')
+				|| ZU.xpathText(results[i], './div[@class="chkBoxLeftCol"]/input/@ref-uid') //My Bibliography
 				|| ZU.xpathText(results[i], './/dl[@class="rprtid"]/dd[preceding-sibling::*[1][text()="PMID:"]]');
+				
 			if(!uid) {
 				uid = ZU.xpathText(results[i], './/p[@class="title"]/a/@href');
 				if(uid) uid = uid.match(/\/(\d+)/);
@@ -1037,6 +1046,11 @@ var testCases = [
 				"publisher": "National Center for Biotechnology Information (US)"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.ncbi.nlm.nih.gov/myncbi/browse/collection/40383442/?sort=&direction=",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

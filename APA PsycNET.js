@@ -8,40 +8,41 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsib",
-	"lastUpdated": "2013-02-28 19:52:30"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2013-05-18 01:05:33"
 }
 
 function detectWeb(doc, url) {
 	var type;
-	if (url.indexOf('search.searchResults') != -1) {
+	url = url.toLowerCase();
+	if (url.indexOf('search.searchresults') != -1) {
 	//permission error (still relevant?)
 	//return false;
 		return "multiple";
 	}
 
-	if(url.indexOf('search.displayRecord') != -1) {
+	if(url.indexOf('search.displayrecord') != -1) {
 		type = doc.getElementById('rdcPubType');
 		if(!type) return false;
 		type = type.textContent.replace(/[\s\[\]]/g,'').split(';');
-		switch(type[0]) {
-			case 'Book':
+		switch(type[0].toLowerCase()) {
+			case 'book':
 				return 'book';
-			case 'Chapter':
+			case 'chapter':
 				return 'bookSection';
-			case 'JournalArticle':
-			case 'Editorial':
+			case 'journalarticle':
+			case 'editorial':
 				return 'journalArticle';
 			default:
 				return false;
 		}
 	}
 
-	if(url.match(/journals\/\S+\/\d+\/\d+\/\d+\//)) {
+	if(url.search(/journals\/\S+\/\d+\/\d+\/\d+\//) != -1) {
 		return "journalArticle";
 	}
 
-	if(url.match(/\/books\/\d+/)) {
+	if(url.search(/\/books\/\d+/) != -1) {
 		fields.title = '(//h3[@id="bwcBookTitle"])[1]';
 		fields.authors = '(//div[@id="bwcBookAuthors"])[1]';
 		fields.voliss = '(//div[@id="bwcBookSource"])[1]';
@@ -50,7 +51,7 @@ function detectWeb(doc, url) {
 		return "book";
 	}
 
-	if(url.indexOf('buy.optionToBuy') != -1
+	if(url.indexOf('buy.optiontobuy') != -1
 		&& url.indexOf('id=') != -1
 		&& (type = doc.getElementById('obArticleHeaderText')) ) {
 		fields.title = '(//div[@id="obArticleTitleHighlighted"])[1]';
@@ -58,11 +59,11 @@ function detectWeb(doc, url) {
 		fields.voliss = '(//div[@id="obSource"])[1]';
 		fields.abstract = '(//div[@id="obAbstract"])[1]';
 
-		if(type.textContent.indexOf('Article') != -1) {
+		if(type.textContent.toLowerCase().indexOf('article') != -1) {
 			return 'journalArticle';
 		}
 
-		if(type.textContent.indexOf('Chapter') != -1) {
+		if(type.textContent.toLowerCase().indexOf('chapter') != -1) {
 			return 'bookSection';
 		}
 	}
@@ -70,11 +71,11 @@ function detectWeb(doc, url) {
 	/**for the book database - item IDs ending in 000 are books
 	 * everything else chapters
 	 */
-	if (url.match(/psycinfo\/[0-9]{4}-[0-9]+-000/)){
+	if (url.search(/psycinfo\/[0-9]{4}-[0-9]+-000/) != -1){
 		return "book";
 	}
 
-	if (url.match(/psycinfo\/[0-9]{4}-[0-9]+-[0-9]{3}/)){
+	if (url.search(/psycinfo\/[0-9]{4}-[0-9]+-[0-9]{3}/) != -1){
 		return "bookSection";
 	}
 }
@@ -125,7 +126,7 @@ function doWeb(doc, url) {
 			ZU.processDocuments(arts, scrape);
 		});
 	} else {
-		scrape(doc, type);
+		scrape(doc, url, type);
 	}
 }
 
@@ -137,10 +138,11 @@ function getIds(doc, url) {
 			'(//input[@name="lstUIDs"][@id="srhLstUIDs"])[1]/@value');
 	if(ret.id || ret.lstUID) return ret;
 
+	url = url.toLowerCase();
 	/**on the /book/\d+ pages, we can find the UID in
 	 * the Front matter and Back matter links
 	 */
-	if(url.match(/\/books\/\d+/)) {
+	if(url.search(/\/books\/\d+/) != -1) {
 		var links = ZU.xpath(doc,
 			'//a[@target="_blank" and contains(@href,"&id=")]');
 		var m;
@@ -157,7 +159,7 @@ function getIds(doc, url) {
 	 * we can fetch the id from the url
 	 * alternatively, the id is in a javascript section (this is messy)
 	 */
-	if(url.indexOf('buy.optionToBuy') != -1) {
+	if(url.indexOf('buy.optiontobuy') != -1) {
 		var m = url.match(/\bid=([^&]+)/);
 		if(m) {
 			ret.lstUID = m[1];
@@ -326,8 +328,7 @@ function finalizeItem(item, doc) {
 	item.complete();
 }
 
-function scrape (doc, type) {
-	var newurl = doc.location.href;
+function scrape (doc, newurl, type) {
 	if(!type) type = detectWeb(doc, newurl);
 	var ids = getIds(doc, newurl);
 	var id = ids.id;

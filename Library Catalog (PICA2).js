@@ -5,11 +5,11 @@
 	"target": "^https?://[^/]+/DB=[\\dA-Z]",
 	"minVersion": "3.0",
 	"maxVersion": "",
-	"priority": 100,
+	"priority": 199,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcs",
-	"lastUpdated": "2013-03-13 23:34:07"
+	"browserSupport": "gcsv",
+	"lastUpdated": "2013-05-10 05:23:14"
 }
 
 /*
@@ -51,7 +51,7 @@ function detectWeb(doc, url) {
 			var xpathimage = "//table[@summary='presentation switch']/tbody/tr/td/img"; 
 			if (elt = doc.evaluate(xpathimage, doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 				var type = elt.getAttribute('src');
-				Z.debug(type);
+				//Z.debug(type);
 				if (type.indexOf('article.') > 0) {
 					return "journalArticle";
 				} else if (type.indexOf('audiovisual.') > 0) {
@@ -206,11 +206,6 @@ var testCases = [
 					{
 						"firstName": "Georg",
 						"lastName": "Borges",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Jörg",
-						"lastName": "Schwenk",
 						"creatorType": "editor"
 					}
 				],
@@ -230,7 +225,7 @@ var testCases = [
 					}
 				],
 				"title": "Daten- und Identitätsschutz in Cloud Computing, E-Government und E-Commerce",
-				"abstractNote": "F r neue und k nftige Gesch ftsfelder von E-Commerce und E-Government stellen der Datenschutz und der Identit tsschutz wichtige Herausforderungen dar. Renommierte Autoren aus Wissenschaft und Praxis widmen sich in dem Band aktuellen Problemen des Daten- und Identit tsschutzes aus rechtlicher und technischer Perspektive. Sie analysieren aktuelle Problemf lle aus der Praxis und bieten Handlungsempfehlungen an. Das Werk richtet sich an Juristen und technisch Verantwortliche in Beh rden und Unternehmen sowie an Rechtsanw lte und Wissenschaftler.",
+				"abstractNote": "Fuer neue und kuenftige Gesch ftsfelder von E-Commerce und E-Government stellen der Datenschutz und der Identit tsschutz wichtige Herausforderungen dar. Renommierte Autoren aus Wissenschaft und Praxis widmen sich in dem Band aktuellen Problemen des Daten- und Identit tsschutzes aus rechtlicher und technischer Perspektive. Sie analysieren aktuelle Problemf lle aus der Praxis und bieten Handlungsempfehlungen an. Das Werk richtet sich an Juristen und technisch Verantwortliche in Beh rden und Unternehmen sowie an Rechtsanw lte und Wissenschaftler.",
 				"place": "Berlin, Heidelberg",
 				"publisher": "Imprint: Springer",
 				"date": "2012",
@@ -254,7 +249,7 @@ var testCases = [
 					}
 				],
 				"notes": [
-					"Bestand: Universität des Saarlandes, Deutsch-Europäisches Juridicum <291/102> [Signatur: bestellt];",
+					"Bestand: Universität des Saarlandes, Deutsch-Europäisches Juridicum <291/102> [Signatur: bestellt];Saarländische Universitäts- und Landesbibliothek <291> [Signatur: bestellt];",
 					"Erscheint: Mai 2013"
 				],
 				"tags": [],
@@ -278,40 +273,41 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "https://pica1l.ulb.tu-darmstadt.de/DB=FHBWI/PPN?PPN=221765255",
+		"url": "https://pica1l.ulb.tu-darmstadt.de/DB=LHBDA/PPN?PPN=245962255",
 		"items": [
 			{
 				"itemType": "book",
 				"creators": [
 					{
-						"firstName": "Bernie",
-						"lastName": "Borges",
+						"firstName": "William Somerset",
+						"lastName": "Maugham",
 						"creatorType": "author"
+					},
+					{
+						"firstName": "Thomas",
+						"lastName": "Stölzel",
+						"creatorType": "editor"
 					}
 				],
 				"notes": [
-					"Bestand: u? [Signatur: 20 HKM 212 263];u? [Signatur: 20 HKM 212 263];"
+					"Bestand: ubi? [Signatur: /HM 3575 M449];",
+					"Bibliogr. W. Somerset Maugham S. 214 - [223]"
 				],
 				"tags": [
-					"",
-					"Marketing / World Wide Web 2.0"
+					"Maugham",
+					"William Somerset"
 				],
 				"seeAlso": [],
-				"attachments": [
-					{
-						"title": "Link to Library Catalog",
-						"mimeType": "text/html",
-						"snapshot": false
-					}
-				],
-				"title": "Marketing 2.0: bridging the gap between seller and buyer through social media marketing",
-				"place": "Tucson, Ariz.",
-				"publisher": "Wheatmark",
-				"date": "2009",
-				"ISBN": "978-1-60494-288-0",
-				"numPages": "XII, 299",
-				"libraryCatalog": "Katalog - Hochschule RheinMain",
-				"shortTitle": "Marketing 2.0"
+				"attachments": [],
+				"title": "W. Somerset Maugham - Leben und Werk",
+				"series": "Diogenes-Taschenbuch ; 23911",
+				"place": "Zürich",
+				"publisher": "Diogenes",
+				"date": "2011",
+				"edition": "Orig.-Ausg.",
+				"ISBN": "978-3-257-23911-9 ; 3-257-23911-4",
+				"numPages": "222",
+				"libraryCatalog": "Katalog - ULB DA"
 			}
 		]
 	}

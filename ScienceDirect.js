@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2013-01-29 15:30:07"
+	"lastUpdated": "2013-04-29 03:09:44"
 }
 
 function detectWeb(doc, url) {
@@ -85,14 +85,63 @@ function getFormValues(text, inputs) {
 	return params;
 }
 
+//mimetype map for supplementary attachments
+//intentionally excluding potentially large files like videos and zip files
+var suppTypeMap = {
+	'pdf': 'application/pdf',
+//	'zip': 'application/zip',
+	'doc': 'application/msword',
+	'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'xls': 'application/vnd.ms-excel',
+	'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+};
+
+//attach supplementary information
+function attachSupplementary(doc, item) {
+	var links = ZU.xpath(doc, './/span[starts-with(@class, "MMCvLABEL_SRC")]');
+	var link, title, url, type, snapshot;
+	var attachAsLink = Z.getHiddenPref("supplementaryAsLink");
+	for(var i=0, n=links.length; i<n; i++) {
+		link = links[i].firstElementChild;
+		if(!link || link.nodeName.toUpperCase() !== 'A') continue;
+		
+		url = link.href;
+		if(!url) continue;
+		
+		title = ZU.trimInternal(link.textContent);
+		if(!title) title = 'Supplementary Data';
+		
+		type = suppTypeMap[url.substr(url.lastIndexOf('.')+1).toLowerCase()];
+		snapshot = !attachAsLink && type;
+		
+		item.attachments.push({
+			title: title,
+			url: url,
+			mimeType: type,
+			snapshot: !!snapshot
+		});
+	}
+}
+
 function scrapeByExport(doc) {
 	var url = getExportLink(doc);
 	var pdfLink = getPDFLink(doc);
 	ZU.doGet(url, function(text) {
 		//select the correct form
-		text = text.match(/<form[^>]+name=(['"])exportCite\1[\s\S]+?<\/form>/)[0];
+		var form = text.match(/<form[^>]+name=(['"])exportCite\1[\s\S]+?<\/form>/);
+		if(form) {
+			form = form[0];
+		} else {
+			form = text.match(/<form[^>]*>/g);
+			if(!form) {
+				Z.debug('No forms found on page.');
+			} else {
+				Z.debug(form.join('\n*********\n'));
+			}
+			throw new Error('exportCite form could not be found.');
+		}
 
-		var postParams = getFormValues(text, [
+		var postParams = getFormValues(form, [
 						//'_ArticleListID',	//do we still need this?
 						'_acct', '_docType', '_eidkey',
 						'_method', '_ob', '_uoikey', '_userid', 'count',
@@ -131,6 +180,16 @@ function scrapeByExport(doc) {
 						url: pdfLink,
 						mimeType: 'application/pdf'
 					});
+					
+					//attach supplementary data
+					if(Z.getHiddenPref && Z.getHiddenPref("attachSupplementary")) {
+						try {	//don't fail if we can't attach supplementary data
+							attachSupplementary(doc, item);
+						} catch(e) {
+							Z.debug("Error attaching supplementary information.")
+							Z.debug(e);
+						}
+					}
 
 					if(item.notes[0]) {
 						item.abstractNote = item.notes[0].note;
@@ -406,7 +465,8 @@ var testCases = [
 					},
 					{
 						"lastName": "Gene E. Likens",
-						"creatorType": "editor"
+						"creatorType": "editor",
+						"fieldMode": 1
 					}
 				],
 				"notes": [],
@@ -442,6 +502,68 @@ var testCases = [
 				"date": "2009",
 				"libraryCatalog": "ScienceDirect",
 				"accessDate": "CURRENT_TIMESTAMP"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.sciencedirect.com/science/article/pii/S0006349512000835",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"lastName": "Voltz",
+						"firstName": "Karine",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Trylska",
+						"firstName": "Joanna",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Calimet",
+						"firstName": "Nicolas",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Smith",
+						"firstName": "Jeremy C.",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Langowski",
+						"firstName": "Jörg",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "ScienceDirect Snapshot"
+					},
+					{
+						"title": "ScienceDirect Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"title": "Unwrapping of Nucleosomal DNA Ends: A Multiscale Molecular Dynamics Study",
+				"journalAbbreviation": "Biophysical Journal",
+				"volume": "102",
+				"issue": "4",
+				"pages": "849-858",
+				"ISSN": "0006-3495",
+				"DOI": "10.1016/j.bpj.2011.11.4028",
+				"url": "http://www.sciencedirect.com/science/article/pii/S0006349512000835",
+				"abstractNote": "To permit access to DNA-binding proteins involved in the control and expression of the genome, the nucleosome undergoes structural remodeling including unwrapping of nucleosomal DNA segments from the nucleosome core. Here we examine the mechanism of DNA dissociation from the nucleosome using microsecond timescale coarse-grained molecular dynamics simulations. The simulations exhibit short-lived, reversible DNA detachments from the nucleosome and long-lived DNA detachments not reversible on the timescale of the simulation. During the short-lived DNA detachments, 9 bp dissociate at one extremity of the nucleosome core and the H3 tail occupies the space freed by the detached DNA. The long-lived DNA detachments are characterized by structural rearrangements of the H3 tail including the formation of a turn-like structure at the base of the tail that sterically impedes the rewrapping of DNA on the nucleosome surface. Removal of the H3 tails causes the long-lived detachments to disappear. The physical consistency of the CG long-lived open state was verified by mapping a CG structure representative of this state back to atomic resolution and performing molecular dynamics as well as by comparing conformation-dependent free energies. Our results suggest that the H3 tail may stabilize the nucleosome in the open state during the initial stages of the nucleosome remodeling process.",
+				"date": "February 22, 2012",
+				"publicationTitle": "Biophysical Journal",
+				"libraryCatalog": "ScienceDirect",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "Unwrapping of Nucleosomal DNA Ends"
 			}
 		]
 	}

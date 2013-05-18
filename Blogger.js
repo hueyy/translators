@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsib",
-	"lastUpdated": "2012-12-10 21:03:42"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2013-04-17 19:10:09"
 }
 
 function detectWeb(doc, url) {
@@ -156,8 +156,38 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://argentina-politica.blogspot.com/2012/05/el-sentimiento-de-inseguridad-y-la_20.html",
-		"items": "multiple"
+		"url": "http://argentina-politica.blogspot.com/2012/03/perciben-una-caida-en-la-imagen-de-la.html",
+		"items": [
+			{
+				"itemType": "blogPost",
+				"creators": [
+					{
+						"firstName": "Federico",
+						"lastName": "González",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Cristina Kirchner",
+					"imagen"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Blogspot Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Politica Argentina - Blog de Psicología Política de Federico González: Perciben una caída en la imagen de la Presidenta",
+				"date": "domingo, 11 de marzo de 2012",
+				"blogTitle": "Politica Argentina - Blog de Psicología Política de Federico González",
+				"url": "http://argentina-politica.blogspot.com/2012/03/perciben-una-caida-en-la-imagen-de-la.html",
+				"libraryCatalog": "Blogger",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "Politica Argentina - Blog de Psicología Política de Federico González"
+			}
+		]
 	}
 ]
 /** END TEST CASES **/
