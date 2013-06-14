@@ -2,7 +2,7 @@
 	"translatorID": "b56d756e-934e-4b46-bc58-d61dccc9f32f",
 	"label": "Japan Times Online",
 	"creator": "Sebastian Karcher",
-	"target": "^http://(?:www|search)\\.japantimes\\.co\\.jp/(?:cgi-bin|gsearch|features|entertainment|sports|life|news|rss)",
+	"target": "^http://(?:www|search)\\.japantimes\\.co\\.jp/(?:cgi-bin|gsearch|features|opinion|entertainment|sports|life|news|rss)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
