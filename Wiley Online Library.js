@@ -2,14 +2,14 @@
 	"translatorID": "fe728bc9-595a-4f03-98fc-766f1d8d0936",
 	"label": "Wiley Online Library",
 	"creator": "Sean Takats, Michael Berkowitz, Avram Lyon and Aurimas Vinckevicius",
-	"target": "^https?://onlinelibrary\\.wiley\\.com[^\\/]*/(?:book|doi|advanced/search|search-web/cochrane|cochranelibrary/search)",
+	"target": "^https?://onlinelibrary\\.wiley\\.com[^\\/]*/(?:book|doi|advanced/search|search-web/cochrane|cochranelibrary/search|o/cochrane/clcentral/articles/.+/sect0.html)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2013-04-25 09:28:20"
+	"lastUpdated": "2013-06-09 12:04:46"
 }
 
 /*
@@ -332,15 +332,51 @@ function scrapeBibTeX(doc, url, pdfUrl) {
 	});
 }
 
+function scrapeCochraneTrial(doc, url){
+	Z.debug("Scraping Cochrane Trial");
+	var item = new Zotero.Item('journalArticle');
+	//Z.debug(ZU.xpathText(doc, '//meta/@content'))
+	item.title = ZU.xpathText(doc, '//meta[@name="Article-title"]/@content');
+	item.publication = ZU.xpathText(doc, '//meta[@name="source"]/@content');
+	item.abstractNote = ZU.xpathText(doc, '//meta[@name="abstract"]/@content');
+	item.date = ZU.xpathText(doc, '//meta[@name="simpleYear"]/@content');
+	item.volume = ZU.xpathText(doc, '//meta[@name="volume"]/@content');
+	item.page = ZU.xpathText(doc, '//meta[@name="pages"]/@content');
+	item.rights = ZU.xpathText(doc, '//meta[@name="Copyright"]/@content');
+	var tags = ZU.xpathText(doc, '//meta[@name="cochraneGroupCode"]/@content');
+	if (tags) tags = tags.split(/\s*;\s*/);
+	for (var i in tags){
+		item.tags.push(tags[i]);
+	}
+	var authors = ZU.xpathText(doc, '//meta[@name="Author"]/@content');
+	item.attachments.push({document: doc, title: "Cochrane Trial Snapshot", mimType: "text/html"});
+	authors = authors.split(/\s*,\s*/);
+	for (var i in authors){
+		//authors are in the forms Smith AS
+		var authormatch = authors[i].match(/(.+)\s+([A-Z]+)/);
+		item.creators.push({lastName: authormatch[1], firstName: authormatch[2], creatorType: "author"}) ;
+		}
+	item.complete();
+}
+
 function scrape(doc, url, pdfUrl) {
 	var itemType = detectWeb(doc,url);
 
 	if( itemType == 'book' ) {
 		scrapeBook(doc, url, pdfUrl);
 	} else {
+		if (url.indexOf("/o/cochrane/clcentral")!=-1) scrapeCochraneTrial(doc, url)
 		//scrapeEM(doc, url, pdfUrl);
-		scrapeBibTeX(doc, url, pdfUrl);
+		else scrapeBibTeX(doc, url, pdfUrl);
 	}
+}
+
+function getSearchResults(doc, url) {
+	var links = ZU.xpath(doc, '//li//div[@class="citation article" or starts-with(@class,"citation")]/a');
+	if(links.length) return links;
+	
+	Z.debug("Cochrane Library");
+	return ZU.xpath(doc, '//div[@class="listingContent"]//td/strong/a[contains(@href, "/doi/")]');
 }
 
 function detectWeb(doc, url) {	
@@ -348,10 +384,13 @@ function detectWeb(doc, url) {
 		url.indexOf('/results') != -1 ||
 		url.indexOf('/search') != -1 ||
 		url.indexOf('/mainSearch?') != -1) {
-		return 'multiple';
+		if(getSearchResults(doc, url).length) return 'multiple';
 	} else {
-		if( url.indexOf('/book/') != -1 ) {
-			return 'book';
+		if(url.indexOf('/book/') != -1 ) {
+			//if the book has more than one chapter, scrape chapters
+			if(getSearchResults(doc, url).length > 1) return 'multiple';
+			//otherwise, import book
+			return 'book'; //does this exist?
 		} else if ( ZU.xpath(doc, '//meta[@name="citation_book_title"]').length ) {
 			return 'bookSection';
 		} else {
@@ -363,11 +402,7 @@ function detectWeb(doc, url) {
 function doWeb(doc, url) {
 	var type = detectWeb(doc, url);
 	if(type == "multiple") {
-		var articles = ZU.xpath(doc, '//li//div[@class="citation article" or starts-with(@class,"citation")]/a');
-		if (articles.length ==0){
-			Z.debug("Cochrane Library");
-			var articles =ZU.xpath(doc, '//div[@class="listingContent"]//td/strong/a[contains(@href, "/doi/")]');
-		}
+		var articles = getSearchResults(doc, url);
 		var availableItems = new Object();
 		for(var i=0, n=articles.length; i<n; i++) {
 			availableItems[articles[i].href] = ZU.trimInternal(articles[i].textContent.trim());
@@ -378,6 +413,8 @@ function doWeb(doc, url) {
 
 			var urls = new Array();
 			for (var i in selectedItems) {
+				//for Cochrane trials - get the frame with the actual data
+				if(i.indexOf("frame.html")!=-1) i = i.replace(/frame\.html$/, "sect0.html");
 				urls.push(i);
 			}
 
@@ -392,9 +429,10 @@ function doWeb(doc, url) {
 			var pdfUrl = ZU.xpathText(doc, '//div[@iframe="pdfDocument"]/@src');
 			ZU.processDocuments(url, function(doc) { scrape(doc, doc.location.href, pdfUrl) });
 		} else if(type != 'book' &&
-				url.indexOf('abstract') == -1 &&
+				url.indexOf('abstract') == -1 && url.indexOf("/o/cochrane/") == -1 &&
 				!ZU.xpathText(doc, '//div[@id="abstract"]/div[@class="para"]')) {
 			//redirect to abstract or summary so we can scrape that
+			
 			if(type == 'bookSection') {
 				url = url.replace(/\/[^?#\/]+(?:[?#].*)?$/, '/summary');
 			} else {
@@ -462,42 +500,7 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://onlinelibrary.wiley.com/book/10.1002/9783527610853",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "Dietrich",
-						"lastName": "Papenfuß",
-						"creatorType": "editor"
-					},
-					{
-						"firstName": "Dieter",
-						"lastName": "Lüst",
-						"creatorType": "editor"
-					},
-					{
-						"firstName": "Wolfgang P.",
-						"lastName": "Schleich",
-						"creatorType": "editor"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [],
-				"title": "100 Years Werner Heisenberg: Works and Impact",
-				"date": "November 29, 2007",
-				"DOI": "10.1002/9783527610853",
-				"ISBN": "9783527403929, 9783527610853",
-				"rights": "Copyright © 2002 Wiley-VCH Verlag GmbH",
-				"url": "http://onlinelibrary.wiley.com/book/10.1002/9783527610853",
-				"abstractNote": "Over 40 renowned scientists from all around the world discuss the work and influence of Werner Heisenberg. The papers result from the symposium held by the Alexander von Humboldt-Stiftung on the occasion of the 100th anniversary of Heisenberg's birth, one of the most important physicists of the 20th century and cofounder of modern-day quantum mechanics. Taking atomic and laser physics as their starting point, the scientists illustrate the impact of Heisenberg's theories on astroparticle physics, high-energy physics and string theory right up to processing quantum information.",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "Wiley Online Library",
-				"shortTitle": "100 Years Werner Heisenberg"
-			}
-		]
+		"items": "multiple"
 	},
 	{
 		"type": "web",
@@ -577,82 +580,12 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://onlinelibrary.wiley.com/book/10.1002/9781444390124",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "Anthony C.",
-						"lastName": "Thiselton",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "John",
-						"lastName": "Sawyer",
-						"creatorType": "seriesEditor"
-					},
-					{
-						"firstName": "Christopher",
-						"lastName": "Rowland",
-						"creatorType": "seriesEditor"
-					},
-					{
-						"firstName": "Judith",
-						"lastName": "Kovacs",
-						"creatorType": "seriesEditor"
-					},
-					{
-						"firstName": "David M.",
-						"lastName": "Gunn",
-						"creatorType": "seriesEditor"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [],
-				"title": "1 & 2 Thessalonians: Through the Centuries",
-				"date": "March 24, 2011",
-				"DOI": "10.1002/9781444390124",
-				"ISBN": "9781405196826, 9781444390124",
-				"rights": "Copyright © 2011 Anthony C. Thiselton",
-				"url": "http://onlinelibrary.wiley.com/book/10.1002/9781444390124",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "Wiley Online Library",
-				"shortTitle": "1 & 2 Thessalonians"
-			}
-		]
+		"items": "multiple"
 	},
 	{
 		"type": "web",
 		"url": "http://onlinelibrary.wiley.com/book/10.1002/9780470320419",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "William",
-						"lastName": "Smothers",
-						"creatorType": "editor"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [],
-				"title": "14th Automotive Materials Conference: Ceramic Engineering and Science Proceedings, Volume 8, Issue 9/10",
-				"date": "March 27, 2008",
-				"DOI": "10.1002/9780470320419",
-				"series": "Ceramic Engineering and Science Proceedings",
-				"ISBN": "9780470374740, 9780470320419",
-				"rights": "Copyright © 1987 The American Ceramic Society, Inc.",
-				"url": "http://onlinelibrary.wiley.com/book/10.1002/9780470320419",
-				"abstractNote": "This volume is part of the Ceramic Engineering and Science Proceeding (CESP) series. This series contains a collection of papers dealing with issues in both traditional ceramics (i.e., glass, whitewares, refractories, and porcelain enamel) and advanced ceramics. Topics covered in the area of advanced ceramic include bioceramics, nanomaterials, composites, solid oxide fuel cells, mechanical properties and structural design, advanced ceramic coatings, ceramic armor, porous ceramics, and more.",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "Wiley Online Library",
-				"shortTitle": "14th Automotive Materials Conference"
-			}
-		]
+		"items": "multiple"
 	},
 	{
 		"type": "web",
@@ -1157,6 +1090,69 @@ var testCases = [
 				"rights": "Copyright © 1983 Journal of Heterocyclic Chemistry",
 				"libraryCatalog": "Wiley Online Library",
 				"accessDate": "CURRENT_TIMESTAMP"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://onlinelibrary.wiley.com/o/cochrane/clcentral/articles/336/CN-00774336/sect0.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"lastName": "Wassenaar",
+						"firstName": "TR",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Eickhoff",
+						"firstName": "JC",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Jarzemsky",
+						"firstName": "DR",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Smith",
+						"firstName": "SS",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Larson",
+						"firstName": "ML",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Schiller",
+						"firstName": "JH",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"HS-HAEMATOL",
+					"HS-HAEMATOLNOSCO",
+					"SR-BREASTCA",
+					"HS-HANDSRCH"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Cochrane Trial Snapshot",
+						"mimType": "text/html"
+					}
+				],
+				"title": "Differences in primary care clinicians' approach to non-small cell lung cancer (NSCLC) patients compared to breast cancer (BrCa)",
+				"publication": "Journal of Clinical Oncology: ASCO annual meeting proceedings",
+				"abstractNote": "42nd Annual Meeting of the American Society of Clinical Oncology, Atlanta,GA, 2-6 June, 2006. Background: Lung cancer is a disease associated with a stigma of being primarily self-induced via smoking and therefore avoidable. It is unclear if this stigma results in feelings of guilt and shame on the part of the patient, and a difference in care on the part of primary care physicians (MDs), both of which could lead to differences in treatment and patient self-advocacy, and ultimately poorer outcomes. Methods: We conducted a prospective survey study of 1,132 MDs who were randomized into 4 groups. Each group received a questionnaire representing a clinical scenario (smoker/NSCLC; nonsmoker/NSCLC; smoker/BrCa; nonsmoker/BrCa). The scenarios were identical in terms of stage, gender and outcome; but varied in the disease and smoking history (smoker (S) vs. nonsmoker (NS)). The primary objective was to collect preliminary data to determine if these MDs approached the care and referral of patients (pts) with NSCLC or BrCa differently. A secondary objective was to determine whether or not tobacco use influenced the MD's approach to the cancer pts. Comparisons of response patterns between the groups were evaluated by Chi-square analysis. Results: 672 questionnaires were completed: 175 in the NS/BrCa, 177 in the S/BrCa, 166 in the NS/NSCLC and 154 in the S/NSCLC scenarios. We observed that MDs were less likely to refer pts with advanced NSCLC to an oncologist than BrCa pts (p=<0.001). More MDs knew that chemotherapy improved survival in pts with advanced BrCa than did MDs regarding chemotherapy use in advanced NSCLC (p=0.0145). In addition, more MDs stated they did not know the benefit of adjuvant therapy for NSCLC than for BrCa (p= <0.001). As a result, more pts with advanced BrCa were referred for further therapy vs. NSCLC pts, who were more likely to be referred only for symptom control (p=0.0092). BrCa pts also had more aggressive follow up than did pts with NSCLC (p=0.0256). There was no statistical significant difference when comparing smoking vs. non-smoking pts. Conclusions: We conclude that there is a significant lack of knowledge in the primary care physician regarding the treatment of pts with advanced stage NSCLC, and the role and benefit of adjuvant therapy. This might lead to a less aggressive referral pattern in these pts to clinical oncologists.",
+				"date": "2006",
+				"volume": "24",
+				"page": "7041",
+				"rights": "Copyright © 2011 The Cochrane Collaboration. Published by John Wiley & Sons, Ltd.",
+				"libraryCatalog": "Wiley Online Library"
 			}
 		]
 	}

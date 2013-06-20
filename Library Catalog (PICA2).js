@@ -8,8 +8,8 @@
 	"priority": 199,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsv",
-	"lastUpdated": "2013-05-10 05:23:14"
+	"browserSupport": "gcsbv",
+	"lastUpdated": "2013-06-09 12:37:40"
 }
 
 /*
@@ -92,6 +92,8 @@ function scrape(doc, url) {
 		//we can have garbage after the bibtex, but note before.
 		bibtex=ZU.trimInternal(bibtex).replace(/^.*?@/, "@")
 		//Z.debug(bibtex);
+		//They have faulty bibtex with semicolons between authors
+		bibtex = bibtex.replace(/(author\s*=\s*\{[^\}]+);([^\}]+\})/g, "$1and$2");
 		//this is provisional. should be fixed in bibtex
 		bibtex = bibtex.replace(/location\s*=\s*\{/, "bestand = {")
 		var bestand = bibtex.match(/bestand\s*=\s*\{([^\}]+)\}/);
@@ -206,6 +208,16 @@ var testCases = [
 					{
 						"firstName": "Georg",
 						"lastName": "Borges",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Jörg",
+						"lastName": "Schwenk",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Georg",
+						"lastName": "Borges",
 						"creatorType": "editor"
 					}
 				],
@@ -230,7 +242,7 @@ var testCases = [
 				"publisher": "Imprint: Springer",
 				"date": "2012",
 				"ISBN": "978-3-642-30101-8",
-				"numPages": "188",
+				"numPages": "X, 187",
 				"libraryCatalog": "HeBIS-Verbundkatalog"
 			}
 		]

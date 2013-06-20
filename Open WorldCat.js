@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 12,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2013-04-11 11:57:40"
+	"lastUpdated": "2013-06-11 06:37:37"
 }
 
 /**
@@ -45,8 +45,20 @@ function scrape(doc, url, callDoneWhenFinished) {
 	}
 	//Z.debug(newurl)
 	Zotero.Utilities.HTTP.doGet(newurl, function (text) {
-	
+		//2013-05-28 RIS export currently has messed up authors
+		// e.g. A1  - Gabbay, Dov M., Woods, John Hayden., Hartmann, Stephan, 
+		text = text.replace(/^((?:A1|ED)\s+-\s+)(.+)/mg, function(m, tag, value) {
+			var authors = value.replace(/[,\s]+$/, '')
+				.split('.,');
+			var replStr = '';
+			for(var i=0, n=authors.length; i<n; i++) {
+				replStr += tag + authors[i].trim() + '\n';
+			}
+			return replStr.trim();
+		});
+		
 		//Zotero.debug("RIS: " + text)
+		
 		var translator = Zotero.loadTranslator("import");
 		translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
 		translator.setString(text);
@@ -150,13 +162,14 @@ function doWeb(doc, url) {
 }
 
 function doSearch(item) {
-	ZU.processDocuments("http://www.worldcat.org/search?q=isbn%3A" + item.ISBN.replace(/[^0-9X]/g, "") + "&=Search&qt=results_page", function (doc, url) {
+	var url = "http://www.worldcat.org/search?q=isbn%3A" + item.ISBN.replace(/[^0-9X]/g, "") + "&=Search&qt=results_page";
+	ZU.processDocuments(url, function (doc) {
 		//we take the first search result and run scrape on it
 		if (doc.evaluate('//div[@class="name"]/a', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) { //search results view
 			var article = ZU.xpathText(doc, '(//div[@class="name"]/a)[1]/@href')
 			if (!article){Zotero.done(false); return false;}
 			article = "http://www.worldcat.org" + article;
-			ZU.processDocuments(article, function(doc, url) { scrape(doc, url, true); });
+			ZU.processDocuments(article, function(doc) { scrape(doc, article, true); });
 		} else {
 			scrape(doc, url, true);
 		}
