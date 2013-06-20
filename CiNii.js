@@ -145,7 +145,7 @@ function doWeb(doc, url) {
 	}
 
 	for (var i = 0, ilen = arts.length; i < ilen; i += 1) {
-        arts[i] += '/rdf';
+        arts[i] = arts[i].replace("/$","").replace(/\/(en|ja)$/,"") + '/rdf';
     }
     
     Zotero.Utilities.doGet(arts, function (rdftext) {
