@@ -15,7 +15,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2013-06-04 22:34:19"
+	"lastUpdated": "2013-06-23 01:00:08"
 }
 
 function detectImport() {
@@ -2026,11 +2026,14 @@ function mapHTMLmarkup(characters){
 	//converts the HTML markup allowed in Zotero for rich text to TeX
 	//since  < and > have already been escaped, we need this rather hideous code - I couldn't see a way around it though.
 	//italics and bold
-	characters = characters.replace(/\{\\textless\}i\{\\textgreater\}(((?!\{\\textless\}\/i{\\textgreater\}).)+)\{\\textless\}\/i{\\textgreater\}/, "\\textit{$1}").replace(/\{\\textless\}b\{\\textgreater\}(((?!\{\\textless\}\/b{\\textgreater\}).)+)\{\\textless\}\/b{\\textgreater\}/g, "\\textbf{$1}");
+	characters = characters.replace(/\{\\textless\}i\{\\textgreater\}(.+?)\{\\textless\}\/i{\\textgreater\}/g, "\\textit{$1}")
+		.replace(/\{\\textless\}b\{\\textgreater\}(.+?)\{\\textless\}\/b{\\textgreater\}/g, "\\textbf{$1}");
 	//sub and superscript
-	characters = characters.replace(/\{\\textless\}sup\{\\textgreater\}(((?!\{\\textless\}\/sup\{\\textgreater\}).)+)\{\\textless\}\/sup{\\textgreater\}/g, "\$^{\\textrm{$1}}\$").replace(/\{\\textless\}sub\{\\textgreater\}(((?!\{\\textless\}\/sub\{\\textgreater\}).)+)\{\\textless\}\/sub\{\\textgreater\}/g, "\$_{\\textrm{$1}}\$");
+	characters = characters.replace(/\{\\textless\}sup\{\\textgreater\}(.+?)\{\\textless\}\/sup{\\textgreater\}/g, "\$^{\\textrm{$1}}\$")
+		.replace(/\{\\textless\}sub\{\\textgreater\}(.+?)\{\\textless\}\/sub\{\\textgreater\}/g, "\$_{\\textrm{$1}}\$");
 	//two variants of small caps
-	characters = characters.replace(/\{\\textless\}span\sstyle=\"small\-caps\"\{\\textgreater\}(((?!\{\\textless\}\/span\{\\textgreater\}).)+)\{\\textless\}\/span{\\textgreater\}/g, "\\textsc{$1}").replace(/\{\\textless\}sc\{\\textgreater\}(((?!\{\\textless\}\/sc\{\\textgreater\}).)+)\{\\textless\}\/sc\{\\textgreater\}/g, "\\textsc{$1}");
+	characters = characters.replace(/\{\\textless\}span\sstyle=\"small\-caps\"\{\\textgreater\}(.+?)\{\\textless\}\/span{\\textgreater\}/g, "\\textsc{$1}")
+		.replace(/\{\\textless\}sc\{\\textgreater\}(.+?)\{\\textless\}\/sc\{\\textgreater\}/g, "\\textsc{$1}");
 	return characters;
 }
 
@@ -2262,6 +2265,8 @@ function doExport() {
 			var author = "";
 			var editor = "";
 			var translator = "";
+			var collaborator = "";
+			var primaryCreatorType = Zotero.Utilities.getCreatorsForType(item.itemType)[0];
 			for(var i in item.creators) {
 				var creator = item.creators[i];
 				var creatorString = creator.lastName;
@@ -2282,8 +2287,10 @@ function doExport() {
 					editor += " and "+creatorString;
 				} else if (creator.creatorType == "translator") {
 					translator += " and "+creatorString;
-				} else {
+				} else if (creator.creatorType == primaryCreatorType) {
 					author += " and "+creatorString;
+				} else {
+					collaborator += " and "+creatorString;
 				}
 			}
 			
@@ -2295,6 +2302,9 @@ function doExport() {
 			}
 			if(translator) {
 				writeField("translator",  "{" + translator.substr(5) + "}", true);
+			}
+			if(collaborator) {
+				writeField("collaborator",  "{" + collaborator.substr(5) + "}", true);
 			}
 		}
 		
