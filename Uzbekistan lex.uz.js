@@ -116,7 +116,6 @@ function doWeb(doc, url) {
                     item.regulatoryBody = acceptingBody;
                 }
                 if (i === 0) {
-                    Zotero.debug("XXX try again");
                     item.attachments.push({url:url,title:title,mimeType:"text/html"});
                 }
                 item.complete();
