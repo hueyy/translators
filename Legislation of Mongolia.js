@@ -67,6 +67,14 @@ Engine.prototype.getTypeFromDocument = function (doc) {
     }
 }
 
+Engine.prototype.getFullURL = function (doc,url) {
+    if (url.slice(0,1) === "/") {
+        var base = doc.location.href;
+        base = base.replace(/^(https?:\/\/[^\/]*).*/,"$1")
+        url = base + url;
+    }
+    return url;
+}
 
 Engine.prototype.getItemData = function (doc) {
     //   * The URL of the doc (from chosen)
@@ -108,6 +116,7 @@ Engine.prototype.getItemData = function (doc) {
             }
 
             var u = cells[pos.title].childNodes[0].getAttribute("href");
+            u = this.getFullURL(doc,u);
             var t = cells[pos.title].childNodes[0].textContent;
             items[u] = t;
             if (t) {
@@ -138,15 +147,18 @@ Engine.prototype.getItemData = function (doc) {
 }
 
 Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
-    for (var i=0,ilen=urls.length;i<ilen;i+=1) {
-        var url = urls[i];
+    ZU.processDocuments(urls, function (doc) {
+		var url = doc.documentURI;
         var type = supp[url].type;
         var item = new Zotero.Item(type);
+        item.url = url;
+        item.jurisdiction = "mn";
         for (var key in fieldmap[type]) {
             item[fieldmap[type][key]] = supp[url][key];
         }
+        // Extract page content for save here.
         item.complete();
-    }
+    }, function(){Zotero.done();});
 }
 
 function detectWeb(doc,url) {
