@@ -221,102 +221,102 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Гадаад харилцааг зохион байгуулах": {
                     code: "138",
-                    english: "[???]"
+                    english: "[Organizing International Relations]"
                 },
                 
                 "Гэмт хэрэг болон терроризмтай хийх олон улсын тэмцэл": {
                     code: "139",
-                    english: "[???]"
+                    english: "[international fight against terrosim and crime]"
                 },
                 
                 "Дипломат болон консулын эрх зүй": {
                     code: "140",
-                    english: "[???]"
+                    english: "[Diplomatic and Consular law]"
                 },
                 
                 "Зэвсэгт мөргөлдөөн ба олон улсын эрх зүй": {
                     code: "141",
-                    english: "[???]"
+                    english: "[Armed conflict and international law]"
                 },
                 
                 "Нийгэм-соёлын салбарын олон улсын хамтын ажиллагаа": {
                     code: "142",
-                    english: "[???]"
+                    english: "[International cooperation on social-cultural branch]"
                 },
                 
                 "Нутаг дэвсгэр": {
                     code: "143",
-                    english: "[???]"
+                    english: "[territory]"
                 },
                 
                 "Олон улсын агаарын эрх зүй": {
                     code: "144",
-                    english: "[???]"
+                    english: "[international air law]"
                 },
                 
                 "Олон улсын аюулгүй байдлын эрх зүй": {
                     code: "145",
-                    english: "[???]"
+                    english: "[international security law ]"
                 },
                 
                 "Олон улсын байгууллага ба холбоо": {
                     code: "146",
-                    english: "[???]"
+                    english: "[international organization and association]"
                 },
                 
                 "Олон улсын гэрээний эрх зүй": {
                     code: "147",
-                    english: "[???]"
+                    english: "[International treaty law]"
                 },
                 
                 "Олон улсын далайн эрх зүй": {
                     code: "148",
-                    english: "[???]"
+                    english: "international law of the sea"
                 },
                 
                 "Олон улсын сансрын эрх зүй": {
                     code: "149",
-                    english: "[???]"
+                    english: "[international outer-space law]"
                 },
                 
                 "Олон улсын харилцааны нийтлэг асуудал": {
                     code: "150",
-                    english: "[???]"
+                    english: "[issues and problems of the international relations]"
                 },
                 
                 "Олон улсын шинжлэх ухаан техникийн хамтын ажиллагаа": {
                     code: "151",
-                    english: "[???]"
+                    english: "[International Cooperation in Science and Technology]"
                 },
                 
                 "Олон улсын эдийн засгийн хамтын ажиллагаа": {
                     code: "152",
-                    english: "[???]"
+                    english: "[International Economic Cooperation"
                 },
                 
                 "Улсын эрх залгамжлал": {
                     code: "153",
-                    english: "[???]"
+                    english: "[succession of state]"
                 },
                 
                 "Хүн ам": {
                     code: "154",
-                    english: "[???]"
+                    english: "[population]"
                 },
                 
                 "Хүний эрхийн олон улсын хамгаалалт": {
                     code: "155",
-                    english: "[???]"
+                    english: "[international protection of human rights]"
                 },
                 
                 "Хүрээлэн буй орчны олон улсын эрх зүйн хамгаалалт": {
                     code: "156",
-                    english: "[???]"
+                    english: "[International law protecting the environment]"
                 },
                 
                 "Цэрэг, дайны асуудлаархи хамтын ажиллагаа": {
                     code: "157",
-                    english: "[???]"
+                    english: "[Military cooperation and war]"
                 }
             }
         },
@@ -326,11 +326,11 @@ Engine.prototype.makeMaps = function () {
             type: "regulation",
             boilerplate: {
                 regulatoryBody: {
-                    mn: "[???]",
+                    mn: "[ерөнхийлөгч]",
                     en: "President"
                 },
                 regulationType: {
-                    mn: "[???]",
+                    mn: "[ерөнхийлөгчийн зарлиг]",
                     en: "Presidential Decree"
                 }
             },
@@ -344,12 +344,12 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Тогтоол": {
                     code: "тогтоол",
-                    english: "[???]"
+                    english: "[resolution]"
                 },
                 
                 "Дүгнэлт": {
                     code: "дүгнэлт",
-                    english: "[???]"
+                    english: "[conclution]"
                 }
             }
         },
@@ -375,47 +375,47 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Гадаад харилцааны яам": {
                     code: "95",
-                    english: "[???]"
+                    english: "[Ministry of foreign affairs]"
                 },
 
                 "Сангийн яам": {
                     code: "96",
-                    english: "[???]"
+                    english: "[Ministry of finance]"
                 },
 
-                "Хууль зүй, дотоод хэргийн яам": {
+                "Хууль зүйн яам": {
                     code: "97",
-                    english: "[???]"
+                    english: "[Ministry of justice]"
                 },
 
-                "Байгаль орчин, аялал жуулчлалын яам": {
+                "Байгаль орчин, ногоон хөгжлийн яам": {
                     code: "98",
-                    english: "[???]"
+                    english: "[Ministry of nature, environment and green development]"
                 },
 
                 "Батлан хамгаалах яам": {
                     code: "99",
-                    english: "[???]"
+                    english: "[Ministry of defence]"
                 },
 
-                "Боловсрол, соёл шинжлэх ухааны яам": {
+                "Боловсрол, шинжлэх ухааны яам": {
                     code: "100",
-                    english: "[???]"
+                    english: "[Ministry of education and science]"
                 },
 
-                "Зам тээвэр, аялал жуулчлалын яам": {
+                "Зам тээвэрийн яам": {
                     code: "101",
-                    english: "[???]"
+                    english: "[Ministry of road and transportation]"
                 },
 
-                "Нийгмийн хамгаалал, хөдөлмөрийн яам": {
+                "Хөдөлмөрийн яам": {
                     code: "102",
-                    english: "[???]"
+                    english: "[Ministry of labor]"
                 },
 
                 "Эрдэс баялаг, эрчим хүчний яам": {
                     code: "103",
-                    english: "[???]"
+                    english: "[]"
                 },
 
                 "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам": {
