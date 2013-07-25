@@ -254,7 +254,6 @@ function doWeb(doc, url) {
 	        selectedItemsCallback(fieldmap, items, data.supp);
         });
     } else {
-        Zotero.debug("XXX TRY");
         engine.scrapeFromDocument(doc);
     }
 }
@@ -413,12 +412,14 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Тогтоол": {
                     code: "тогтоол",
-                    english: "[resolution]"
+                    english: "[resolution]",
+                    boilerplate: {}
                 },
                 
                 "Дүгнэлт": {
                     code: "дүгнэлт",
-                    english: "[conclution]"
+                    english: "[conclution]",
+                    boilerplate: {}
                 }
             }
         },
@@ -444,102 +445,137 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Гадаад харилцааны яам": {
                     code: "95",
-                    english: "[Ministry of foreign affairs]"
+                    english: "[Ministry of foreign affairs]",
+                    boilerplate: {}
                 },
 
                 "Сангийн яам": {
                     code: "96",
-                    english: "[Ministry of finance]"
+                    english: "[Ministry of finance]",
+                    boilerplate: {}
                 },
 
-                "Хууль зүйн яам": {
+                "Хууль зүй, дотоод хэргийн яам": {
                     code: "97",
-                    english: "[Ministry of justice]"
+                    english: "[Ministry of justice]",
+                    boilerplate: {},
+                    variants: {
+                        "2012": "Хууль зүйн яам"
+                    }
                 },
 
-                "Байгаль орчин, ногоон хөгжлийн яам": {
+                "Байгаль орчин, аялал жуулчлалын яам": {
                     code: "98",
-                    english: "[Ministry of nature, environment and green development]"
+                    english: "[Ministry of nature, environment and green development]",
+                    boilerplate: {},
+                    variants: {
+                        "2012": "Байгаль орчин, ногоон хөгжлийн яам"
+                    }
                 },
 
-                "Батлан хамгаалах яам": {
+                "Боловсрол, соёл шинжлэх ухааны яам": {
                     code: "99",
-                    english: "[Ministry of defence]"
+                    english: "[Ministry of defence]",
+                    boilerplate: {},
+                    variants: {
+                        "2012": "Батлан хамгаалах яам"
+                    }
                 },
 
                 "Боловсрол, шинжлэх ухааны яам": {
                     code: "100",
-                    english: "[Ministry of education and science]"
+                    english: "[Ministry of education and science]",
+                    boilerplate: {}
                 },
 
-                "Зам тээвэрийн яам": {
+                "Зам тээвэр, аялал жуулчлалын яам": {
                     code: "101",
-                    english: "[Ministry of road and transportation]"
+                    english: "[Ministry of road and transportation]",
+                    boilerplate: {},
+                    variants: {
+                        "2012": "Зам тээвэрийн яам"
+                    }
                 },
 
-                "Хөдөлмөрийн яам": {
+                "Нийгмийн хамгаалал, хөдөлмөрийн яам": {
                     code: "102",
-                    english: "[Ministry of labor]"
+                    english: "[Ministry of labor]",
+                    boilerplate: {},
+                    variants: {
+                        "2012": "Хөдөлмөрийн яам"
+                    }
                 },
 
                 "Эрдэс баялаг, эрчим хүчний яам": {
                     code: "103",
-                    english: "[]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам": {
                     code: "104",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Барилга, хот байгуулалтын яам": {
                     code: "105",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Түлш, эрчим хүчний яам": {
                     code: "106",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Эрүүл мэндийн яам": {
                     code: "107",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дэд бүтцийн яам": {
                     code: "158",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Зам тээвэр, барилга, хот байгуулалтын яам": {
                     code: "159",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Байгаль орчны яам": {
                     code: "160",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Гадаад хэргийн яам": {
                     code: "161",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Үйлдвэр, худалдааны яам": {
                     code: "162",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Санхүү, эдийн засгийн яам": {
                     code: "163",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Гэгээрлийн яам": {
                     code: "164",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 }
             }
         },
@@ -551,152 +587,182 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Биеийн тамир, спортын хороо": {
                     code: "137",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Мэдээлэл, харилцаа холбоо, технологийн газар": {
                     code: "108",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Тагнуулын ерөнхий газар": {
                     code: "109",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Төрийн өмчийн хороо": {
                     code: "110",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Стандартчилал, хэмжил зүйн төв": {
                     code: "111",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Шударга бус өрсөлдөөнийг хянан зохицуулах газар": {
                     code: "112",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хил хамгаалах ерөнхий газар": {
                     code: "113",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Цагдаагийн ерөнхий газар": {
                     code: "114",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Газрын харилцаа, геодези, зураг зүйн газар": {
                     code: "115",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Зэвсэгт хүчний жанжин штаб": {
                     code: "116",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Улсын мэргэжлийн хяналтын газар": {
                     code: "117",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Онцгой байдлын ерөнхий газар": {
                     code: "118",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Оюуны өмчийн газар": {
                     code: "119",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хүүхдийн төлөө үндэсний газар": {
                     code: "120",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Удирдлагын академи": {
                     code: "121",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Төр, засгийн үйлчилгээ, аж ахуйг эрхлэх газар": {
                     code: "122",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дипломат байгууллагын үйлчилгээ, аж ахуйн газар": {
                     code: "123",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Улсын гаалийн ерөнхий газар": {
                     code: "124",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Үндэсний татварын ерөнхий газар": {
                     code: "125",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Иргэний бүртгэл мэдээллийн улсын төв": {
                     code: "126",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Үндэсний архивын газар": {
                     code: "127",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Шүүхийн шийдвэр гүйцэтгэх ерөнхий газар": {
                     code: "128",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Усны хэрэг эрхлэх газар": {
                     code: "129",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Цаг уур, орчны шинжилгээний газар": {
                     code: "130",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Иргэний нисэхийн ерөнхий газар": {
                     code: "131",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Төмөр замын Хэрэг эрхлэх газар": {
                     code: "132",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Ашигт малтмал, газрын тосны Хэрэг эрхлэх газар": {
                     code: "133",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Гадаадын хөрөнгө оруулалтын газар": {
                     code: "134",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Улсын нийгмийн даатгалын ерөнхий газар": {
                     code: "135",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хөдөлмөр, халамжийн үйлчилгээний газар": {
                     code: "136",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 }
             }
         },
@@ -708,42 +774,50 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Монгол банк": {
                     code: "87",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Төрийн албаны зөвлөл": {
                     code: "88",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Сонгуулийн ерөнхий хороо": {
                     code: "89",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Авилгатай тэмцэх газар": {
                     code: "90",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Үндэсний статистикийн газар": {
                     code: "91",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хүний эрхийн үндэсний комисс": {
                     code: "92",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Үндэсний аудитын газар": {
                     code: "93",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Санхүүгийн зохицуулах хороо": {
                     code: "94",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 }
             }
         },
@@ -755,112 +829,134 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Архангай аймаг": {
                     code: "65",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Баян-Өлгий аймаг": {
                     code: "66",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Баянхонгор аймаг": {
                     code: "67",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Булган аймаг": {
                     code: "68",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Говь-Алтай аймаг": {
                     code: "69",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Говьсүмбэр аймаг": {
                     code: "70",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дархан-Уул аймаг": {
                     code: "71",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дорноговь аймаг": {
                     code: "72",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дорнод аймаг": {
                     code: "73",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Дундговь аймаг": {
                     code: "74",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Завхан аймаг": {
                     code: "75",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Орхон аймаг": {
                     code: "76",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Сэлэнгэ аймаг": {
                     code: "77",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Сүхбаатар аймаг": {
                     code: "78",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Төв аймаг": {
                     code: "79",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Увс аймаг": {
                     code: "80",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Улаанбаатар": {
                     code: "81",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Ховд аймаг": {
                     code: "82",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хэнтий аймаг": {
                     code: "83",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Хөвсгөл аймаг": {
                     code: "84",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Өвөрхангай аймаг": {
                     code: "85",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 },
 
                 "Өмнөговь аймаг": {
                     code: "86",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 }
             }
         },
@@ -872,112 +968,134 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Архангай аймаг": {
                     code: "39",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Баян-Өлгий аймаг": {
                     code: "40",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Баянхонгор аймаг": {
                     code: "41",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Булган аймаг": {
                     code: "46",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Говь-Алтай аймаг": {
                     code: "47",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Говьсүмбэр аймаг": {
                     code: "48",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Дархан-Уул аймаг": {
                     code: "49",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Дорноговь аймаг": {
                     code: "50",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Дорнод аймаг": {
                     code: "51",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Дундговь аймаг": {
                     code: "52",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Завхан аймаг": {
                     code: "53",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Орхон аймаг": {
                     code: "54",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Сэлэнгэ аймаг": {
                     code: "55",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Сүхбаатар аймаг": {
                     code: "56",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Төв аймаг": {
                     code: "57",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Увс аймаг": {
                     code: "58",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Улаанбаатар": {
                     code: "59",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Ховд аймаг": {
                     code: "60",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Хэнтий аймаг": {
                     code: "61",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Хөвсгөл аймаг": {
                     code: "62",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Өвөрхангай аймаг": {
                     code: "63",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}                
                 },
 
                 "Өмнөговь аймаг": {
                     code: "64",
-                    english: "[???]"
+                    english: "[???]",
+                    boilerplate: {}
                 }
             }
         }
