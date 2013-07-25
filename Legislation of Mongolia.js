@@ -34,14 +34,14 @@ Engine.prototype.detectWeb = function (doc, url) {
     var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(\/details)*.*/);
     if (m) {
         if (m[1]) {
-            return this.getTypeFromDocument(doc);
+            return this.getInfoFromDocument(doc).cat.type;
         } else {
             return "multiple";
         }
     }
 }
 
-Engine.prototype.getInfo = function (url) {
+Engine.prototype.getInfo = function (doc, url) {
     var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(?:(\/details)|.*[^b]cat=([0-9]+))*.*/);
     if (m) {
         if (m[1]) {
@@ -58,13 +58,28 @@ Engine.prototype.getInfo = function (url) {
     return this.info.type;
 }
 
-Engine.prototype.getTypeFromDocument = function (doc) {
-    var category = false;
+Engine.prototype.getInfoFromDocument = function (doc) {
+    var category;
+    var subcategory;
     var crumbs = ZU.xpath(doc,'//h2[@class="crumbs"]/a');
+    var ret;
     if (crumbs.length > 1) {
-        category = crumbs.slice(1,2)[0].textContent;
-        return this.getType(category);
+        ret = {};
+        category = crumbs.slice(1,2)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
+        ret.cat = this.inputmap[category];
+        Zotero.debug("XXX category: "+category);
+        ret.title = crumbs.slice(-1)[0].textContent;
     }
+    if (crumbs.length > 2) {
+        subcategory = crumbs.slice(2,3)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
+        Zotero.debug("XXX subcategory: "+subcategory);
+        ret.subcat = this.inputmap[category].children[subcategory];
+        for (var key in this.inputmap[category].children) {
+            Zotero.debug("XXX   --> "+key);
+        }
+        Zotero.debug("XXX   ("+ret.cat + ") (" + ret.subcat + ")");
+    }
+    return ret;
 }
 
 Engine.prototype.getFullURL = function (doc,url) {
@@ -157,8 +172,61 @@ Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
             item[fieldmap[type][key]] = supp[url][key];
         }
         // Extract page content for save here.
+        var content = doc.getElementsByClassName("content_field");
+        if (content && content.length) {
+            content = content[0];
+            // Delete word processor and download icons, they're not part of content
+            var anchors = content.getElementsByTagName("a");
+            for (var i=anchors.length-1;i>-1;i+=-1) {
+                var href = anchors[i].getAttribute("href");
+                if (href && href.match(/(?:showPrint|downloadDoc)/)) {
+                    anchors[i].parentNode.removeChild(anchors[i]);
+                }
+            }
+            var title = supp[url].title;
+            var myns = "http://www.w3.org/1999/xhtml"
+            var head = doc.createElementNS(myns, "head");
+            var titlenode = doc.createElementNS(myns, "title");
+            head.appendChild(titlenode)
+            titlenode.appendChild(doc.createTextNode(title));
+            var style = doc.createElementNS(myns, "style");
+            head.appendChild(style)
+            style.setAttribute("type", "text/css")
+            
+            var css = "*{margin:0;padding:0;}table, div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}";
+            
+            style.appendChild(doc.createTextNode(css));
+            var newDoc = ZU.composeDoc(doc, head, content);
+            
+            item.attachments.push({ url:item.url, mimeType: "text/html", document: newDoc, snapshot: true })
+        }
         item.complete();
     }, function(){Zotero.done();});
+}
+
+Engine.prototype.scrapeFromDocument = function (doc) {
+    // Cobble together URL for a listing containing only the target item
+    var info = this.getInfoFromDocument(doc);
+    var title = info.title.replace(" ","%20","g");
+    if (info.subcat) {
+        var url = "/law?cat=" + info.cat.code + "&subcat=" + info.subcat.code + "&l_name=" + title;
+    } else {
+        var url = "/law?cat=" + info.cat.code + "&l_name=" + title;
+    }
+    // Run processDocuments() on target URL as a way of getting the DOM of the target listing
+    var engine = this;
+    Zotero.debug("XXX ADDRESS: "+url);
+    ZU.processDocuments([url], function(doc) {
+        // Inside processDocuments() gather metadata from all rows (should be only one ...)
+        var data = engine.getItemData(doc);
+        // Run selectedItemsCallback with our original URL to fetch the item to MLZ
+        var urls = [];
+        for (var u in data.items) {
+            urls.push(u);
+        }
+        Zotero.debug("XXX URLS: "+urls);
+        engine.selectedItemsCallback(engine.fieldmap, urls, data.supp);;
+    }, function(){});
 }
 
 function detectWeb(doc,url) {
@@ -168,7 +236,7 @@ function detectWeb(doc,url) {
     
 function doWeb(doc, url) {
     var engine = new Engine();
-    engine.getInfo(url);
+    engine.getInfo(doc, url);
     var displayType = engine.detectWeb(doc, url);
     if (displayType === "multiple") {
         var callback = engine.selectedItemsCallback;
@@ -186,7 +254,8 @@ function doWeb(doc, url) {
 	        selectedItemsCallback(fieldmap, items, data.supp);
         });
     } else {
-        // trickey callback to look up statute in multiple listing
+        Zotero.debug("XXX TRY");
+        engine.scrapeFromDocument(doc);
     }
 }
 
