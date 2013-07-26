@@ -278,13 +278,13 @@ Engine.prototype.makeMaps = function () {
         "Монгол Улсын хууль": {
             code: "27",
             type: "statute",
-            english: "Statutes",
+            english: "[Statutes]",
             boilerplate: {},
             children: {}
         },
         "Улсын Их Хурлын тогтоол": {
             code: "28",
-            english: "Resolutions of the state Great Khural",
+            english: "[Resolutions of the state Great Khural]",
             type: "bill",
             boilerplate: {
                 resolutionLabel: {
@@ -296,120 +296,136 @@ Engine.prototype.makeMaps = function () {
         },
         "Монгол Улсын олон улсын гэрээ": {
             code: "29",
-            english: "Mongolian international treaties",
+            english: "[Mongolian international treaties]",
             type: "treaty",
             boilerplate: {},
             children: {
                 "Гадаад харилцааг зохион байгуулах": {
                     code: "138",
-                    english: "[Organizing International Relations]"
+                    english: "[Organizing International Relations]",
+                    boilerplate: {}
                 },
                 
                 "Гэмт хэрэг болон терроризмтай хийх олон улсын тэмцэл": {
                     code: "139",
-                    english: "[International Fight Against Terrorism and Crime]"
+                    english: "[International Fight Against Terrorism and Crime]",
+                    boilerplate: {}
                 },
                 
                 "Дипломат болон консулын эрх зүй": {
                     code: "140",
-                    english: "[Diplomatic and Consular Law]"
+                    english: "[Diplomatic and Consular Law]",
+                    boilerplate: {}
                 },
                 
                 "Зэвсэгт мөргөлдөөн ба олон улсын эрх зүй": {
                     code: "141",
-                    english: "[Armed Conflict and International Law]"
+                    english: "[Armed Conflict and International Law]",
+                    boilerplate: {}
                 },
                 
                 "Нийгэм-соёлын салбарын олон улсын хамтын ажиллагаа": {
                     code: "142",
-                    english: "[International Cooperation on Social-Cultural Issues]"
+                    english: "[International Cooperation on Social-Cultural Issues]",
+                    boilerplate: {}
                 },
                 
                 "Нутаг дэвсгэр": {
                     code: "143",
-                    english: "[Territory]"
+                    english: "[Territory]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын агаарын эрх зүй": {
                     code: "144",
-                    english: "[International Air Law]"
+                    english: "[International Air Law]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын аюулгүй байдлын эрх зүй": {
                     code: "145",
-                    english: "[International Security Law ]"
+                    english: "[International Security Law ]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын байгууллага ба холбоо": {
                     code: "146",
-                    english: "[International Organizations and Associations]"
+                    english: "[International Organizations and Associations]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын гэрээний эрх зүй": {
                     code: "147",
-                    english: "[International Treaty Law]"
+                    english: "[International Treaty Law]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын далайн эрх зүй": {
                     code: "148",
-                    english: "International Law of the Sea"
+                    english: "International Law of the Sea",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын сансрын эрх зүй": {
                     code: "149",
-                    english: "[International Law of Space]"
+                    english: "[International Law of Space]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын харилцааны нийтлэг асуудал": {
                     code: "150",
-                    english: "[Issues and Problems of International Relations]"
+                    english: "[Issues and Problems of International Relations]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын шинжлэх ухаан техникийн хамтын ажиллагаа": {
                     code: "151",
-                    english: "[International Cooperation in Science and Technology]"
+                    english: "[International Cooperation in Science and Technology]",
+                    boilerplate: {}
                 },
                 
                 "Олон улсын эдийн засгийн хамтын ажиллагаа": {
                     code: "152",
-                    english: "[International Economic Cooperation]"
+                    english: "[International Economic Cooperation]",
+                    boilerplate: {}
                 },
                 
                 "Улсын эрх залгамжлал": {
                     code: "153",
-                    english: "[Succession of State]"
+                    english: "[Succession of State]",
+                    boilerplate: {}
                 },
                 
                 "Хүн ам": {
                     code: "154",
-                    english: "[Population]"
+                    english: "[Population]",
+                    boilerplate: {}
                 },
                 
                 "Хүний эрхийн олон улсын хамгаалалт": {
                     code: "155",
-                    english: "[International Protection of Human Rights]"
+                    english: "[International Protection of Human Rights]",
+                    boilerplate: {}
                 },
                 
                 "Хүрээлэн буй орчны олон улсын эрх зүйн хамгаалалт": {
                     code: "156",
-                    english: "[International Law Protecting the Environment]"
+                    english: "[International Law Protecting the Environment]",
+                    boilerplate: {}
                 },
                 
                 "Цэрэг, дайны асуудлаархи хамтын ажиллагаа": {
                     code: "157",
-                    english: "[Military Cooperation and War]"
+                    english: "[Military Cooperation and War]",
+                    boilerplate: {}
                 }
             }
         },
         "Ерөнхийлөгчийн зарлиг": {
             code: "30",
-            english: "Decrees of the president",
+            english: "[Decrees of the President]",
             type: "regulation",
             boilerplate: {
-                regulatoryBody: {
-                    mn: "Ерөнхийлөгч",
-                    en: "President"
-                },
                 regulationType: {
                     mn: "Ерөнхийлөгчийн зарлиг",
                     en: "Presidential Decree"
@@ -419,35 +435,58 @@ Engine.prototype.makeMaps = function () {
         },
         "Үндсэн хуулийн цэцийн шийдвэр": {
             code: "31",
-            english: "Decisions of the Constitutional Tsets",
+            english: "[Decisions of the Constitutional Tsets]",
             type: "case",
             boilerplate: {},
             children: {
                 "Тогтоол": {
                     code: "тогтоол",
                     english: "Resolution",
-                    boilerplate: {}
+                    boilerplate: {
+                        supplementName: {
+                            mn: "Тогтоол",
+                            en: "Resolution"
+                    }
                 },
                 
                 "Дүгнэлт": {
                     code: "дүгнэлт",
                     english: "Decision",
-                    boilerplate: {}
+                    boilerplate: {
+                        supplementName: {
+                            mn: "Дүгнэлт",
+                            en: "Decision"
+                        }
+                    }
                 }
             }
         },
         "Улсын дээд шүүхийн тогтоол": {
             code: "32",
-            english: "Resolutions of the Supreme Court",
-            type: "bill",
-            boilerplate: {},
+            english: "[Resolutions of the Supreme Court]",
+            type: "case",
+            boilerplate: {
+                supplementName: {
+                    mn: "Тогтоол",
+                    en: "Resolution"
+                },
+                court: {
+                    mn: "[???]",
+                    en: "Supreme Court"
+                }
+            },
             children: {}
         },
         "Засгийн газрын тогтоол": {
             code: "33",
-            english: "Resolutions of the government",
-            type: "bill",
-            boilerplate: {},
+            english: "[Resolutions of the government]",
+            type: "regulation",
+            boilerplate: {
+                regulationType: {
+                    mn: "[???]",
+                    en: "Resolution of Government (???)"
+                }
+            },
             children: {}
         },
         "Сайдын тушаал": {
@@ -459,23 +498,59 @@ Engine.prototype.makeMaps = function () {
                 "Гадаад харилцааны яам": {
                     code: "95",
                     english: "[Ministry of Foreign Affairs]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Гадаад харилцааны яам",
+                            en: "Ministry of Foreign Affairs"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Сангийн яам": {
                     code: "96",
                     english: "[Ministry of Finance]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Сангийн яам",
+                            en: "Ministry of Finance"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хууль зүй, дотоод хэргийн яам": {
                     code: "97",
                     english: "[Ministry of Justice]",
-                    boilerplate: {},
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Хууль зүй, дотоод хэргийн яам",
+                            en: "Ministry of Justice"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    },
                     changes: {
                         "2012": {
                             variant: "Хууль зүйн яам",
-                            boilerplate: {}
+                            boilerplate: {
+                                regulatoryBody: {
+                                    mn: "Хууль зүйн яам",
+                                    en: "Ministry of Justice"
+                                }
+                                regulationType: {
+                                    mn: "[???]",
+                                    en: "Ordinance"
+                                }
+                            }
                         }
                     }
                 },
@@ -483,11 +558,29 @@ Engine.prototype.makeMaps = function () {
                 "Байгаль орчин, аялал жуулчлалын яам": {
                     code: "98",
                     english: "[Ministry of Nature, Environment and Green Development]",
-                    boilerplate: {},
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Байгаль орчин, аялал жуулчлалын яам",
+                            en: "Ministry of Nature, Environment and Green Development"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    },
                     changes: {
                         "2012": {
                             variant: "Байгаль орчин, ногоон хөгжлийн яам",
-                            boilerplate: {}
+                            boilerplate: {
+                                regulatoryBody: {
+                                    mn: "Байгаль орчин, ногоон хөгжлийн яам",
+                                    en: "Ministry of Nature, Environment and Green Development"
+                                }
+                                regulationType: {
+                                    mn: "[???]",
+                                    en: "Ordinance"
+                                }
+                            }
                         }
                     }
                 },
@@ -495,11 +588,29 @@ Engine.prototype.makeMaps = function () {
                 "Боловсрол, соёл шинжлэх ухааны яам": {
                     code: "99",
                     english: "[Ministry of Defence]",
-                    boilerplate: {},
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Боловсрол, соёл шинжлэх ухааны яам",
+                            en: "Ministry of Defence"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    },
                     changes: {
                         "2012": {
                             variant: "Батлан хамгаалах яам",
-                            boilerplate: {}
+                            boilerplate: {
+                                regulatoryBody: {
+                                    mn: "Батлан хамгаалах яам",
+                                    en: "Ministry of Defence"
+                                }
+                                regulationType: {
+                                    mn: "[???]",
+                                    en: "Ordinance"
+                                }
+                            }
                         }
                     }
                 },
@@ -507,17 +618,44 @@ Engine.prototype.makeMaps = function () {
                 "Боловсрол, шинжлэх ухааны яам": {
                     code: "100",
                     english: "[Ministry of Education and Science]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Боловсрол, шинжлэх ухааны яам",
+                            en: "Ministry of Education and Science"
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Зам тээвэр, аялал жуулчлалын яам": {
                     code: "101",
                     english: "[Ministry of Road and Transportation]",
-                    boilerplate: {},
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    },
                     changes: {
-                        "2012": {
+                        "2012"q: {
                             variant: "Зам тээвэрийн яам",
-                            boilerplate: {}
+                            boilerplate: {
+                                regulatoryBody: {
+                                    mn: "Зам тээвэрийн яам",
+                                    en: "Ministry of Road and Transportation"
+                                }
+                                regulationType: {
+                                    mn: "[???]",
+                                    en: "Ordinance"
+                                }
+                            }
                         }
                     }
                 },
@@ -525,11 +663,29 @@ Engine.prototype.makeMaps = function () {
                 "Нийгмийн хамгаалал, хөдөлмөрийн яам": {
                     code: "102",
                     english: "[Ministry of Labor]",
-                    boilerplate: {},
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    },
                     changes: {
                         "2012": {
                             variant: "Хөдөлмөрийн яам",
-                            boilerplate: {}
+                            boilerplate: {
+                                regulatoryBody: {
+                                    mn: "",
+                                    en: ""
+                                }
+                                regulationType: {
+                                    mn: "[???]",
+                                    en: "Ordinance"
+                                }
+                            }
                         }
                     }
                 },
@@ -537,73 +693,181 @@ Engine.prototype.makeMaps = function () {
                 "Эрдэс баялаг, эрчим хүчний яам": {
                     code: "103",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам": {
                     code: "104",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Барилга, хот байгуулалтын яам": {
                     code: "105",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Түлш, эрчим хүчний яам": {
                     code: "106",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Эрүүл мэндийн яам": {
                     code: "107",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Дэд бүтцийн яам": {
                     code: "158",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Зам тээвэр, барилга, хот байгуулалтын яам": {
                     code: "159",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Байгаль орчны яам": {
                     code: "160",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Гадаад хэргийн яам": {
                     code: "161",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Үйлдвэр, худалдааны яам": {
                     code: "162",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Санхүү, эдийн засгийн яам": {
                     code: "163",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Гэгээрлийн яам": {
                     code: "164",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 }
             }
         },
