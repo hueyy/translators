@@ -635,8 +635,8 @@ Engine.prototype.makeMaps = function () {
                     english: "[Ministry of Road and Transportation]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
-                            en: ""
+                            mn: "Зам тээвэр, аялал жуулчлалын яам",
+                            en: "Ministry of Road and Transportation"
                         }
                         regulationType: {
                             mn: "[???]",
@@ -665,8 +665,8 @@ Engine.prototype.makeMaps = function () {
                     english: "[Ministry of Labor]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
-                            en: ""
+                            mn: "Нийгмийн хамгаалал, хөдөлмөрийн яам",
+                            en: "Ministry of Labor"
                         }
                         regulationType: {
                             mn: "[???]",
@@ -678,8 +678,8 @@ Engine.prototype.makeMaps = function () {
                             variant: "Хөдөлмөрийн яам",
                             boilerplate: {
                                 regulatoryBody: {
-                                    mn: "",
-                                    en: ""
+                                    mn: "Хөдөлмөрийн яам",
+                                    en: "Ministry of Labor"
                                 }
                                 regulationType: {
                                     mn: "[???]",
@@ -695,7 +695,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Эрдэс баялаг, эрчим хүчний яам",
                             en: ""
                         }
                         regulationType: {
@@ -710,7 +710,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -725,7 +725,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Барилга, хот байгуулалтын яам",
                             en: ""
                         }
                         regulationType: {
@@ -740,7 +740,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Түлш, эрчим хүчний яам",
                             en: ""
                         }
                         regulationType: {
@@ -755,7 +755,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Эрүүл мэндийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -770,7 +770,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Дэд бүтцийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -785,7 +785,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Зам тээвэр, барилга, хот байгуулалтын яам",
                             en: ""
                         }
                         regulationType: {
@@ -800,7 +800,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Байгаль орчны яам",
                             en: ""
                         }
                         regulationType: {
@@ -815,7 +815,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Гадаад хэргийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -830,7 +830,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Үйлдвэр, худалдааны яам",
                             en: ""
                         }
                         regulationType: {
@@ -845,7 +845,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Санхүү, эдийн засгийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -860,7 +860,7 @@ Engine.prototype.makeMaps = function () {
                     english: "[???]",
                     boilerplate: {
                         regulatoryBody: {
-                            mn: "",
+                            mn: "Гэгээрлийн яам",
                             en: ""
                         }
                         regulationType: {
@@ -880,181 +880,451 @@ Engine.prototype.makeMaps = function () {
                 "Биеийн тамир, спортын хороо": {
                     code: "137",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Биеийн тамир, спортын хороо",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Мэдээлэл, харилцаа холбоо, технологийн газар": {
                     code: "108",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Мэдээлэл, харилцаа холбоо, технологийн газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Тагнуулын ерөнхий газар": {
                     code: "109",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Тагнуулын ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Төрийн өмчийн хороо": {
                     code: "110",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Төрийн өмчийн хороо",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Стандартчилал, хэмжил зүйн төв": {
                     code: "111",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Стандартчилал, хэмжил зүйн төв",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Шударга бус өрсөлдөөнийг хянан зохицуулах газар": {
                     code: "112",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Шударга бус өрсөлдөөнийг хянан зохицуулах газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хил хамгаалах ерөнхий газар": {
                     code: "113",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Хил хамгаалах ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Цагдаагийн ерөнхий газар": {
                     code: "114",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Цагдаагийн ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Газрын харилцаа, геодези, зураг зүйн газар": {
                     code: "115",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Газрын харилцаа, геодези, зураг зүйн газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Зэвсэгт хүчний жанжин штаб": {
                     code: "116",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Зэвсэгт хүчний жанжин штаб",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Улсын мэргэжлийн хяналтын газар": {
                     code: "117",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Улсын мэргэжлийн хяналтын газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Онцгой байдлын ерөнхий газар": {
                     code: "118",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Онцгой байдлын ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Оюуны өмчийн газар": {
                     code: "119",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Оюуны өмчийн газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хүүхдийн төлөө үндэсний газар": {
                     code: "120",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Хүүхдийн төлөө үндэсний газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Удирдлагын академи": {
                     code: "121",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Удирдлагын академи",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Төр, засгийн үйлчилгээ, аж ахуйг эрхлэх газар": {
                     code: "122",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Төр, засгийн үйлчилгээ, аж ахуйг эрхлэх газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Дипломат байгууллагын үйлчилгээ, аж ахуйн газар": {
                     code: "123",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Дипломат байгууллагын үйлчилгээ, аж ахуйн газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Улсын гаалийн ерөнхий газар": {
                     code: "124",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Улсын гаалийн ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Үндэсний татварын ерөнхий газар": {
                     code: "125",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Үндэсний татварын ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Иргэний бүртгэл мэдээллийн улсын төв": {
                     code: "126",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Иргэний бүртгэл мэдээллийн улсын төв",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Үндэсний архивын газар": {
                     code: "127",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Үндэсний архивын газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Шүүхийн шийдвэр гүйцэтгэх ерөнхий газар": {
                     code: "128",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Шүүхийн шийдвэр гүйцэтгэх ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Усны хэрэг эрхлэх газар": {
                     code: "129",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Усны хэрэг эрхлэх газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Цаг уур, орчны шинжилгээний газар": {
                     code: "130",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Цаг уур, орчны шинжилгээний газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Иргэний нисэхийн ерөнхий газар": {
                     code: "131",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Иргэний нисэхийн ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Төмөр замын Хэрэг эрхлэх газар": {
                     code: "132",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Төмөр замын Хэрэг эрхлэх газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Ашигт малтмал, газрын тосны Хэрэг эрхлэх газар": {
                     code: "133",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Ашигт малтмал, газрын тосны Хэрэг эрхлэх газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Гадаадын хөрөнгө оруулалтын газар": {
                     code: "134",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Гадаадын хөрөнгө оруулалтын газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Улсын нийгмийн даатгалын ерөнхий газар": {
                     code: "135",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Улсын нийгмийн даатгалын ерөнхий газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хөдөлмөр, халамжийн үйлчилгээний газар": {
                     code: "136",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Хөдөлмөр, халамжийн үйлчилгээний газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 }
             }
         },
@@ -1067,49 +1337,121 @@ Engine.prototype.makeMaps = function () {
                 "Монгол банк": {
                     code: "87",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Монгол банк",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Төрийн албаны зөвлөл": {
                     code: "88",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Төрийн албаны зөвлөл",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Сонгуулийн ерөнхий хороо": {
                     code: "89",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Сонгуулийн ерөнхий хороо",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Авилгатай тэмцэх газар": {
                     code: "90",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Авилгатай тэмцэх газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Үндэсний статистикийн газар": {
                     code: "91",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Үндэсний статистикийн газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Хүний эрхийн үндэсний комисс": {
                     code: "92",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Хүний эрхийн үндэсний комисс",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Үндэсний аудитын газар": {
                     code: "93",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Үндэсний аудитын газар",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 },
 
                 "Санхүүгийн зохицуулах хороо": {
                     code: "94",
                     english: "[???]",
-                    boilerplate: {}
+                    boilerplate: {
+                        regulatoryBody: {
+                            mn: "Санхүүгийн зохицуулах хороо",
+                            en: ""
+                        }
+                        regulationType: {
+                            mn: "[???]",
+                            en: "Ordinance"
+                        }
+                    }
                 }
             }
         },
