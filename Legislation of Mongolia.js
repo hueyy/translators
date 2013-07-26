@@ -34,7 +34,11 @@ Engine.prototype.detectWeb = function (doc, url) {
     var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(\/details)*.*/);
     if (m) {
         if (m[1]) {
-            return this.getInfoFromDocument(doc).cat.type;
+
+            // Just ignore single docs. Can't be made to work, unfortunately.
+
+            //return this.getInfoFromDocument(doc).cat.type;
+
         } else {
             return "multiple";
         }
@@ -204,6 +208,9 @@ Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
     }, function(){Zotero.done();});
 }
 
+// This didn't work out. API does not seem to permit acquisition of a list
+// containing metadata for exactly one instrument.
+/*
 Engine.prototype.scrapeFromDocument = function (doc) {
     // Cobble together URL for a listing containing only the target item
     var info = this.getInfoFromDocument(doc);
@@ -228,6 +235,8 @@ Engine.prototype.scrapeFromDocument = function (doc) {
         engine.selectedItemsCallback(engine.fieldmap, urls, data.supp);;
     }, function(){});
 }
+*/
+
 
 function detectWeb(doc,url) {
     var engine = new Engine();
@@ -253,9 +262,13 @@ function doWeb(doc, url) {
 	        }
 	        selectedItemsCallback(fieldmap, items, data.supp);
         });
-    } else {
+    }
+// Nevermind
+/*
+    else {
         engine.scrapeFromDocument(doc);
     }
+*/
 }
 
 // Static data
