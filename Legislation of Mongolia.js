@@ -527,14 +527,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хууль зүй, дотоод хэргийн яам": {
                     code: "97",
-                    english: "[Ministry of Justice and internal affairs]",
+                    english: "[Ministry of Justice and Home Affairs]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хууль зүй, дотоод хэргийн яам",
-                            en: "Ministry of Justice and Internal Affairs"
+                            en: "Ministry of Justice and Home Affairs"
                         },
                         regulationType: {
-                            mn: "meiggl",
+                            mn: "Тушаал"
                             en: "Ordinance"
                         }
                     },
@@ -639,7 +639,7 @@ Engine.prototype.makeMaps = function () {
                             en: "Ministry of Roads, Transportation and Tourism"
                         },
                         regulationType: {
-                            mn: "тушаал",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     },
@@ -652,7 +652,7 @@ Engine.prototype.makeMaps = function () {
                                     en: "Ministry of Road and Transportation"
                                 },
                                 regulationType: {
-                                    mn: "???",
+                                    mn: "Тушаал",
                                     en: "Ordinance"
                                 }
                             }
@@ -662,7 +662,7 @@ Engine.prototype.makeMaps = function () {
 
                 "Нийгмийн хамгаалал, хөдөлмөрийн яам": {
                     code: "102",
-                    english: "[Ministry of Labor]",
+                    english: "[Ministry of Social Welfare and Labor]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Нийгмийн хамгаалал, хөдөлмөрийн яам",
@@ -782,11 +782,11 @@ Engine.prototype.makeMaps = function () {
 
                 "Зам тээвэр, барилга, хот байгуулалтын яам": {
                     code: "159",
-                    english: "[Ministry of Roads, Transportation and Urban Development]",
+                    english: "[Ministry of Roads, Transportation, Construction and Urban Development]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Зам тээвэр, барилга, хот байгуулалтын яам",
-                            en: "Ministry of Roads, Transportation and Urban Development"
+                            en: "Ministry of Roads, Transportation, Construction and Urban Development"
                         },
                         regulationType: {
                             mn: "Тушаал",
@@ -954,11 +954,11 @@ Engine.prototype.makeMaps = function () {
 
                 "Шударга бус өрсөлдөөнийг хянан зохицуулах газар": {
                     code: "112",
-                    english: "[Unfair Compitition Regulatory Authority]",
+                    english: "[Unfair Competition Regulatory Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Шударга бус өрсөлдөөнийг хянан зохицуулах газар",
-                            en: "Unfiar Compitition Regulatory Authority"
+                            en: "Unfiar Competition Regulatory Authority"
                         },
                         regulationType: {
                             mn: "Тушаал",
