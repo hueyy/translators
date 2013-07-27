@@ -471,7 +471,7 @@ Engine.prototype.makeMaps = function () {
                     en: "Resolution"
                 },
                 court: {
-                    mn: "???",
+                    mn: "Дээд шүүх",
                     en: "Supreme Court"
                 }
             },
@@ -483,7 +483,7 @@ Engine.prototype.makeMaps = function () {
             type: "regulation",
             boilerplate: {
                 regulationType: {
-                    mn: "???",
+                    mn: "Засгийн газрын тогтоол",
                     en: "Resolution of Government (???)"
                 }
             },
@@ -504,7 +504,7 @@ Engine.prototype.makeMaps = function () {
                             en: "Ministry of Foreign Affairs"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     }
@@ -519,7 +519,7 @@ Engine.prototype.makeMaps = function () {
                             en: "Ministry of Finance"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     }
@@ -527,14 +527,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хууль зүй, дотоод хэргийн яам": {
                     code: "97",
-                    english: "[Ministry of Justice]",
+                    english: "[Ministry of Justice and internal affairs]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хууль зүй, дотоод хэргийн яам",
-                            en: "Ministry of Justice"
+                            en: "Ministry of Justice and Internal Affairs"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "meiggl",
                             en: "Ordinance"
                         }
                     },
@@ -547,7 +547,7 @@ Engine.prototype.makeMaps = function () {
                                     en: "Ministry of Justice"
                                 },
                                 regulationType: {
-                                    mn: "???",
+                                    mn: "Tушаал",
                                     en: "Ordinance"
                                 }
                             }
@@ -557,14 +557,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Байгаль орчин, аялал жуулчлалын яам": {
                     code: "98",
-                    english: "[Ministry of Nature, Environment and Green Development]",
+                    english: "[Ministry of Nature, Environment and Tourism]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Байгаль орчин, аялал жуулчлалын яам",
-                            en: "Ministry of Nature, Environment and Green Development"
+                            en: "Ministry of Nature, Environment and Tourism"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     },
@@ -577,7 +577,7 @@ Engine.prototype.makeMaps = function () {
                                     en: "Ministry of Nature, Environment and Green Development"
                                 },
                                 regulationType: {
-                                    mn: "???",
+                                    mn: "Tушаал",
                                     en: "Ordinance"
                                 }
                             }
@@ -587,14 +587,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Боловсрол, соёл шинжлэх ухааны яам": {
                     code: "99",
-                    english: "[Ministry of Defence]",
+                    english: "[Ministry of Education, Culture and Science]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Боловсрол, соёл шинжлэх ухааны яам",
-                            en: "Ministry of Defence"
+                            en: "Ministry of Education, Culture and Science"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     },
@@ -607,7 +607,7 @@ Engine.prototype.makeMaps = function () {
                                     en: "Ministry of Defence"
                                 },
                                 regulationType: {
-                                    mn: "???",
+                                    mn: "Tушаал",
                                     en: "Ordinance"
                                 }
                             }
@@ -624,7 +624,7 @@ Engine.prototype.makeMaps = function () {
                             en: "Ministry of Education and Science"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Tушаал",
                             en: "Ordinance"
                         }
                     }
@@ -632,14 +632,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Зам тээвэр, аялал жуулчлалын яам": {
                     code: "101",
-                    english: "[Ministry of Road and Transportation]",
+                    english: "[Ministry of Roads, Transportation and Tourism]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Зам тээвэр, аялал жуулчлалын яам",
-                            en: "Ministry of Road and Transportation"
+                            en: "Ministry of Roads, Transportation and Tourism"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "тушаал",
                             en: "Ordinance"
                         }
                     },
@@ -666,10 +666,10 @@ Engine.prototype.makeMaps = function () {
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Нийгмийн хамгаалал, хөдөлмөрийн яам",
-                            en: "Ministry of Labor"
+                            en: "Ministry of Social Welfare and Labor"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     },
@@ -682,7 +682,7 @@ Engine.prototype.makeMaps = function () {
                                     en: "Ministry of Labor"
                                 },
                                 regulationType: {
-                                    mn: "???",
+                                    mn: "Тушаал",
                                     en: "Ordinance"
                                 }
                             }
@@ -692,14 +692,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Эрдэс баялаг, эрчим хүчний яам": {
                     code: "103",
-                    english: "[???]",
+                    english: "[Ministry of Mineral Resources and Energy]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Эрдэс баялаг, эрчим хүчний яам",
-                            en: "???"
+                            en: "Ministry of Mineral Resources and Energy"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -707,14 +707,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам": {
                     code: "104",
-                    english: "[???]",
+                    english: "[Ministry of Food, Agriculture and Light Industry]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам",
-                            en: "???"
+                            en: "Ministry of Food, Agriculture and Light Industry"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -722,14 +722,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Барилга, хот байгуулалтын яам": {
                     code: "105",
-                    english: "[???]",
+                    english: "[Ministry of Construction and Urban Development]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Барилга, хот байгуулалтын яам",
-                            en: "???"
+                            en: "Ministry of Construction and Urban Development"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -737,14 +737,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Түлш, эрчим хүчний яам": {
                     code: "106",
-                    english: "[???]",
+                    english: "[Ministry of Fuel and Energy]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Түлш, эрчим хүчний яам",
-                            en: "???"
+                            en: "Ministry of Fuel and Energy"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -752,14 +752,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Эрүүл мэндийн яам": {
                     code: "107",
-                    english: "[???]",
+                    english: "[Ministry of Health]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Эрүүл мэндийн яам",
-                            en: "???"
+                            en: "Ministry of Health"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -767,14 +767,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Дэд бүтцийн яам": {
                     code: "158",
-                    english: "[???]",
+                    english: "[Ministry of Infrastructure]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Дэд бүтцийн яам",
-                            en: "???"
+                            en: "Ministry of Infrastructure"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -782,14 +782,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Зам тээвэр, барилга, хот байгуулалтын яам": {
                     code: "159",
-                    english: "[???]",
+                    english: "[Ministry of Roads, Transportation and Urban Development]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Зам тээвэр, барилга, хот байгуулалтын яам",
-                            en: "???"
+                            en: "Ministry of Roads, Transportation and Urban Development"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -797,14 +797,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Байгаль орчны яам": {
                     code: "160",
-                    english: "[???]",
+                    english: "[Ministry of Environment]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Байгаль орчны яам",
-                            en: "???"
+                            en: "Ministry of Environment"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -812,14 +812,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Гадаад хэргийн яам": {
                     code: "161",
-                    english: "[???]",
+                    english: "[Ministry of Foreign Affairs]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Гадаад хэргийн яам",
-                            en: "???"
+                            en: "Ministry of Foreign Affairs"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -827,14 +827,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Үйлдвэр, худалдааны яам": {
                     code: "162",
-                    english: "[???]",
+                    english: "[Ministry of Industry and Trade]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Үйлдвэр, худалдааны яам",
-                            en: "???"
+                            en: "Ministry of Industry and Trade"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -842,14 +842,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Санхүү, эдийн засгийн яам": {
                     code: "163",
-                    english: "[???]",
+                    english: "[Ministry of Finance and Economic]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Санхүү, эдийн засгийн яам",
-                            en: "???"
+                            en: "Ministry of Finance and Economic"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -857,14 +857,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Гэгээрлийн яам": {
                     code: "164",
-                    english: "[???]",
+                    english: "[Ministry of Enlightenment]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Гэгээрлийн яам",
-                            en: "???"
+                            en: "Ministry of Enlightenment"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -879,14 +879,14 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Биеийн тамир, спортын хороо": {
                     code: "137",
-                    english: "[???]",
+                    english: "[Physical Culture and Sports Committee]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Биеийн тамир, спортын хороо",
-                            en: "???"
+                            en: "Physical Culture and Sports Committee"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -894,14 +894,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Мэдээлэл, харилцаа холбоо, технологийн газар": {
                     code: "108",
-                    english: "[???]",
+                    english: "[Information, Comunication and Technology Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Мэдээлэл, харилцаа холбоо, технологийн газар",
-                            en: "???"
+                            en: "Information, Comunication and Technology Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -909,14 +909,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Тагнуулын ерөнхий газар": {
                     code: "109",
-                    english: "[???]",
+                    english: "[General Intelligence Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Тагнуулын ерөнхий газар",
-                            en: "???"
+                            en: "General Intelligence Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -924,14 +924,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Төрийн өмчийн хороо": {
                     code: "110",
-                    english: "[???]",
+                    english: "[State Property Committee]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Төрийн өмчийн хороо",
-                            en: "???"
+                            en: "State Property Committee"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -939,14 +939,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Стандартчилал, хэмжил зүйн төв": {
                     code: "111",
-                    english: "[???]",
+                    english: "[Standardization and Metrology Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Стандартчилал, хэмжил зүйн төв",
-                            en: "???"
+                            en: "Standardization and Metrology Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -954,14 +954,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Шударга бус өрсөлдөөнийг хянан зохицуулах газар": {
                     code: "112",
-                    english: "[???]",
+                    english: "[Unfair Compitition Regulatory Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Шударга бус өрсөлдөөнийг хянан зохицуулах газар",
-                            en: "???"
+                            en: "Unfiar Compitition Regulatory Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -969,14 +969,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хил хамгаалах ерөнхий газар": {
                     code: "113",
-                    english: "[???]",
+                    english: "[General Authority for Border Protection]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хил хамгаалах ерөнхий газар",
-                            en: "???"
+                            en: "General Authority for Border Protection"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -984,14 +984,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Цагдаагийн ерөнхий газар": {
                     code: "114",
-                    english: "[???]",
+                    english: "[General Police Department]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Цагдаагийн ерөнхий газар",
-                            en: "???"
+                            en: "General Police Department"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -999,14 +999,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Газрын харилцаа, геодези, зураг зүйн газар": {
                     code: "115",
-                    english: "[???]",
+                    english: "[Administration of Land Affairs, Construction, Geodesy and Cartography]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Газрын харилцаа, геодези, зураг зүйн газар",
-                            en: "???"
+                            en: "Administration of Land Affairs, Construction, Geodesy and Cartography"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1014,14 +1014,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Зэвсэгт хүчний жанжин штаб": {
                     code: "116",
-                    english: "[???]",
+                    english: "[General Staff of Armed Forces]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Зэвсэгт хүчний жанжин штаб",
-                            en: "???"
+                            en: "General Staff of Armed Forces"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1029,14 +1029,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Улсын мэргэжлийн хяналтын газар": {
                     code: "117",
-                    english: "[???]",
+                    english: "[General Agency for State Specialised Inspection]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Улсын мэргэжлийн хяналтын газар",
-                            en: "???"
+                            en: "General Agency for State Specialised Inspection"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1044,14 +1044,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Онцгой байдлын ерөнхий газар": {
                     code: "118",
-                    english: "[???]",
+                    english: "[National Emergency Management Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Онцгой байдлын ерөнхий газар",
-                            en: "???"
+                            en: "National Emergency Management Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1059,14 +1059,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Оюуны өмчийн газар": {
                     code: "119",
-                    english: "[???]",
+                    english: "[Intellectual Property Office]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Оюуны өмчийн газар",
-                            en: "???"
+                            en: "Intellectual Property Office"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1074,14 +1074,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хүүхдийн төлөө үндэсний газар": {
                     code: "120",
-                    english: "[???]",
+                    english: "[National Authority for Children]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хүүхдийн төлөө үндэсний газар",
-                            en: "???"
+                            en: "National Authority for Children"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1089,14 +1089,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Удирдлагын академи": {
                     code: "121",
-                    english: "[???]",
+                    english: "[Academy of Management]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Удирдлагын академи",
-                            en: "???"
+                            en: "Academy of management"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1104,14 +1104,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Төр, засгийн үйлчилгээ, аж ахуйг эрхлэх газар": {
                     code: "122",
-                    english: "[???]",
+                    english: "[State and Government Service Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Төр, засгийн үйлчилгээ, аж ахуйг эрхлэх газар",
-                            en: "???"
+                            en: "State and Government Service Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1119,14 +1119,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Дипломат байгууллагын үйлчилгээ, аж ахуйн газар": {
                     code: "123",
-                    english: "[???]",
+                    english: "[Diplomatic Service Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Дипломат байгууллагын үйлчилгээ, аж ахуйн газар",
-                            en: "???"
+                            en: "Diplomatic Service Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1134,14 +1134,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Улсын гаалийн ерөнхий газар": {
                     code: "124",
-                    english: "[???]",
+                    english: "[General Customs Office]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Улсын гаалийн ерөнхий газар",
-                            en: "???"
+                            en: "General Customs Office"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1149,14 +1149,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Үндэсний татварын ерөнхий газар": {
                     code: "125",
-                    english: "[???]",
+                    english: "[General Department of Taxation]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Үндэсний татварын ерөнхий газар",
-                            en: "???"
+                            en: "General Department of Taxation"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1164,14 +1164,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Иргэний бүртгэл мэдээллийн улсын төв": {
                     code: "126",
-                    english: "[???]",
+                    english: "[General Authority for State Registration and Information]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Иргэний бүртгэл мэдээллийн улсын төв",
-                            en: "???"
+                            en: "General Authority for State Registration and Information"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1179,14 +1179,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Үндэсний архивын газар": {
                     code: "127",
-                    english: "[???]",
+                    english: "[General Archival Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Үндэсний архивын газар",
-                            en: "???"
+                            en: "General Archival Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1194,14 +1194,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Шүүхийн шийдвэр гүйцэтгэх ерөнхий газар": {
                     code: "128",
-                    english: "[???]",
+                    english: "[General Executive Department of Court Decisions]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Шүүхийн шийдвэр гүйцэтгэх ерөнхий газар",
-                            en: "???"
+                            en: "General Executive Department of Court Decisions"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1209,14 +1209,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Усны хэрэг эрхлэх газар": {
                     code: "129",
-                    english: "[???]",
+                    english: "[Water Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Усны хэрэг эрхлэх газар",
-                            en: "???"
+                            en: "Water Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1224,14 +1224,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Цаг уур, орчны шинжилгээний газар": {
                     code: "130",
-                    english: "[???]",
+                    english: "[National Agency for Metereology, Hydrology and Environment Monitoring]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Цаг уур, орчны шинжилгээний газар",
-                            en: "???"
+                            en: "National Agency for Metreology, Hydrology and Environment Monitoring"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1239,14 +1239,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Иргэний нисэхийн ерөнхий газар": {
                     code: "131",
-                    english: "[???]",
+                    english: "[Civil Aviation Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Иргэний нисэхийн ерөнхий газар",
-                            en: "???"
+                            en: "Civil Aviation Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1254,14 +1254,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Төмөр замын Хэрэг эрхлэх газар": {
                     code: "132",
-                    english: "[???]",
+                    english: "[Railway Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Төмөр замын Хэрэг эрхлэх газар",
-                            en: "???"
+                            en: "Railway Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1269,14 +1269,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Ашигт малтмал, газрын тосны Хэрэг эрхлэх газар": {
                     code: "133",
-                    english: "[???]",
+                    english: "[Mineral Resources and Petroleum Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Ашигт малтмал, газрын тосны Хэрэг эрхлэх газар",
-                            en: "???"
+                            en: "Mineral Resources and Petroleum Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1284,14 +1284,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Гадаадын хөрөнгө оруулалтын газар": {
                     code: "134",
-                    english: "[???]",
+                    english: "[Foreign Investment Authority]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Гадаадын хөрөнгө оруулалтын газар",
-                            en: "???"
+                            en: "Foreign Investment Authority"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1299,14 +1299,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Улсын нийгмийн даатгалын ерөнхий газар": {
                     code: "135",
-                    english: "[???]",
+                    english: "[Social Insurance General Office]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Улсын нийгмийн даатгалын ерөнхий газар",
-                            en: "???"
+                            en: "Social Insurance General Office"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1314,14 +1314,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хөдөлмөр, халамжийн үйлчилгээний газар": {
                     code: "136",
-                    english: "[???]",
+                    english: "[Labour and Welfare Service Agency]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хөдөлмөр, халамжийн үйлчилгээний газар",
-                            en: "???"
+                            en: "Labour and Welfare Service Agency"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1336,14 +1336,14 @@ Engine.prototype.makeMaps = function () {
             children: {
                 "Монгол банк": {
                     code: "87",
-                    english: "[???]",
+                    english: "[Bank of Mongolia]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Монгол банк",
-                            en: "???"
+                            en: "Bank of Mongolia"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1351,14 +1351,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Төрийн албаны зөвлөл": {
                     code: "88",
-                    english: "[???]",
+                    english: "[Civil Service Counsil]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Төрийн албаны зөвлөл",
-                            en: "???"
+                            en: "Civil Service Counsil"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1366,14 +1366,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Сонгуулийн ерөнхий хороо": {
                     code: "89",
-                    english: "[???]",
+                    english: "[General Election Commission]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Сонгуулийн ерөнхий хороо",
-                            en: "???"
+                            en: "General Election Commission"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1381,14 +1381,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Авилгатай тэмцэх газар": {
                     code: "90",
-                    english: "[???]",
+                    english: "[Independent Authority Against Corruption]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Авилгатай тэмцэх газар",
-                            en: "???"
+                            en: "Independent Authority Against Corruption"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1396,14 +1396,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Үндэсний статистикийн газар": {
                     code: "91",
-                    english: "[???]",
+                    english: "[National Statistical Office]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Үндэсний статистикийн газар",
-                            en: "???"
+                            en: "National Statistical Office"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1411,14 +1411,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Хүний эрхийн үндэсний комисс": {
                     code: "92",
-                    english: "[???]",
+                    english: "[National Human Rights Commission]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Хүний эрхийн үндэсний комисс",
-                            en: "???"
+                            en: "National Human Rights Commission"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1426,14 +1426,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Үндэсний аудитын газар": {
                     code: "93",
-                    english: "[???]",
+                    english: "[Natinal Audit Office]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Үндэсний аудитын газар",
-                            en: "???"
+                            en: "National Audit Office"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1441,14 +1441,14 @@ Engine.prototype.makeMaps = function () {
 
                 "Санхүүгийн зохицуулах хороо": {
                     code: "94",
-                    english: "[???]",
+                    english: "[Financial Regulatory Commission]",
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Санхүүгийн зохицуулах хороо",
-                            en: "???"
+                            en: "Financial Regulatory Commission"
                         },
                         regulationType: {
-                            mn: "???",
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     }
@@ -1651,7 +1651,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;arkhangai"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1663,7 +1663,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;bayan-ulgii"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1675,7 +1675,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;bayankhongor"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1687,7 +1687,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;bulgan"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1699,7 +1699,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;govi-altai"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирмж",
                         en: "Ordinance"
                     }
                 },
@@ -1711,7 +1711,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;govisumber"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1723,7 +1723,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;darkhan-uul"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1735,7 +1735,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;dornogovi"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1747,7 +1747,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;dornod"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1759,7 +1759,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;dundgovi"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1771,7 +1771,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;zavkhan"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1783,7 +1783,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;orkhon"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1795,7 +1795,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;selenge"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1807,7 +1807,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;sukhbaatar"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1819,7 +1819,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;tuv"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1831,7 +1831,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;uvs"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1843,7 +1843,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;ulaanbaatar"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1855,7 +1855,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;khovd"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1867,7 +1867,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;khentii"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1879,7 +1879,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;khuvsgul"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1891,7 +1891,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;uvurkhangai"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 },
@@ -1903,7 +1903,7 @@ Engine.prototype.makeMaps = function () {
                         jurisdiction: "mn;umnugovi"
                     },
                     regulationType: {
-                        mn: "???",
+                        mn: "Захирамж",
                         en: "Ordinance"
                     }
                 }
