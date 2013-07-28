@@ -50,7 +50,10 @@ Engine.prototype.getInfo = function (doc, url) {
     if (m) {
         if (m[1]) {
             this.info = this.getInfoFromDocument(doc);
-        } else if (m[2]) {
+        } else if (m[2] || url === "http://www.legalinfo.mn/law/158") {
+            if (!m[2]) {
+                m[2] = "27"
+            }
             this.info.cat = this.reverseInputMap[m[2]];
             this.info.type = this.inputmap[this.info.cat].type;
             var mm = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law.*subcat=([0-9]*)*.*/);
@@ -71,17 +74,11 @@ Engine.prototype.getInfoFromDocument = function (doc) {
         ret = {};
         category = crumbs.slice(1,2)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
         ret.cat = this.inputmap[category];
-        Zotero.debug("XXX category: "+category);
         ret.title = crumbs.slice(-1)[0].textContent;
     }
     if (crumbs.length > 2) {
         subcategory = crumbs.slice(2,3)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
-        Zotero.debug("XXX subcategory: "+subcategory);
         ret.subcat = this.inputmap[category].children[subcategory];
-        for (var key in this.inputmap[category].children) {
-            Zotero.debug("XXX   --> "+key);
-        }
-        Zotero.debug("XXX   ("+ret.cat + ") (" + ret.subcat + ")");
     }
     return ret;
 }
@@ -446,9 +443,9 @@ Engine.prototype.makeMaps = function () {
                         supplementName: {
                             mn: "Тогтоол",
                             en: "Resolution"
+                        }
                     }
-                },
-                
+                },            
                 "Дүгнэлт": {
                     code: "дүгнэлт",
                     english: "Decision",
@@ -534,7 +531,7 @@ Engine.prototype.makeMaps = function () {
                             en: "Ministry of Justice and Home Affairs"
                         },
                         regulationType: {
-                            mn: "Тушаал"
+                            mn: "Тушаал",
                             en: "Ordinance"
                         }
                     },
@@ -644,7 +641,7 @@ Engine.prototype.makeMaps = function () {
                         }
                     },
                     changes: {
-                        "2012"q: {
+                        "2012": {
                             variant: "Зам тээвэрийн яам",
                             boilerplate: {
                                 regulatoryBody: {
