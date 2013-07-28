@@ -514,11 +514,8 @@ Engine.prototype.getDocketNumber = function(multipleOK) {
  */
 Engine.prototype.getLouisianaVendorNeutral = function() {
     // Louisiana: from July 1, 1994, docketNumber and full date as mm/dd/yy in yearAsVolume NOT IN HEADER.
-    Zotero.debug("XXX Louisiana neutral: start");
     if (this.fields.jurisdiction.slice(0,5) === "us;la" && this.fields.docketNumber) {
-        Zotero.debug("XXX Louisiana neutral: has jurisdiction and docketNumber");
         if (this.onOrAfter("1994/07/01")) {
-            Zotero.debug("XXX Louisiana neutral: date is within range");
             var newlst = [];
             var lst = this.fields.dateDecided.split(/[-\/]/);
             for (var i=0,ilen=lst.length;i<ilen;i+=1) {
@@ -528,7 +525,6 @@ Engine.prototype.getLouisianaVendorNeutral = function() {
             newlst = [lst[1], lst[2], lst[0]];
             var datestr = newlst.join("/");
             var cite = {neutral: true,volume:datestr}
-            Zotero.debug("XXX Louisiana neutral: pushing cite");
             this.cites.push(cite);
         }
     }
