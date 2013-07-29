@@ -31,14 +31,15 @@ Engine.prototype.makeReverseInputMap = function () {
 }
 
 Engine.prototype.detectWeb = function (doc, url) {
-    var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(\/details)*.*/);
+    var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(?:(\/details)|.*[^b]cat=([0-9]+))*.*/);
     if (m) {
-        if (m[1]) {
+        if (m[1] || m[2] === "31") {
 
             // Just ignore single docs. Can't be made to work, unfortunately.
 
-            //return this.getInfoFromDocument(doc).cat.type;
-
+            // Also ignore the Constitutional Tsets area, which seems to be
+            // poorly curated.
+            
         } else {
             return "multiple";
         }
@@ -49,23 +50,23 @@ Engine.prototype.getInfo = function (doc, url) {
     var m = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law(?:(\/details)|.*[^b]cat=([0-9]+))*.*/);
     if (m) {
         if (m[1]) {
-            this.info = this.getInfoFromDocument(doc);
+            this.info = this.getInfoFromDocument(this.inputmap, doc);
         } else if (m[2] || url === "http://www.legalinfo.mn/law/158") {
             if (!m[2]) {
                 m[2] = "27"
             }
             this.info.cat = this.reverseInputMap[m[2]];
-            this.info.type = this.inputmap[this.info.cat].type;
+            this.info.itemType = this.inputmap[this.info.cat].itemType;
             var mm = url.match(/https?:\/\/(?:www\.)*legalinfo\.mn\/law.*subcat=([0-9]*)*.*/);
             if (mm) {
                 this.info.subcat = this.reverseInputMap[mm[1]];
             }
         }
     }
-    return this.info.type;
+    return this.info.itemType;
 }
 
-Engine.prototype.getInfoFromDocument = function (doc) {
+Engine.prototype.getInfoFromDocument = function (inputmap, doc) {
     var category;
     var subcategory;
     var crumbs = ZU.xpath(doc,'//h2[@class="crumbs"]/a');
@@ -73,12 +74,12 @@ Engine.prototype.getInfoFromDocument = function (doc) {
     if (crumbs.length > 1) {
         ret = {};
         category = crumbs.slice(1,2)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
-        ret.cat = this.inputmap[category];
+        ret.cat = category;
         ret.title = crumbs.slice(-1)[0].textContent;
     }
-    if (crumbs.length > 2) {
+    if (crumbs.length === 4) {
         subcategory = crumbs.slice(2,3)[0].textContent.replace(/^\s*(.*?)\s*$/, "$1");
-        ret.subcat = this.inputmap[category].children[subcategory];
+        ret.subcat = subcategory;
     }
     return ret;
 }
@@ -93,18 +94,14 @@ Engine.prototype.getFullURL = function (doc,url) {
 }
 
 Engine.prototype.getItemData = function (doc) {
-    //   * The URL of the doc (from chosen)
-    //   * The title (from chosen or from supp)
-    //   * The number (optional, from supp)
-    //   * The enactment date (from supp)
-    //   * The effective date (optional, from supp)
-    //   * The category (preset from index page)
-    //   * The subcategory (optional, from index page)
-    //   * The type (derived from index page)
-    var rows = ZU.xpath(doc, '//div[@id="page-container"]//div[@id="datagrid"]//div[contains(@class,"tbd")]/div[contains(@class,"row")]');
     var items = {};
     var supp = {};
+    var ensupp = {};
+
+    var rows = ZU.xpath(doc, '//div[@id="page-container"]//div[@id="datagrid"]//div[contains(@class,"tbd")]/div[contains(@class,"row")]');
+
     for (i=0,ilen=rows.length;i<ilen;i+=1) {
+
         var cells = rows[i].childNodes;
         // The width of the list varies, with drop-outs on both sides of
         // title. So we sniff the position of title, and then infer the
@@ -133,6 +130,7 @@ Engine.prototype.getItemData = function (doc) {
 
             var u = cells[pos.title].childNodes[0].getAttribute("href");
             u = this.getFullURL(doc,u);
+
             var t = cells[pos.title].childNodes[0].textContent;
             items[u] = t;
             if (t) {
@@ -144,7 +142,8 @@ Engine.prototype.getItemData = function (doc) {
                 t = lst.join(" ");
             }
 
-            supp[u] = { type: this.info.type, cat: this.info.cat, subcat: this.info.subcat, title: t };
+            supp[u] = { itemType: this.info.itemType, cat: this.info.cat, subcat: this.info.subcat, title: t };
+            ensupp[u] = {};
             
             if (cells[pos.enactedDate].textContent.replace(/^\s*(.*?)\s*$/, "$1")) {
                 supp[u].enactedDate = cells[pos.enactedDate].textContent;
@@ -159,17 +158,49 @@ Engine.prototype.getItemData = function (doc) {
             }
         }
     }
-    return { items: items, supp: supp };
+    return { items: items, supp: supp, ensupp: ensupp };
 }
 
-Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
+Engine.prototype.selectedItemsCallback = function (fieldmap, inputmap, getInfoFromDocument, urls, supp, ensupp) {
     ZU.processDocuments(urls, function (doc) {
 		var url = doc.documentURI;
-        var type = supp[url].type;
+        var type = supp[url].itemType;
+        Zotero.debug("XXX CURRENT TYPE(2): "+type);
         var item = new Zotero.Item(type);
         item.url = url;
         item.jurisdiction = "mn";
-        for (var key in fieldmap[type]) {
+
+        // Pick up subcat boilerplate fields, which can only be determined with
+        // confidence after we have the document
+        var info = getInfoFromDocument(inputmap, doc);
+        Zotero.debug("XXX info.cat="+info.cat);
+        for (var fieldname in inputmap[info.cat].boilerplate) {
+            item[fieldname] = inputmap[info.cat].boilerplate[fieldname].mn;
+            ZU.setMultiField(item, fieldname, inputmap[info.cat].boilerplate[fieldname].en, "en");
+        }
+        Zotero.debug("XXX info.subcat="+info.subcat);
+        if (info.subcat) {
+            for (var fieldname in inputmap[info.cat].children[info.subcat].boilerplate) {
+                item[fieldname] = inputmap[info.cat].children[info.subcat].boilerplate[fieldname].mn;
+                ZU.setMultiField(item, fieldname, inputmap[info.cat].children[info.subcat].boilerplate[fieldname].en, "en");
+                if (inputmap[info.cat].children[info.subcat].changes) {
+                    var docdate = new Date(supp[url].enactedDate.replace("-","/","g"));
+                    for (var changedatestr in inputmap[info.cat].children[info.subcat].changes) {
+                        var changedate = new Date(changedatestr.replace("-","/","g"));
+                        if (docdate >= changedate) {
+                            for (var fieldname in inputmap[info.cat].children[info.subcat].changes[changedatestr].boilerplate) {
+                                item[fieldname] = inputmap[info.cat].children[info.subcat].changes[changedatestr].boilerplate[fieldname].mn;
+                                ZU.setMultiField(item, fieldname, inputmap[info.cat].children[info.subcat].changes[changedatestr].boilerplate[fieldname].en, "en");
+                            }
+                            docdate = changedate;
+                        }
+                    }
+                }
+            }
+        }
+
+        // for (var key in fieldmap[type]) {
+        for (var key in supp[url]) {
             item[fieldmap[type][key]] = supp[url][key];
         }
         // Extract page content for save here.
@@ -194,7 +225,7 @@ Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
             head.appendChild(style)
             style.setAttribute("type", "text/css")
             
-            var css = "*{margin:0;padding:0;}table, div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}";
+            var css = "*{margin:0;padding:0;}table, div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
             
             style.appendChild(doc.createTextNode(css));
             var newDoc = ZU.composeDoc(doc, head, content);
@@ -204,36 +235,6 @@ Engine.prototype.selectedItemsCallback = function (fieldmap, urls, supp) {
         item.complete();
     }, function(){Zotero.done();});
 }
-
-// This didn't work out. API does not seem to permit acquisition of a list
-// containing metadata for exactly one instrument.
-/*
-Engine.prototype.scrapeFromDocument = function (doc) {
-    // Cobble together URL for a listing containing only the target item
-    var info = this.getInfoFromDocument(doc);
-    var title = info.title.replace(" ","%20","g");
-    if (info.subcat) {
-        var url = "/law?cat=" + info.cat.code + "&subcat=" + info.subcat.code + "&l_name=" + title;
-    } else {
-        var url = "/law?cat=" + info.cat.code + "&l_name=" + title;
-    }
-    // Run processDocuments() on target URL as a way of getting the DOM of the target listing
-    var engine = this;
-    Zotero.debug("XXX ADDRESS: "+url);
-    ZU.processDocuments([url], function(doc) {
-        // Inside processDocuments() gather metadata from all rows (should be only one ...)
-        var data = engine.getItemData(doc);
-        // Run selectedItemsCallback with our original URL to fetch the item to MLZ
-        var urls = [];
-        for (var u in data.items) {
-            urls.push(u);
-        }
-        Zotero.debug("XXX URLS: "+urls);
-        engine.selectedItemsCallback(engine.fieldmap, urls, data.supp);;
-    }, function(){});
-}
-*/
-
 
 function detectWeb(doc,url) {
     var engine = new Engine();
@@ -245,27 +246,22 @@ function doWeb(doc, url) {
     engine.getInfo(doc, url);
     var displayType = engine.detectWeb(doc, url);
     if (displayType === "multiple") {
-        var callback = engine.selectedItemsCallback;
         //   * The category (preset from index page)
         //   * The subcategory (optional, from index page)
         //   * The type (derived from index page)
         var data = engine.getItemData(doc);
         var items = [];
         var selectedItemsCallback = engine.selectedItemsCallback;
+        var getInfoFromDocument = engine.getInfoFromDocument;
+        var inputmap = engine.inputmap;
         var fieldmap = engine.fieldmap;
         Zotero.selectItems(data.items, function (chosen) {
 	        for (var j in chosen) {
 		        items.push(j);
 	        }
-	        selectedItemsCallback(fieldmap, items, data.supp);
+	        selectedItemsCallback(fieldmap, inputmap, getInfoFromDocument, items, data.supp, data.ensupp);
         });
     }
-// Nevermind
-/*
-    else {
-        engine.scrapeFromDocument(doc);
-    }
-*/
 }
 
 // Static data
@@ -274,7 +270,7 @@ Engine.prototype.makeMaps = function () {
     this.inputmap = {
         "Монгол Улсын хууль": {
             code: "27",
-            type: "statute",
+            itemType: "statute",
             english: "[Statutes]",
             boilerplate: {},
             children: {}
@@ -282,11 +278,11 @@ Engine.prototype.makeMaps = function () {
         "Улсын Их Хурлын тогтоол": {
             code: "28",
             english: "[Resolutions of the state Great Khural]",
-            type: "bill",
+            itemType: "bill",
             boilerplate: {
                 resolutionLabel: {
-                    mn: "Улсын Их Хурлын тогтоол [??? -- singular form -- ???]",
-                    en: "Resolution of the state Great Khural"
+                    mn: "Улсын Их Хурлын тогтоол",
+                    en: "Resolution of the Great Khural"
                 }
             },
             children: {}
@@ -294,7 +290,7 @@ Engine.prototype.makeMaps = function () {
         "Монгол Улсын олон улсын гэрээ": {
             code: "29",
             english: "[Mongolian international treaties]",
-            type: "treaty",
+            itemType: "treaty",
             boilerplate: {},
             children: {
                 "Гадаад харилцааг зохион байгуулах": {
@@ -421,7 +417,7 @@ Engine.prototype.makeMaps = function () {
         "Ерөнхийлөгчийн зарлиг": {
             code: "30",
             english: "[Decrees of the President]",
-            type: "regulation",
+            itemType: "regulation",
             boilerplate: {
                 regulationType: {
                     mn: "Ерөнхийлөгчийн зарлиг",
@@ -433,35 +429,30 @@ Engine.prototype.makeMaps = function () {
         "Үндсэн хуулийн цэцийн шийдвэр": {
             code: "31",
             english: "[Decisions of the Constitutional Tsets]",
-            type: "case",
-            boilerplate: {},
+            itemType: "case",
+            boilerplate: {
+                court: {
+                    mn: "Тогтоол",
+                    en: "Resolution"
+                }
+            },
             children: {
                 "Тогтоол": {
                     code: "тогтоол",
                     english: "Resolution",
-                    boilerplate: {
-                        supplementName: {
-                            mn: "Тогтоол",
-                            en: "Resolution"
-                        }
-                    }
+                    boilerplate: {}
                 },            
                 "Дүгнэлт": {
                     code: "дүгнэлт",
                     english: "Decision",
-                    boilerplate: {
-                        supplementName: {
-                            mn: "Дүгнэлт",
-                            en: "Decision"
-                        }
-                    }
+                    boilerplate: {}
                 }
             }
         },
         "Улсын дээд шүүхийн тогтоол": {
             code: "32",
             english: "[Resolutions of the Supreme Court]",
-            type: "case",
+            itemType: "case",
             boilerplate: {
                 supplementName: {
                     mn: "Тогтоол",
@@ -477,11 +468,11 @@ Engine.prototype.makeMaps = function () {
         "Засгийн газрын тогтоол": {
             code: "33",
             english: "[Resolutions of the government]",
-            type: "regulation",
+            itemType: "regulation",
             boilerplate: {
                 regulationType: {
                     mn: "Засгийн газрын тогтоол",
-                    en: "Resolution of Government (???)"
+                    en: "Resolution of Government"
                 }
             },
             children: {}
@@ -489,8 +480,13 @@ Engine.prototype.makeMaps = function () {
         "Сайдын тушаал": {
             code: "34",
             english: "Ministerial ordinances",
-            type: "regulation",
-            boilerplate: {},
+            itemType: "regulation",
+            boilerplate: {
+                regulationType: {
+                    mn: "Tушаал",
+                    en: "Ordinance"
+                }
+            },
             children: {
                 "Гадаад харилцааны яам": {
                     code: "95",
@@ -499,10 +495,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Гадаад харилцааны яам",
                             en: "Ministry of Foreign Affairs"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -514,10 +506,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Сангийн яам",
                             en: "Ministry of Finance"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -529,23 +517,15 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Хууль зүй, дотоод хэргийн яам",
                             en: "Ministry of Justice and Home Affairs"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     },
                     changes: {
-                        "2012": {
+                        "2012-06-01": {
                             variant: "Хууль зүйн яам",
                             boilerplate: {
                                 regulatoryBody: {
                                     mn: "Хууль зүйн яам",
                                     en: "Ministry of Justice"
-                                },
-                                regulationType: {
-                                    mn: "Tушаал",
-                                    en: "Ordinance"
                                 }
                             }
                         }
@@ -559,23 +539,15 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Байгаль орчин, аялал жуулчлалын яам",
                             en: "Ministry of Nature, Environment and Tourism"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     },
                     changes: {
-                        "2012": {
+                        "2012-06-01": {
                             variant: "Байгаль орчин, ногоон хөгжлийн яам",
                             boilerplate: {
                                 regulatoryBody: {
                                     mn: "Байгаль орчин, ногоон хөгжлийн яам",
                                     en: "Ministry of Nature, Environment and Green Development"
-                                },
-                                regulationType: {
-                                    mn: "Tушаал",
-                                    en: "Ordinance"
                                 }
                             }
                         }
@@ -589,23 +561,15 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Боловсрол, соёл шинжлэх ухааны яам",
                             en: "Ministry of Education, Culture and Science"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     },
                     changes: {
-                        "2012": {
+                        "2012-06-01": {
                             variant: "Батлан хамгаалах яам",
                             boilerplate: {
                                 regulatoryBody: {
                                     mn: "Батлан хамгаалах яам",
                                     en: "Ministry of Defence"
-                                },
-                                regulationType: {
-                                    mn: "Tушаал",
-                                    en: "Ordinance"
                                 }
                             }
                         }
@@ -619,10 +583,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Боловсрол, шинжлэх ухааны яам",
                             en: "Ministry of Education and Science"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -634,23 +594,15 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Зам тээвэр, аялал жуулчлалын яам",
                             en: "Ministry of Roads, Transportation and Tourism"
-                        },
-                        regulationType: {
-                            mn: "Tушаал",
-                            en: "Ordinance"
                         }
                     },
                     changes: {
-                        "2012": {
+                        "2012-06-01": {
                             variant: "Зам тээвэрийн яам",
                             boilerplate: {
                                 regulatoryBody: {
                                     mn: "Зам тээвэрийн яам",
                                     en: "Ministry of Road and Transportation"
-                                },
-                                regulationType: {
-                                    mn: "Тушаал",
-                                    en: "Ordinance"
                                 }
                             }
                         }
@@ -664,23 +616,15 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Нийгмийн хамгаалал, хөдөлмөрийн яам",
                             en: "Ministry of Social Welfare and Labor"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     },
                     changes: {
-                        "2012": {
+                        "2012-06-01": {
                             variant: "Хөдөлмөрийн яам",
                             boilerplate: {
                                 regulatoryBody: {
                                     mn: "Хөдөлмөрийн яам",
                                     en: "Ministry of Labor"
-                                },
-                                regulationType: {
-                                    mn: "Тушаал",
-                                    en: "Ordinance"
                                 }
                             }
                         }
@@ -694,10 +638,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Эрдэс баялаг, эрчим хүчний яам",
                             en: "Ministry of Mineral Resources and Energy"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -709,10 +649,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Хүнс, хөдөө аж ахуй, хөнгөн үйлдвэрийн яам",
                             en: "Ministry of Food, Agriculture and Light Industry"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -724,10 +660,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Барилга, хот байгуулалтын яам",
                             en: "Ministry of Construction and Urban Development"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -739,10 +671,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Түлш, эрчим хүчний яам",
                             en: "Ministry of Fuel and Energy"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -754,10 +682,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Эрүүл мэндийн яам",
                             en: "Ministry of Health"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -769,10 +693,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Дэд бүтцийн яам",
                             en: "Ministry of Infrastructure"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -784,10 +704,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Зам тээвэр, барилга, хот байгуулалтын яам",
                             en: "Ministry of Roads, Transportation, Construction and Urban Development"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -799,10 +715,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Байгаль орчны яам",
                             en: "Ministry of Environment"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -814,10 +726,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Гадаад хэргийн яам",
                             en: "Ministry of Foreign Affairs"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -829,10 +737,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Үйлдвэр, худалдааны яам",
                             en: "Ministry of Industry and Trade"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -844,10 +748,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Санхүү, эдийн засгийн яам",
                             en: "Ministry of Finance and Economic"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 },
@@ -859,10 +759,6 @@ Engine.prototype.makeMaps = function () {
                         regulatoryBody: {
                             mn: "Гэгээрлийн яам",
                             en: "Ministry of Enlightenment"
-                        },
-                        regulationType: {
-                            mn: "Тушаал",
-                            en: "Ordinance"
                         }
                     }
                 }
@@ -871,7 +767,7 @@ Engine.prototype.makeMaps = function () {
         "Засгийн газрын агентлагийн даргын тушаал": {
             code: "35",
             english: "Ordinances of administrative agency chiefs",
-            type: "regulation",
+            itemType: "regulation",
             boilerplate: {},
             children: {
                 "Биеийн тамир, спортын хороо": {
@@ -955,7 +851,7 @@ Engine.prototype.makeMaps = function () {
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Шударга бус өрсөлдөөнийг хянан зохицуулах газар",
-                            en: "Unfiar Competition Regulatory Authority"
+                            en: "Unfair Competition Regulatory Authority"
                         },
                         regulationType: {
                             mn: "Тушаал",
@@ -1328,7 +1224,7 @@ Engine.prototype.makeMaps = function () {
         "УИХ-аас томилогддог байгууллагын дарга, түүнтэй адилтгах албан тушаалтны шийдвэр": {
             code: "36",
             english: "Ordinances of chiefs of organizations established by the state Great Khural",
-            type: "regulation",
+            itemType: "regulation",
             boilerplate: {},
             children: {
                 "Монгол банк": {
@@ -1352,7 +1248,7 @@ Engine.prototype.makeMaps = function () {
                     boilerplate: {
                         regulatoryBody: {
                             mn: "Төрийн албаны зөвлөл",
-                            en: "Civil Service Counsil"
+                            en: "Civil Service Council"
                         },
                         regulationType: {
                             mn: "Тушаал",
@@ -1455,7 +1351,7 @@ Engine.prototype.makeMaps = function () {
         "Аймаг, нийслэлийн ИТХ-ын шийдвэр": {
             code: "37",
             english: "Decisions of aimag and capital city representative khurals",
-            type: "statute",
+            itemType: "statute",
             boilerplate: {},
             children: {
                 "Архангай аймаг": {
@@ -1638,7 +1534,7 @@ Engine.prototype.makeMaps = function () {
         "Аймаг, нийслэлийн Засаг даргын захирамж": {
             code: "38",
             english: "Ordinances of aimag and capital city governors",
-            type: "regulation",
+            itemType: "regulation",
             boilerplate: {},
             children: {
                 "Архангай аймаг": {
@@ -1913,6 +1809,11 @@ Engine.prototype.makeMaps = function () {
             title: "caseName",
             number: "docketNumber",
             enactedDate: "dateDecided"
+        },
+        bill: {
+            title: "title",
+            number: "billNumber",
+            enactedDate: "date"
         },
         regulation: {
             title: "nameOfAct",
