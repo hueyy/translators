@@ -1,5 +1,6 @@
 {
 	"translatorID": "14c135ad-93f3-4e64-b501-a36724418cef",
+	"translatorType": 4,
 	"label": "Cornell LII - US Code",
 	"creator": "Frank Bennett",
 	"target": "https?://(?:www.)law.cornell.edu/uscode/text",
@@ -7,9 +8,8 @@
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "g",
-	"lastUpdated": "2013-07-19 22:45:50"
+	"lastUpdated": "2013-07-22 05:01:36"
 }
 
 /**
@@ -403,18 +403,18 @@ FW._MultiScraper = function (init) {
 		ret();
 	    } else {
 	        var cb = function (doc1) {
-		    var url1 = doc1.documentURI;
-		    var itemTrans = parentItemTrans;
-		    if (itemTrans === undefined) {
-			itemTrans = FW.getScraper(doc1, url1);
-		    }
-		    if (itemTrans === undefined) {
+		        var url1 = doc1.documentURI;
+		        var itemTrans = parentItemTrans;
+		        if (itemTrans === undefined) {
+			        itemTrans = FW.getScraper(doc1, url1);
+		        }
+		        if (itemTrans === undefined) {
 			/* nothing to do */
-		    } else {
-			itemTrans.makeItems(doc1, url1, attachments[url1],
-                                            eachItem, function() {});
-		    }
-		};
+		        } else {
+			        itemTrans.makeItems(doc1, url1, attachments[url1],
+                                        eachItem, function() {});
+		        }
+		    };
 	        Zotero.Utilities.processDocuments(itemsToUse, cb, ret);
 	    }
 	});
@@ -613,6 +613,7 @@ FW._Xpath = function (_xpath) {
                 head.appendChild(titlenode)
                 titlenode.appendChild(doc.createTextNode(title));
                 if (css) {
+
                     var style = doc.createElementNS(myns, "style");
                     head.appendChild(style)
                     style.setAttribute("type", "text/css")
@@ -705,7 +706,8 @@ function doWeb(doc, url) { return FW.doWeb(doc, url); }
 
 // Local code
 
-var css = "*{margin:0;padding:0;}div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}.enumbell{font-weight:bold;}div.psection-2{text-indent:1em;}div.psection-3{text-indent:2em;}div.psection-4{text-indent:3em;}div.psection-5{text-indent:4em;}div.psection-6{text-indent:5em;}div.psection-7{text-indent:6em;}div.psection-8{text-indent:7em;}"
+var css = "*{margin:0;padding:0;}div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}.enumbell{font-weight:bold;}div.psection-2{text-indent:1em;}div.psection-3{text-indent:2em;}div.psection-4{text-indent:3em;}div.psection-5{text-indent:4em;}div.psection-6{text-indent:5em;}div.psection-7{text-indent:6em;}div.psection-8{text-indent:7em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
+
 
 FW.Scraper({
     itemType: 'statute',
