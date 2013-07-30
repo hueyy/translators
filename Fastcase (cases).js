@@ -186,8 +186,8 @@ var fedmap = {
   "C.D.Cal.": "us;federal;ca.central"
 }
 
-var daterex = /.*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z.]*\s+([0-9]{1,2}),*\s+([0-9]{4})(?:[^0-9]|$)/i;
-var daterexstrict = /^\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z.]*\s+([0-9]{1,2}),*\s+([0-9]{4})\.?\s*$/i;
+var daterex = /.*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z.]*\s+([0-9]{1,2}|term),*\s+([0-9]{4})(?:[^0-9]|$)/i;
+var daterexstrict = /^\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z.]*\s+([0-9]{1,2}|term),*\s+([0-9]{4})\.?\s*$/i;
 
 /*
  * Top of the parsing engine
@@ -331,7 +331,11 @@ Engine.prototype.getDecisionDate = function() {
         if (m) {
             var monthname = m[1].toLowerCase();
             month = (monthnames.indexOf(monthname) + 1);
-            day = m[2];
+            if (m[2].toLowerCase() === "term") {
+                day = "1";
+            } else {
+                day = m[2];
+            }
             while (day.length < 2) {
                 day = "0" + day;
             }
