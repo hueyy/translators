@@ -1803,8 +1803,8 @@ Engine.prototype.selectedItemsCallback = function (urls, supp, ensupp) {
             item[fieldmap[type][key]] = supp[url][key];
         }
         // Fix truncated titles on decisions of the Constitutional Tsets
-        if (info.title) {
-            item[fieldmap[type]["title"]] = info.title;
+        if (info.abstractNote) {
+            item.abstractNote = info.abstractNote;
         }
         // Extract page content for save here.
         var content = doc.getElementsByClassName("content_field");
