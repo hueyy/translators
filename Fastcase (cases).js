@@ -2,7 +2,7 @@
 	"translatorID": "bb3cdc98-300e-4c66-a3d3-63ba6a87bf01",
 	"label": "Fastcase (cases)",
 	"creator": "Frank Bennett",
-	"target": "https?://apps.fastcase.com/Research/Pages/Document.aspx?.*LTID=",
+	"target": "https?://apps.fastcase.com/Research/Pages/(?:Document|Results).aspx?.*LTID=",
 	"minVersion": "1.0",
 	"maxVersion": "",
 	"priority": 100,
@@ -478,6 +478,8 @@ Engine.prototype.getDocketNumber = function(multipleOK) {
         lst[i] = lst[i].replace(/^\s*(?:no|nos|number)[:.]\s+/i,"");
         // Normalize en-dash to hyphen
         lst[i] = lst[i].replace("–","-","g");
+        // Normalize double-hyphen to hyphen
+        lst[i] = lst[i].replace("--","-","g");
         // Test for terminal string with no spaces that contains at least one number 
         if (lst[i].match(/.*[0-9][^ ]*$/)) {
             var docketNumber = lst[i].replace(/\s*\.\s*$/g,"");
@@ -621,16 +623,10 @@ Engine.prototype.fixGeneralVendorNeutral = function() {
 }
 
 /*
- * Translator detectWeb() and doWeb() functions.
- */
-function detectWeb(doc, url) {
-	if (doc.getElementById("ViewDocumentCitationHdr1_lblCitation")) {
-		return "case";
-	}
-}
-
-function doWeb(doc, url) {
-
+ * Master scrape function
+ *
+*/
+function scrapeOneCase(doc, url) {
     var engine = new Engine(doc, url);
 
     // ** Attachment
@@ -718,5 +714,71 @@ function doWeb(doc, url) {
     // Wrap it up
     for (var i=0,ilen=engine.items.length;i<ilen;i+=1) {
         engine.items[i].complete();
+    }
+}
+
+/*
+ * Translator detectWeb() and doWeb() functions.
+ */
+function detectWeb(doc, url) {
+    if (url.match(/https?:\/\/apps\.fastcase\.com\/Research\/Pages\/Results\.aspx\?.*LTID=/)) {
+        return "multiple";
+    } else if (doc.getElementById("ViewDocumentCitationHdr1_lblCitation")) {
+		return "case";
+	}
+}
+
+function doWeb(doc, url) {
+
+    if (url.match(/https?:\/\/apps\.fastcase\.com\/Research\/Pages\/Results\.aspx\?.*LTID=/)) {
+        // Assemble items list
+        ZU.doGet([url], function (txt) {
+            var items = [];
+            var anchors_m = txt.match(/<a[^>]+>.*?<\/a>/g);
+            for (var i=0,ilen=anchors_m.length;i<ilen;i+=1) {
+                if (anchors_m[i].indexOf("ucPageWrapper") === -1 || anchors_m[i].indexOf('target="_self"') === -1) {
+                    continue;
+                }
+                var m = anchors_m[i].match(/<a[^>]+href="([^"]+)"[^>]+>(.*?)<\/a>/);
+                var url = m[1];
+                var title = m[2];
+                items[url] = title;
+            }
+            Zotero.selectItems(items, function (chosen) {
+                var urls = [];
+	            for (var j in chosen) {
+		            urls.push(j);
+	            };
+                ZU.processDocuments(urls, function (doc, url) {
+                    scrapeOneCase(doc, url);
+                });
+            });
+        }, Zotero.done);
+  //      var node = document.evaluate('//span', iframe.contentDocument,
+  //                                           null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue
+/*
+        for (var i=0,ilen=nodes.length;i<ilen;i+=1) {
+            try {
+                Zotero.debug("XXX gotcha: "+nodes[i]);
+                var url = nodes[i].getElementsByTagName("a")[0].getAttribute("href");
+                var title = nodes.textContent;
+                items[url] = title;
+            } catch (e) {
+                Zotero.debug("XXX Fastcase translator error: unable to read list node");
+            }
+            
+        }
+        Zotero.selectItems(items, function (chosen) {
+            var urls = [];
+	        for (var j in chosen) {
+		        urls.push(j);
+	        };
+            ZU.processDocuments(urls, function (doc, url) {
+                scrapeOneCase(doc, url);
+            });
+        });
+*/
+    } else {
+        scrapeOneCase(doc, url);
     }
 }
