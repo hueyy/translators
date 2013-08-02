@@ -26,7 +26,6 @@ function detectWeb(doc, url) {
 // Need a function to clean up titles (only one parenthetical per title, the first)
 
 function doWeb(doc, url) {
-	anchors = doc.getElementsByTagName('a');
 	var availableItems = {};
     var documentURLs = {};
     var documentTitles = {};
