@@ -15,28 +15,36 @@
 
 function getDateAndNumber(txt) {
     var ret;
-    var m = txt.match(/(?:ºÇ½ª²şÀµ¡§)*((ÌÀ¼£|ÂçÀµ|¾¼ÏÂ|Ê¿À®)([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)Ç¯([½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)·î([½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)Æü)(Ë¡Î§)Âè([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)¹æ/);
+    var m = txt.match(/(?:æœ€çµ‚æ”¹æ­£ï¼š)*((æ˜æ²»|å¤§æ­£|æ˜­å’Œ|å¹³æˆ)([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)å¹´([åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)æœˆ([åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)æ—¥)(æ³•å¾‹|.*çœä»¤|æ”¿ä»¤)ç¬¬([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)å·/);
 
     var date = "";
     var number = "";
     if (m) {
         ret = {};
         var addifier = {
-            "ÌÀ¼£": 1867,
-            "ÂçÀµ": 1911,
-            "¾¼ÏÂ": 1925,
-            "Ê¿À®": 1988
+            "æ˜æ²»": 1867,
+            "å¤§æ­£": 1911,
+            "æ˜­å’Œ": 1925,
+            "å¹³æˆ": 1988
+        }
+        if (m[6] === "æ³•å¾‹") {
+            ret.type = "statute";
+        } else if (m[6] === "æ”¿ä»¤") {
+            ret.authority = "å†…é–£";
+            ret.type = "regulation";
+        } else {
+            ret.authority = m[6].slice(0,-1);
+            ret.type = "regulation";
         }
         ret.rawdate = m[1];
         ret.date = (addifier[m[2]] + convertNumber(m[3])) + "-" + convertNumber(m[4]) + "-" + convertNumber(m[5]);
-        ret.number = convertNumber(m[6]);
+        ret.number = convertNumber(m[7]);
     }
     return ret;
 }
 
 
-function scrapeStatute (doc, url, articles) {
-    Zotero.debug("XXX articles: "+articles);
+function scrapeStatute (doc, url, articles, mode, originalDoc, originalUrl) {
     // Get the basic statutory info:
     // * title
     // * year of latest revision
@@ -59,26 +67,37 @@ function scrapeStatute (doc, url, articles) {
     var ministry = "";
 
     var itemmaps = [];
-    var itemnodes = ZU.xpath(doc, '//div[contains(@class,"item")]/b[contains(.,"Âè")][1]');
+    var itemnodes = ZU.xpath(doc, '//div[contains(@class,"item")]/b[1]');
     for (var i=0,ilen=articles.length;i<ilen;i+=1) {
         var node = itemnodes[articles[i]];
+        if (dateAndNumber) {
+            var type = dateAndNumber.type;
+        }
         var item = new Zotero.Item(type);
-        item.url = url;
+        item.url = originalUrl;
         item.jurisdiction = "jp";
         item.title = title;
         if (dateAndNumber) {
             item.publicLawNumber = dateAndNumber.number;
             item.date = dateAndNumber.date;
+            item.regulatoryBody = dateAndNumber.authority;
         }
         if (revisionDateAndNumber) {
             item.extra = "Last revised " + revisionDateAndNumber.date + " by Law no. " + revisionDateAndNumber.number;
         }
         var section = node.textContent;
-        var m = section.match(/\s*Âè([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)¾ò[¤ÎÉ]*([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)*/);
-        if (m) {
-            var section = "sec. " + convertNumber(m[1]);
-            if (m[2]) {
-                section += ("-" + convertNumber(m[2]));
+        if (mode === "ç¬¬") {
+            var m = section.match(/\s*ç¬¬([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)æ¡[ã®ï¾‰]*([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)*/);
+            if (m) {
+                var section = "sec. " + convertNumber(m[1]);
+                if (m[2]) {
+                    section += ("-" + convertNumber(m[2]));
+                }
+            }
+        } else {
+            var m = section.match(/\s*([ï¼‘ï¼’ï¼“ï¼”ï¼•ï¼–ï¼—ï¼˜ï¼™]+)/);
+            if (m) {
+                var section = "sec. " + convertNumber(m[1]);
             }
         }
         item.section = section;
@@ -97,18 +116,24 @@ function scrapeStatute (doc, url, articles) {
                             break;
                         }
                     }
-                    if (labelnode && labelnode.textContent.match(/^\s*Âè/)) {
-                        nextnode = false;
+                    if (mode === "ç¬¬") {
+                        if (labelnode && (labelnode.textContent.match(/^\s*ç¬¬/) || labelnode.textContent.match(/^\s*é™„ã€€*å‰‡.*/))) {
+                            nextnode = false;
+                        }
+                    } else {
+                        if (labelnode && labelnode.textContent.match(/^\s*[ï¼‘ï¼’ï¼“ï¼”ï¼•ï¼–ï¼—ï¼˜ï¼™]+/)) {
+                            nextnode = false;
+                        }
                     }
                 }
             }
         }
-        var pagetitle = node.textContent + "¡¢" + title; 
+        var pagetitle = node.textContent + "ã€" + title; 
         if (revisionDateAndNumber) {
-            pagetitle += "¡ÊºÇ½ª²şÀµ¡§" + revisionDateAndNumber.rawdate + "¡Ë"
+            pagetitle += "ï¼ˆæœ€çµ‚æ”¹æ­£ï¼š" + revisionDateAndNumber.rawdate + "ï¼‰"
         }
-        var header = makeHeader(doc, pagetitle);
-        var artdoc = ZU.composeDoc(doc, header, docnodes);
+        var header = makeHeader(originalDoc, pagetitle);
+        var artdoc = ZU.composeDoc(originalDoc, header, docnodes);
         item.attachments.push({document:artdoc, title:node.textContent, snapshot:true});
         item.complete();
     }
@@ -127,7 +152,7 @@ function makeHeader(doc, title) {
     var style = doc.createElementNS(myns, "style");
     head.appendChild(style)
     style.setAttribute("type", "text/css")
-    var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;max-width:95%;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}div{margin:1em 0 1em 0;}";
+    var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;max-width:95%;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}div{margin:1em 0 1em 0;}div.number{text-indent:-1em;margin:2em;}";
     style.appendChild(doc.createTextNode(css));
     return head;
 }
@@ -135,14 +160,19 @@ function makeHeader(doc, title) {
 function convertNumber (str) {
     var num = 0;
     var multipliers = {
-        "Àé": 1000,
-        "É´": 100,
-        "½½": 10
+        "åƒ": 1000,
+        "ç™¾": 100,
+        "å": 10
     }
-    var numbers = ["meh","°ì","Æó","»°","»Í","¸Ş","Ï»","¼·","È¬","¶å"];
+    var numbers = ["meh","ä¸€","äºŒ","ä¸‰","å››","äº”","å…­","ä¸ƒ","å…«","ä¹"];
+    var arabic = ["ï¼","ï¼‘","ï¼’","ï¼“","ï¼”","ï¼•","ï¼–","ï¼—","ï¼˜","ï¼™"];
     var working = "";
     var lst = str.split("");
     for (var i=0,ilen=lst.length;i<ilen;i+=1) {
+        if (arabic.indexOf(lst[i]) > -1) {
+            working += arabic.indexOf(lst[i]);
+            continue;
+        }
         if (multipliers[lst[i]]) {
             if (!working) {
                 working = "1";
@@ -160,11 +190,22 @@ function convertNumber (str) {
 }
 
 function buildItemList (doc, items) {
-    var itemnodes = ZU.xpath(doc, '//div[contains(@class,"item")]/b[contains(.,"Âè")][1]');
+    var mode, rex;
+    var itemnodes = ZU.xpath(doc, '//div[contains(@class,"item")]/b[1]');
+    if (itemnodes && itemnodes[0]) {
+        var mode;
+        if (itemnodes[0].textContent.match(/^\s*ç¬¬/)) {
+            rex = new RegExp("^\s*ç¬¬([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)æ¡[ã®ï¾‰]*([åƒç™¾åä¸€äºŒä¸‰å››äº”å…­ä¸ƒå…«ä¹]+)*");
+            mode = "ç¬¬";
+        } else {
+            rex = new RegExp("^\s*([ï¼‘ï¼’ï¼“ï¼”ï¼•ï¼–ï¼—ï¼˜ï¼™]+)");
+            mode = "ï¼‘";
+        }
+    }
     var lastnum = 0;
     for (var j=0,jlen=itemnodes.length;j<jlen;j+=1) {
         var title = itemnodes[j].textContent;
-        var m = title.match(/^\s*Âè([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)¾ò[¤ÎÉ]*([ÀéÉ´½½°ìÆó»°»Í¸ŞÏ»¼·È¬¶å]+)*/);
+        var m = title.match(rex);
         if (m) {
             var num = convertNumber(m[1]);
             if (num < lastnum) {
@@ -176,6 +217,7 @@ function buildItemList (doc, items) {
         }
         items[j] = title;
     }
+    return mode;
 }
 
 function detectWeb (doc, url) {
@@ -183,6 +225,8 @@ function detectWeb (doc, url) {
 }
 
 function doWeb (doc, url) {
+    var originalUrl = url;
+    var originalDoc = doc;
     var frames = doc.getElementsByTagName("frame");
     for (var i=0,ilen=frames.length;i<ilen;i+=1) {
         if (frames[i].getAttribute("name") === "data") {
@@ -191,16 +235,16 @@ function doWeb (doc, url) {
                 [realurl],
                 function (doc, url) {
                     var items = {};
-                    buildItemList(doc, items);
+                    var mode = buildItemList(doc, items);
                     Zotero.selectItems(items, function (chosen) {
                         var articles = [];
 	                    for (var j in chosen) {
 		                    articles.push(j);
 	                    };
-                        scrapeStatute(doc, url, articles);
+                        scrapeStatute(doc, url, articles, mode, originalDoc, originalUrl);
                     });
                 },
-                function(){}
+                function(){Zotero.done();}
             );
             break;
         }
