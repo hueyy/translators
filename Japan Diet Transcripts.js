@@ -125,7 +125,7 @@ function doWeb(doc, url) {
 		}
 	}
 
-	Zotero.Utilities.processDocuments(urls, function(newDoc) {
+	Zotero.Utilities.processDocuments(urls, function(newDoc, url) {
 		var item = new Zotero.Item("hearing");
         item.jurisdiction = "jp";
 		var pos = "0";
@@ -135,8 +135,10 @@ function doWeb(doc, url) {
 		}
 		//
 		// These details come in from the speakers list
-		item.creators.push( {lastName:items_data[pos]['speaker'], creatorType:"contributor"});
-		item.statementNumber = pos;
+        // XXX this has been abandoned: just label the attachments and let user flag
+        // XXX the speaker in parentheticals etc.
+		//item.creators.push( {lastName:items_data[pos]['speaker'], creatorType:"contributor"});
+		//item.statementNumber = pos;
 		//
 		// The rest are scraped from the index page
 		// Number of columns varies (of course!).  build a map before
@@ -160,11 +162,53 @@ function doWeb(doc, url) {
 		item.date = convertDate(date);
 		item.url = url_base+"/";
 
+        var speaker = items_select[pos];
 
-		item.attachments = [
-			{url:items_data[pos]['text_url'], title:"Hearing Statement Snapshot", mimeType:"text/html"},
-		];
-		item.complete();
+        ZU.processDocuments(
+            [items_data[pos]['text_url']],
+            function (doc, url) {
+                var body = doc.getElementsByTagName("body")[0];
+                var html = body.innerHTML;
+                var lst = html.split("\n");
+                for (var i=lst.length-1;i>-1;i+=-1) {
+                    if (lst[i].match(/.*<br\s*\/*>\s*/)) {
+                        lst[i] = lst[i].replace(/<[^>]+>/g,"").replace(/^(○)(.*?)([　 ])/,"$1<b>$2</b>$3").replace(/^[　 ]/,"");
+                    } else {
+                        lst = lst.slice(0,i).concat(lst.slice(i+1));
+                    }
+                }
+                html = '<div class="mlz-block"><div class="mlz-first">' + lst.join('</div>\n<div class="mlz-subsequent">') + '</div></div>';
+
+                var myns = "http://www.w3.org/1999/xhtml"
+                var block = doc.createElementNS(myns, "div");
+                block.innerHTML = html;
+
+                // head (title and css)
+                var head = doc.createElementNS(myns, "head");
+                var titlenode = doc.createElementNS(myns, "title");
+                head.appendChild(titlenode)
+                var pagetitle = item.legislativeBody + item.committee + " (" + item.date + ")"
+                titlenode.appendChild(doc.createTextNode("国会会議録検索システム："+pagetitle));
+                
+                var style = doc.createElementNS(myns, "style");
+                head.appendChild(style)
+                style.setAttribute("type", "text/css")
+                var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;max-width:95%;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}div.mlz-block{margin:1em 0 1em 1em;}div.mlz-first{text-indent:-1em;margin-bottom:1em;}div.mlz-subsequent{margin-bottom:1em;}";
+                style.appendChild(doc.createTextNode(css));
+
+
+                // Block URLs in recomposed document.
+                var mydoc = ZU.composeDoc(doc, head, block, true);
+		        item.attachments = [
+			        {document:mydoc, title:speaker, snapshot:true, url:"http://example.com"},
+		        ];
+		        item.complete();
+            },
+            function () {
+                Zotero.done();
+            }
+        );
+
 	}, function() {Zotero.done();});
 }
 
