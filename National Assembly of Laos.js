@@ -12,34 +12,30 @@
 	"lastUpdated": "2013-07-05 07:40:28"
 }
 
-function detectWeb(doc, url) {
-	anchors = doc.getElementsByTagName('a');
-	for (var i=0,ilen=anchors.length;i<ilen;i+=1) {
-		var href = anchors[i].getAttribute('href');
-		if (href && href.match(/.*\/docs\/lao\/laws\/.*/)) {
-			return "multiple";
-		}
-	}
- 	return false;
-}
+ParseDoc = function (doc) {
+    this.doc = doc;
+	this.availableItems = {};
+    this.itemURLs = {};
+    this.itemTitles = {};
+    this.fields = {};
+    this.getAvailableItems();
+};
 
-// Need a function to clean up titles (only one parenthetical per title, the first)
-
-function doWeb(doc, url) {
-	var availableItems = {};
-    var documentURLs = {};
-    var documentTitles = {};
+ParseDoc.prototype.getAvailableItems = function () {
     // The markup of the legislation lists is less than ideal, to put it mildly.
     // List elements are set entirely in SPAN and A tags, with newlines forced with BR.
     // Some documents are even linked to anchors with no descriptive content.
     // The nesting of SPAN, A and BR tags is highly irregular, making it impossible
     // to extract structured content with xpath.
     //
-    // Recovering this mess will require some extremely ugly and arcane
-    // code-fu. Hold your nose, here we go ...
-    //
-    // Get the nodes containing the gunk for the list(s).
-    var bignodes = ZU.xpath(doc, '//h2/following-sibling::div[@class="article-content"]/p');
+    this.getLineData();
+    this.fixLineData();
+}
+
+ParseDoc.prototype.getLineData = function () {
+    // Set the availableItems list for the UI, and 
+    // set up the data list for onward processing
+    var bignodes = ZU.xpath(this.doc, '//h2/following-sibling::div[@class="article-content"]/p');
     // Dump the HTML of the list(s) to a string.
     var bigtxt = "";
     var biglst;
@@ -52,21 +48,24 @@ function doWeb(doc, url) {
             var txt = count + ". " + biglst[j].replace(/<[^>]*>/g,"");
             var m = biglst[j].match(/[^\"]*\/docs\/lao\/laws[^\"]*/g);
             if (m) {
-                documentURLs[m[0]] = m.slice();
-                documentTitles[m[0]] = txt;
-                availableItems[m[0]] = txt;
+                var url = m[0]
+                this.availableItems[url] = txt;
+                this.itemURLs[url] = m.slice();
+                this.itemTitles[url] = [txt];
                 count += 1;
             }
 	    }
     }
-	var items = Zotero.selectItems(availableItems);
-	var urls = [];
-	for (var myurl in items) {
-		urls.push(myurl);
-	}
-	Zotero.Utilities.processDocuments(urls, function(doc, url){
-        var key = url.replace(/^https?:\/\/(www\.)?na\.gov\.la/,"");
-        
+}
+
+ParseDoc.prototype.fixLineData = function () {
+
+    for (var key in this.availableItems) {
+        this.fields[key] = {};
+
+        // We now have a sensible list of items. Now for the attachment
+        // URLs.
+
         // There can be multiple attachment URLs for a numbered
         // statute item. Attachments either represent the statute, or
         // a revision to the statute, or a supplementary order or law
@@ -75,65 +74,103 @@ function doWeb(doc, url) {
         // should be added one at a time for the succeeding URLs. If
         // we run out of parentheticals, we should attach the doc to
         // the current item.
+        
+        var itemTitleLst = [this.itemTitles[key][0].replace(/\s*\(.*/,"")];
 
-        //
-        // Yuck! But at least the list has something more closely
-        // resembling a structure at this point, after our
-        // pre-processing.
-        var docTitleLst = [documentTitles[key].replace(/\s*\(.*/,"")];
-        var docTitleMatch = documentTitles[key].match(/(\([^)]+\))/g);
-        if (docTitleMatch) {
-            for (var i=docTitleMatch.length-1;i>-1;i+=-1) {
-                docTitleLst.push(docTitleLst[0] + " " + docTitleMatch[i]);
+        // Extend item title list for this item
+        var itemTitleMatch = this.itemTitles[key][0].match(/(\([^)]+\))/g);
+        if (itemTitleMatch) {
+            for (var i=itemTitleMatch.length-1;i>-1;i+=-1) {
+                itemTitleLst.push(itemTitleLst[0] + " " + itemTitleMatch[i]);
             }
         }
 
-        // Extend title of all elements with any leftovers.
-        if (docTitleLst.length > documentURLs[key].length) {
-            var suppLst = docTitleLst.slice(documentURLs[key].length);
-            for (var i=0,ilen=suppLst.length;i<ilen;i+=1) {
-                for (var j=0,jlen=documentURLs[key].length;j<jlen;j+=1) {
-                    docTitleLst[j] += (" " + suppLst[i]);
+        // Append orphan item title parenthetical string(s) to linked titles
+        if (itemTitleLst.length > this.itemURLs[key].length) {
+            var supplementaryTitleLst = itemTitleLst.slice(this.itemURLs[key].length);
+            for (var i=0,ilen=supplementaryTitleLst.length;i<ilen;i+=1) {
+                for (var j=0,jlen=this.itemURLs[key].length;j<jlen;j+=1) {
+                    itemTitleLst[j] += (" " + supplementaryTitleLst[i]);
                 }
             }
+            itemTitleLst = itemTitleLst.slice(0,this.itemURLs[key].length);
         }
+        
+        this.itemTitles[key] = itemTitleLst;
 
-        // Convert documentURLs to a list of lists.
-        for (var j=0,jlen=documentURLs[key].length;j<jlen;j+=1) {
-            documentURLs[key] = [documentURLs[key]];
+        // Convert documentURLs to a list of lists, one for each item.
+        for (var j=0,jlen=this.itemURLs[key].length;j<jlen;j+=1) {
+            this.itemURLs[key][j] = [this.itemURLs[key][j]];
         }
+        
         // Normally there will be one url per item, but orphans are populated 
         // back across all items if they turn up
-        if (documentURLs[key].length > docTitleLst.length) {
-            var suppLst = documentURLs[key].slice(docTitleLst.length);
-            for (var j=0,jlen=docTitleLst.length;j<jlen;j+=1) {
-                documentURLs[key][j].push(suppLst[j]);
+        if (this.itemURLs[key].length > this.itemTitles[key].length) {
+            var supplementaryUrlLst = this.itemURLs[key].slice(this.itemTitles[key].length);
+            for (var j=0,jlen=this.itemTitles[key].length;j<jlen;j+=1) {
+                for (var k=0,klen=supplementaryUrlLst.length;k<klen;k+=1) {
+                    this.itemURLs[key][j] = this.itemURLs[key][j].concat(supplementaryUrlLst[k]);
+                }
             }
-
+            this.itemURLs[key] = this.itemURLs[key].slice(0,this.itemTitles[key].length);
         }
 
-        for (var i=0,ilen=documentURLs[key].length;i<ilen;i+=1) {
-            var item = new Zotero.Item("statute");
-            item.jurisdiction = "la";
-            var mytitle;
-            if (docTitleLst[i]) {
-                mytitle = docTitleLst[i];
-            } else {
-                mytitle = docTitleLst[0];
+        // So should now have symmetrical lists, no?
+
+        //Zotero.debug("XXX ITEM SET: "+key);
+        //for (var i=0,ilen=this.itemTitles[key].length;i<ilen;i+=1) {
+        //    Zotero.debug("XXX            ("+i+") "+this.itemURLs[key][i].length);
+        //}
+
+    }
+}
+
+
+function detectWeb(doc, url) {
+	anchors = doc.getElementsByTagName('a');
+	for (var i=0,ilen=anchors.length;i<ilen;i+=1) {
+		var href = anchors[i].getAttribute('href');
+		if (href && href.match(/.*\/docs\/lao\/laws\/.*/)) {
+			return "multiple";
+		}
+	}
+ 	return false;
+}
+
+function doWeb(doc, url) {
+    var data = new ParseDoc(doc);
+	Zotero.selectItems(
+        data.availableItems, 
+        function(chosen) {
+	        var urls = [];
+	        for (var myurl in chosen) {
+		        urls.push(myurl);
+	        }
+
+            for (var i=0,ilen=urls.length;i<ilen;i+=1) {
+                var url = urls[i];
+
+                for (var i=0,ilen=data.itemURLs[url].length;i<ilen;i+=1) {
+                    var item = new Zotero.Item("statute");
+                    item.jurisdiction = "la";
+                    var mytitle;
+                    item.title = data.itemTitles[url][i].replace(/^\s*[0-9]\.\s*/, "");
+                    // Extract year from URL and set on item
+                    var m = data.itemURLs[url][i][0].match(/.*([0-9]{4}).*/);
+                    if (m) {
+                        item.date = m[1];
+                    }
+
+                    // Attach document(s) to item
+                    for (var j=0,jlen=data.itemURLs[url][i].length;j<jlen;j+=1) {
+                        var label = "Official Text (" + (j+1) + ")";
+                        var attachurl = data.itemURLs[url][i][j].replace(" ","%20", "g")
+                        item.attachments.push({url: attachurl, title: label, mimeType: 'application/pdf'});
+                    }
+                    item.complete();
+                }
             }
-            item.title = mytitle;
-            // Extract year from URL and set on item
-            var m = documentURLs[key][i][0].match(/.*([0-9]{4}).*/);
-            if (m) {
-                item.date = m[1];
-            }
-            // Attach document(s) to item
-            for (var j=0,jlen=documentURLs[key][i].length;j<jlen;j+=1) {
-                var label = "Official Text (" + (j+1) + ")";
-                item.attachments.push({url: documentURLs[key][i][j], title: label, mimeType: 'application/pdf'});
-            }
-            item.complete();
-        }
-    }, function(){Zotero.done();});
-	Zotero.wait();
+        },
+        function(){Zotero.done();}
+    );
 }
