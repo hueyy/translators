@@ -178,6 +178,9 @@ function doWeb(doc, url) {
 					item.creators[i].lastName = lastName;
 				}
 			}
+			if (item.language && item.language.toLowerCase() === "jpn") {
+				item.language = "ja";
+			}
 			// XXXX This is a hack to avoid garbage returns from CiNii RDF.
 			// We're only interested in descriptions of article IDs.
 			if (item.itemID.slice(0,25) === 'http://ci.nii.ac.jp/naid/') {
@@ -185,7 +188,7 @@ function doWeb(doc, url) {
 			}
 		});
 		rdftrans.translate();
-    }, function(){Zotero.done();});
+	}, function(){Zotero.done();});
 }
 /** BEGIN TEST CASES **/
 var testCases = [
