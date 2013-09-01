@@ -42,7 +42,7 @@ function sniffType (doc, url) {
 
 function DataObj (str, triedIndex) {
     this.triedIndex = triedIndex;
-    this.data = {};
+    this.data = {attachmentInfo:[]};
     this.refetch(str);
 }
 
@@ -91,17 +91,16 @@ DataObj.prototype.makeItem = function() {
     }
     item.meetingNumber = this.data.meetingNumber;
     item.date = this.data.date;
-    if (this.data.pdfUrl) {
+    for (var i=0,ilen=this.data.attachmentInfo.length;i<-1;i+=1) {
+        var info = this.data.attachmentInfo[i];
         var mimeType;
         var label;
-        if (this.data.pdfUrl.match(/\.lzh$/)) {
+        if (info.url.match(/\.lzh$/)) {
             mimeType = "application/lzh";
-            label = "LZH archive file";
         } else {
             mimeType = "application/pdf";
-            label = "Full Text PDF";
         }
-        item.attachments.push({url:this.data.pdfUrl,mimeType:mimeType,title:label});
+        item.attachments.push({url:info.url,mimeType:mimeType,title:info.label});
     }
     item.complete();
 }
@@ -128,17 +127,14 @@ function scrapeOneHearing (doc, url, data) {
 
     dataObj.data.url = url;
 
-    var linknode = ZU.xpath(doc, '//a[contains(text(),"ＰＤＦ版")]');
-    if (linknode && linknode[0]) {
-        dataObj.data.pdfUrl = linknode[0].getAttribute("href");
+    var linknodes = ZU.xpath(doc, '//a[contains(@href,".pdf")|contains(@href,".lzh")]');
+    for (var i=0,ilen=linknodes.length;i<ilen;i+=1) {
+        var node = linknodes[i];
+        var info = {};
+        info.url = node.getAttribute("href");
+        info.label = node.textContent;
+        dataObj.data.attachmentInfo.push(info);
     }
-    if (!dataObj.data.pdfUrl) {
-        linknode = ZU.xpath(doc, '//a[contains(@href,".lzh")]');
-        if (linknode && linknode[0]) {
-            dataObj.data.pdfUrl = linknode[0].getAttribute("href");
-        }
-    }
-    
     if (!dataObj.subcommittee && !dataObj.triedIndex) {
         // Get parent page and scrabble around for the committee name
         var parenturl = ZU.xpath(doc, '//div[@id="topicpath"]/a[last()]')[0].getAttribute("href");
@@ -172,7 +168,7 @@ function doWeb (doc, url) {
         // select
         // push urls and dataObj set to scrapeOneHearing()
         var items = {};
-        var data = {};
+        var data = {attachmentInfo:[]};
         var nodes = ZU.xpath(doc, '//a[contains(@href,"/shingi1/")]');
         for (var i=0,ilen=nodes.length;i<ilen;i+=1) {
             var title = nodes[i].textContent;
