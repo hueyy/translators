@@ -1,5 +1,6 @@
 {
 	"translatorID": "0624386b-d70c-4a59-a95e-259656e82c27",
+	"translatorType": 4,
 	"label": "Japan Legislative Council Minutes",
 	"creator": "Frank Bennett",
 	"target": "https?://(?:www.)*moj.go.jp/shingi1/",
@@ -7,18 +8,15 @@
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "g",
-	"lastUpdated": "2013-08-03 05:47:18"
+	"lastUpdated": "2013-09-01 15:39:28"
 }
 
 function sniffType (doc, url) {
     var ret;
     var m = url.match(/https?:\/\/(?:www\.)*moj\.go\.jp\/shingi1\/shingi.*\.html/);
-    Zotero.debug("XXX m="+m);
     if (m) {
         var nodes = ZU.xpath(doc, '//div[@id="content"]/h2[contains(@class,"cnt_ttl01")]');
-        Zotero.debug("XXX nodes="+nodes);
         if (nodes && nodes[0]) {
             var str = normalizeString(nodes[0].textContent);
             var mm = str.match(/.*第([0-9]+)回会議\s*\(平成([0-9]+)年([0-9]+)月([0-9]+)日.*\).*/);
@@ -29,7 +27,6 @@ function sniffType (doc, url) {
     }
     if (!ret) {
         var nodes = ZU.xpath(doc, '//div[@id="content"]/h2[contains(@class,"cnt_ttl01")]');
-        Zotero.debug("XXX nodes="+nodes);
         if (nodes && nodes[0]) {
             var mm = nodes[0].textContent.match(/^\s*法制審議会\s*[－-]*\s*.*部会\s*/);
             if (mm) {
@@ -42,7 +39,7 @@ function sniffType (doc, url) {
 
 function DataObj (str, triedIndex) {
     this.triedIndex = triedIndex;
-    this.data = {attachmentInfo:[]};
+    this.data = {attachmentInfo:{}};
     this.refetch(str);
 }
 
@@ -85,22 +82,20 @@ DataObj.prototype.makeItem = function() {
     ZU.setMultiField(item, "legislativeBody", "Ministry of Justice", "en");
     item.committee = this.data.committee;
     if (this.data.committee) {
-        Zotero.debug("XXX OOPS committee field should not go missing like this");
         var subcommittee = this.data.committee.replace(/^法制審議会/,"");
         ZU.setMultiField(item, "committee", "Legislative Council | " + subcommittee, "en");
     }
     item.meetingNumber = this.data.meetingNumber;
     item.date = this.data.date;
-    for (var i=0,ilen=this.data.attachmentInfo.length;i<-1;i+=1) {
-        var info = this.data.attachmentInfo[i];
+    for (var url in this.data.attachmentInfo) {
+        var label = this.data.attachmentInfo[url];
         var mimeType;
-        var label;
-        if (info.url.match(/\.lzh$/)) {
+        if (url.match(/\.lzh$/)) {
             mimeType = "application/lzh";
         } else {
             mimeType = "application/pdf";
         }
-        item.attachments.push({url:info.url,mimeType:mimeType,title:info.label});
+        item.attachments.push({url:url,mimeType:mimeType,title:label});
     }
     item.complete();
 }
@@ -116,10 +111,6 @@ function scrapeOneHearing (doc, url, data) {
     var dataObj;
     var str = ZU.xpath(doc, '//div[@id="content"]/h2[contains(@class,"cnt_ttl01")]')[0].textContent;
     if (data) {
-        Zotero.debug("XXX myurl: "+url);
-        for (var dataurl in data) {
-            Zotero.debug("XXX   dataurl: "+dataurl);
-        }
         dataObj = data[url];
     } else {
         dataObj = new DataObj(str);
@@ -130,10 +121,11 @@ function scrapeOneHearing (doc, url, data) {
     var linknodes = ZU.xpath(doc, '//a[contains(@href,".pdf")] | //a[contains(@href,".lzh")]');
     for (var i=0,ilen=linknodes.length;i<ilen;i+=1) {
         var node = linknodes[i];
-        var info = {};
-        info.url = node.getAttribute("href");
-        info.label = node.textContent;
-        dataObj.data.attachmentInfo.push(info);
+        var url = node.getAttribute("href");
+        if (!dataObj.data.attachmentInfo[url]) {
+            var label = node.textContent;
+            dataObj.data.attachmentInfo[url] = label;
+        }
     }
     if (!dataObj.subcommittee && !dataObj.triedIndex) {
         // Get parent page and scrabble around for the committee name
@@ -143,7 +135,6 @@ function scrapeOneHearing (doc, url, data) {
             function (doc, url) {
                 var topnode = ZU.xpath(doc, '//div[@id="content"]/h2[contains(@class,"cnt_ttl01")]')[0];
                 if (topnode) {
-                    Zotero.debug("XXX SCRAPING WITH: "+topnode.textContent);
                     dataObj.refetch(topnode.textContent);
                 }
                 dataObj.makeItem();
@@ -168,7 +159,7 @@ function doWeb (doc, url) {
         // select
         // push urls and dataObj set to scrapeOneHearing()
         var items = {};
-        var data = {attachmentInfo:[]};
+        var data = {attachmentInfo:{}};
         var nodes = ZU.xpath(doc, '//a[contains(@href,"/shingi1/")]');
         for (var i=0,ilen=nodes.length;i<ilen;i+=1) {
             var title = nodes[i].textContent;
