@@ -127,7 +127,7 @@ function scrapeOneHearing (doc, url, data) {
 
     dataObj.data.url = url;
 
-    var linknodes = ZU.xpath(doc, '//a[contains(@href,".pdf")|contains(@href,".lzh")]');
+    var linknodes = ZU.xpath(doc, '//a[contains(@href,".pdf")] | //a[contains(@href,".lzh")]');
     for (var i=0,ilen=linknodes.length;i<ilen;i+=1) {
         var node = linknodes[i];
         var info = {};
