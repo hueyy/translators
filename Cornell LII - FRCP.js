@@ -1,7 +1,7 @@
 {
 	"translatorID": "97d6f922-9835-44c4-a3ac-bb039a2359a5",
 	"translatorType": 4,
-	"label": "Cornell LII - US Code",
+	"label": "Cornell LII - FRCP",
 	"creator": "Frank Bennett",
 	"target": "https?://(?:www.)law.cornell.edu/rules/frcp/rule_[-0-9]",
 	"minVersion": "1.0",
