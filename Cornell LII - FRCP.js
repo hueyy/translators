@@ -22,7 +22,7 @@ function doWeb(doc, url) {
     var titleNode = doc.getElementsByTagName("title")[0];
     var title = titleNode.textContent;
     title = title.replace(/\s+\|.*/, "");
-    var m = title.m(/^Rule\s+([.0-9]+)\.\s+(.*)/);
+    var m = title.match(/^Rule\s+([.0-9]+)\.\s+(.*)/);
     var ruleNumber, ruleTitle;
     if (m) {
         ruleNumber = m[1];
