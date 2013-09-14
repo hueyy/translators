@@ -642,17 +642,10 @@ function scrapeOneCase(doc, url) {
         head.appendChild(titlenode)
         titlenode.appendChild(doc.createTextNode("Fastcase: " + engine.citation));
 
-        // Fonts for a bit of flair
-        var fontlink = doc.createElementNS(myns, "link");
-        fontlink.setAttribute("href","http://fonts.googleapis.com/css?family=Buenard|Bree+Serif");
-        fontlink.setAttribute("rel","stylesheet");
-        fontlink.setAttribute("type","text/css");
-        head.appendChild(fontlink);
-
         var style = doc.createElementNS(myns, "style");
         head.appendChild(style)
         style.setAttribute("type", "text/css")
-        var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;font-family:Buenard, serif;}p{margin-top:0.75em;margin-bottom:0.75em;}strong{font-family:Bree Serif, serif;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}div.Headnote-div{background:#f5f5f5;}";
+        var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}div.Headnote-div{background:#f5f5f5;}";
         style.appendChild(doc.createTextNode(css));
 
         var attachmentdoc = ZU.composeDoc(doc, head, block);
