@@ -32,6 +32,7 @@ function doWeb(doc, url) {
     var returnNodes = [];
     var contentBody = doc.getElementsByClassName("content")[0];
     for (var i=0,ilen=contentBody.childNodes.length;i<ilen;i+=1) {
+        Zotero.debug("XXX type? " + contentBody.childNodes[i] + " " + typeof contentBody.childNodes[i]);
         var cls = contentBody.childNodes[i].getAttribute("class");
         m = cls.match(/^(statutory|note|source)/);
         if (m) {
