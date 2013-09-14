@@ -708,7 +708,7 @@ ItemFactory.prototype.getCourt = function () {
 	if (m) {
 		this.v.court = m[2].replace(/_/g, " ");
 		if (m[1]) {
-			this.v.extra = "{:jurisdiction: " + m[1] + "}";
+			this.v.jurisdiction = m[1];
 		}
 	}
 	return this.v.court;
@@ -767,9 +767,9 @@ ItemFactory.prototype.getAttachments = function (doctype) {
 	for (i = 0, ilen = this.attachmentLinks.length; i < ilen; i += 1) {
 		if (this.attachmentLinks[i].slice(0, 1) === "/") {
 			this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
-			this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/,"");
 		}
-		attachments.push({title:"Google Scholar Linked " + doctype, type:"text/html",
+		this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/g,"");
+		attachments.push({title:"Google Scholar: " + doctype, type:"text/html",
 							  url:this.attachmentLinks[i]});
 	}
 	return attachments;
@@ -816,12 +816,6 @@ ItemFactory.prototype.saveItem = function () {
 				if (i === (this.vv.volRepPag.length - 1)) {
 					this.pushAttachments("Judgement");
 				}
-				if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
-                    if (!this.item.extra) {
-                        this.item.extra = "";
-                    }
-					this.item.extra = "{:jurisdiction:us} " + this.item.extra;
-				}
 				this.item.itemID = "" + bogusItemID;
 				bogusItemID += 1;
 				completed_items.push(this.item);
@@ -839,9 +833,7 @@ ItemFactory.prototype.saveItem = function () {
 			this.item = new Zotero.Item("case");
 			this.saveItemCommonVars();
 			this.pushAttachments("Judgement");
-			if (!this.item.extra || !this.item.extra.match(/{:jurisdiction:[^}]*}/)) {
-				this.item.extra = "{:jurisdiction:us} " + this.item.extra;
-			}
+			this.item.jurisdiction = "us";
 			this.item.complete();
 		}
 	}
