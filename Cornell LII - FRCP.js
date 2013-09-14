@@ -49,7 +49,7 @@ function doWeb(doc, url) {
     var head = doc.createElement("head");
     var titlenode = doc.createElement("title");
     head.appendChild(titlenode)
-    titlenode.appendChild(doc.createTextNode("Federal Rules of Civil Procedure (Cornell LII): " + "TITLE"));
+    titlenode.appendChild(doc.createTextNode("Federal Rules of Civil Procedure (Cornell LII): Rule " + ruleNumber + ": " + ruleTitle));
 
     var style = doc.createElement("style");
     head.appendChild(style)
