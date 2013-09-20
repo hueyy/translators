@@ -726,7 +726,7 @@ FW.Scraper({
     attachments: [
         {
 			title:"US Code text (Cornell LII)",
-			document: FW.Xpath("//div[@id='quicktabs_tabpage_8_1']//sectioncontent").doclet(false, css),
+			document: FW.Xpath("//div[@id='quicktabs_tabpage_8_0']//sectioncontent").doclet(false, css),
 		    snapshot:true,
             url: FW.Url()
         }
