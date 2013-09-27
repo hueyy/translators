@@ -273,7 +273,7 @@ function scrapeAndParse(doc) {
 
 function detectWeb(doc, url) {
 	if (url.match(/.*\/webopac\/catdbl.do/)) {
-		var journal_test = doc.evaluate( '//th[div[*!=a and contains(text(),"Frequency of publication") or contains(text(),"刊行頻度") or contains(text(),"巻号") or contains(text(),"Volumes")]]',  doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+		var journal_test = doc.evaluate( '//th[div[contains(text(),"Frequency of publication") or contains(text(),"刊行頻度") or contains(text(),"Volumes")]]',  doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 		if (!journal_test) {
 			return "book";
 		}
