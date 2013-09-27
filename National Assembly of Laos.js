@@ -85,12 +85,12 @@ ParseDoc.prototype.fixLineData = function () {
             }
         }
 
-        // Append orphan item title parenthetical string(s) to linked titles
+        // Use full title with parenthetical string if there is no separate URL for the latter
         if (itemTitleLst.length > this.itemURLs[key].length) {
             var supplementaryTitleLst = itemTitleLst.slice(this.itemURLs[key].length);
             for (var i=0,ilen=supplementaryTitleLst.length;i<ilen;i+=1) {
                 for (var j=0,jlen=this.itemURLs[key].length;j<jlen;j+=1) {
-                    itemTitleLst[j] += (" " + supplementaryTitleLst[i]);
+                    itemTitleLst[j] = supplementaryTitleLst[i];
                 }
             }
             itemTitleLst = itemTitleLst.slice(0,this.itemURLs[key].length);
