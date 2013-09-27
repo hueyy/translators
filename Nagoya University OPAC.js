@@ -163,7 +163,7 @@ function splitTitle(data) {
  * array items for book entries in the DOM.
  */
 var sniffIndexPage = function(doc,getlist){
-	var check = doc.evaluate("//td[div[@class='lst_value' and contains(text(),'Books')]]/following-sibling::td",  doc, null, XPathResult.ANY_TYPE, null);
+	var check = doc.evaluate("//td[div[@class='lst_value' and (contains(text(),'Books') or contains(text(), '図書'))]]/following-sibling::td",  doc, null, XPathResult.ANY_TYPE, null);
 	var node = check.iterateNext();
 	if (getlist){
 		var ret = new Object();
