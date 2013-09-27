@@ -154,7 +154,7 @@ function doWeb(doc, url) {
                     var item = new Zotero.Item("statute");
                     item.jurisdiction = "la";
                     var mytitle;
-                    item.title = data.itemTitles[url][i].replace(/^\s*[0-9]\.\s*/, "");
+                    item.title = data.itemTitles[url][i].replace(/^\s*[0-9]+\.\s*/, "");
                     // Extract year from URL and set on item
                     var m = data.itemURLs[url][i][0].match(/.*([0-9]{4}).*/);
                     if (m) {
