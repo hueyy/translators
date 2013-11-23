@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2013-06-19 10:57:36"
+	"lastUpdated": "2013-09-23 04:28:34"
 }
 
 /*
@@ -90,7 +90,8 @@ var _prefixes = {
 	eprints:"http://purl.org/eprint/terms/",
 	og:"http://ogp.me/ns#",				// Used for Facebook's OpenGraph Protocol
 	article:"http://ogp.me/ns/article#",
-	book:"http://ogp.me/ns/book#"
+	book:"http://ogp.me/ns/book#",
+	rdf:"http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 };
 
 var _prefixRemap = {
@@ -130,10 +131,22 @@ function getPrefixes(doc) {
 		if(rel) {
 			var matches = rel.match(/^schema\.([a-zA-Z]+)/);
 			if(matches) {
-				//Zotero.debug("Prefix '" + matches[1].toLowerCase() +"' => '" + links[i].getAttribute("href") + "'");
-				_prefixes[matches[1].toLowerCase()] = remapPrefix(link.getAttribute("href"));
+				var uri = remapPrefix(link.getAttribute("href"));
+				//Zotero.debug("Prefix '" + matches[1].toLowerCase() +"' => '" + uri + "'");
+				_prefixes[matches[1].toLowerCase()] = uri;
 			}
 		}
+	}
+	
+	//also look in html and head elements
+	var prefixes = (doc.documentElement.getAttribute('prefix') || '')
+		+ (doc.head.getAttribute('prefix') || '');
+	var prefixRE = /(\w+):\s+(\S+)/g;
+	var m;
+	while(m = prefixRE.exec(prefixes)) {
+		var uri = remapPrefix(m[2]);
+		Z.debug("Prefix '" + m[1].toLowerCase() +"' => '" + uri + "'");
+		_prefixes[m[1].toLowerCase()] = uri;
 	}
 }
 
@@ -175,11 +188,13 @@ function processFields(doc, item, fieldMap, strict) {
 
 function completeItem(doc, newItem) {
 	addHighwireMetadata(doc, newItem);
+	addLowQualityMetadata(doc, newItem);
+	finalDataCleanup(doc, newItem);
 
 	if(CUSTOM_FIELD_MAPPINGS) {
 		processFields(doc, newItem, CUSTOM_FIELD_MAPPINGS, true);
 	}
-
+	
 	newItem.complete();
 }
 
@@ -216,47 +231,59 @@ function init(doc, url, callback, forceLoadRDF) {
 		//	<meta property="..." content="..." />
 		// The first is more common; the second is recommended by Facebook
 		// for their OpenGraph vocabulary
-		var tag = metaTag.getAttribute("name");
-		if (!tag) tag = metaTag.getAttribute("property");
+		var tags = metaTag.getAttribute("name");
+		if (!tags) tags = metaTag.getAttribute("property");
 		var value = metaTag.getAttribute("content");
-		if(!tag || !value) continue;
+		if(!tags || !value) continue;
 
-		// We allow three delimiters between the namespace and the property
-		var delimIndex = tag.indexOf('.');
-		if(delimIndex === -1) delimIndex = tag.indexOf(':');
-		if(delimIndex === -1) delimIndex = tag.indexOf('_');
-		if(delimIndex === -1) continue;
+		tags = tags.split(/\s+/);
+		for(var j=0, m=tags.length; j<m; j++) {
+			var tag = tags[j];
+			// We allow three delimiters between the namespace and the property
+			var delimIndex = tag.indexOf('.');
+			if(delimIndex === -1) delimIndex = tag.indexOf(':');
+			if(delimIndex === -1) delimIndex = tag.indexOf('_');
+			if(delimIndex === -1) continue;
 
-		var prefix = tag.substr(0, delimIndex).toLowerCase();
+			var prefix = tag.substr(0, delimIndex).toLowerCase();
 
-		if(_prefixes[prefix]) {
-			var prop = tag.substr(delimIndex+1, 1).toLowerCase()+tag.substr(delimIndex+2);
-			// This debug is for seeing what is being sent to RDF
-			//Zotero.debug(_prefixes[prefix]+prop +"=>"+value);
-			statements.push([url, _prefixes[prefix]+prop, value]);
-		} else {
-			var shortTag = tag.slice(tag.lastIndexOf('citation_'));
-			switch(shortTag) {
-				case "citation_journal_title":
-					hwType = "journalArticle";
-					break;
-				case "citation_technical_report_institution":
-					hwType = "report";
-					break;
-				case "citation_conference_title":
-				case "citation_conference":
-					hwType = "conferencePaper";
-					break;
-				case "citation_book_title":
-					hwType = "bookSection";
-					break;
-				case "citation_dissertation_institution":
-					hwType = "thesis";
-					break;
-				case "citation_title":		//fall back to journalArticle, since this is quite common
-				case "citation_series_title":	//possibly journal article, though it could be book
-					hwTypeGuess = "journalArticle";
-					break;
+			if(_prefixes[prefix]) {
+				var prop = tag.substr(delimIndex+1, 1).toLowerCase()+tag.substr(delimIndex+2);
+				
+				//bib and bibo types are special, they use rdf:type to define type
+				var specialNS = [_prefixes['bib'], _prefixes['bibo']];
+				if(prop == 'type' && specialNS.indexOf(_prefixes[prefix]) != -1) {
+					value = _prefixes[prefix] + value;
+					prefix = 'rdf';
+				}
+				
+				// This debug is for seeing what is being sent to RDF
+				//Zotero.debug(_prefixes[prefix]+prop +"=>"+value);
+				statements.push([url, _prefixes[prefix]+prop, value]);
+			} else {
+				var shortTag = tag.slice(tag.lastIndexOf('citation_'));
+				switch(shortTag) {
+					case "citation_journal_title":
+						hwType = "journalArticle";
+						break;
+					case "citation_technical_report_institution":
+						hwType = "report";
+						break;
+					case "citation_conference_title":
+					case "citation_conference":
+						hwType = "conferencePaper";
+						break;
+					case "citation_book_title":
+						hwType = "bookSection";
+						break;
+					case "citation_dissertation_institution":
+						hwType = "thesis";
+						break;
+					case "citation_title":		//fall back to journalArticle, since this is quite common
+					case "citation_series_title":	//possibly journal article, though it could be book
+						hwTypeGuess = "journalArticle";
+						break;
+				}
 			}
 		}
 	}
@@ -388,44 +415,6 @@ function addHighwireMetadata(doc, newItem) {
 		 newItem.tags = getContent(doc, 'citation_keywords')
 		 					.map(function(t) { return t.textContent; });
 
-	//fall back to "keywords"
-	if(!newItem.tags.length)
-		 newItem.tags = ZU.xpath(doc, '//x:meta[@name="keywords"]/@content', namespaces)
-		 					.map(function(t) { return t.textContent; });
-
-	/**If we already have tags - run through them one by one,
-	 * split where ncessary and concat them.
-	 * This  will deal with multiple tags, some of them comma delimited,
-	 * some semicolon, some individual
-	 */
-	if (newItem.tags.length) {
-		var tags = [];
-		for (var i in newItem.tags) {
-			newItem.tags[i] = newItem.tags[i].trim();
-			if (newItem.tags[i].indexOf(';') == -1) {
-				//split by comma, since there are no semicolons
-				tags = tags.concat( newItem.tags[i].split(/\s*,\s*/) );
-			} else {
-				tags = tags.concat( newItem.tags[i].split(/\s*;\s*/) );
-			}
-		}
-		for (var i=0; i<tags.length; i++) {
-			if (tags[i] === "") tags.splice(i, 1);
-		}
-		newItem.tags = tags;
-	}
-
-	//We can try getting abstract from 'description'
-	if(!newItem.abstractNote) {
-		newItem.abstractNote = ZU.trimInternal(
-			ZU.xpathText(doc, '//x:meta[@name="description"]/@content', namespaces) || '');
-	}
-
-	//Cleanup DOI
-	if (newItem.DOI){
-		newItem.DOI =newItem.DOI.replace(/^doi:\s*/, "");
-	}
-
 	//sometimes RDF has more info, let's not drop it
 	var rdfPages = (newItem.pages)? newItem.pages.split(/\s*-\s*/) : new Array();
 	var firstpage = getContentText(doc, 'citation_firstpage') ||
@@ -481,19 +470,190 @@ function addHighwireMetadata(doc, newItem) {
 	}
 
 	// Other last chances
-	if(!newItem.url)
+	if(!newItem.url) {
 		newItem.url = getContentText(doc, "citation_abstract_html_url") ||
-			getContentText(doc, "citation_fulltext_html_url") ||
-			doc.location.href;
-	if(!newItem.title) newItem.title = doc.title;
-	//worst case, if this is not called from another translator, use URL for title
-	if(!newItem.title && !Zotero.parentTranslator) newItem.title = newItem.url;
+			getContentText(doc, "citation_fulltext_html_url");
+	}
+}
 
+function addLowQualityMetadata(doc, newItem) {
+	//if we don't have a creator, look for byline on the page
+	//but first, we're desperate for a title
+	if(!newItem.title) {
+		Z.debug("Title was not found in meta tags. Using document title as title");
+		newItem.title = doc.title;
+	}
+	
+	if(newItem.title) {
+		newItem.title = newItem.title.replace(/\s+/g, ' '); //make sure all spaces are \u0020
+		if(newItem.publicationTitle) {
+			//remove publication title from the end of title
+			var removePubTitleRegex = new RegExp('\\s*\\W\\s*'
+				+ newItem.publicationTitle + '\\s*$','i');
+			newItem.title = newItem.title.replace(removePubTitleRegex, '');
+		}
+	}
+	
+	if(!newItem.creators.length) getAuthorFromByline(doc, newItem);
+	
+	//fall back to "keywords"
+	if(!newItem.tags.length) {
+		 newItem.tags = ZU.xpath(doc, '//x:meta[@name="keywords"]/@content', namespaces)
+		 	.map(function(t) { return t.textContent; });
+	}
+	
+	//We can try getting abstract from 'description'
+	if(!newItem.abstractNote) {
+		newItem.abstractNote = ZU.trimInternal(
+			ZU.xpathText(doc, '//x:meta[@name="description"]/@content', namespaces) || '');
+	}
+	
+	if(!newItem.url) {
+		newItem.url = doc.location.href;
+	}
+	
+	newItem.libraryCatalog = doc.location.host;
+	
 	// add access date
 	newItem.accessDate = 'CURRENT_TIMESTAMP';
+}
+
+function getAuthorFromByline(doc, newItem) {
+	var bylineClasses = ['byline', 'vcard'];
+	Z.debug("Looking for authors in " + bylineClasses.join(', '));
+	var bylines = [], byline;
+	for(var i=0; i<bylineClasses.length; i++) {
+		byline = doc.getElementsByClassName(bylineClasses[i]);
+		Z.debug("Found " + byline.length + " elements with '" + bylineClasses[i] + "' class");
+		for(var j=0; j<byline.length; j++) {
+			bylines.push(byline[j]);
+		}
+	}
+	
+	var actualByline;
+	if(!bylines.length) {
+		Z.debug("No byline found.");
+		return;
+	} else if(bylines.length == 1) {
+		actualByline = bylines[0];
+	} else if(newItem.title) {
+		Z.debug(bylines.length + " bylines found. Locating the one closest to title.")
+		//find the closest one to the title (in DOM)
+		actualByline = false;
+		var parentLevel = 1;
+		var skipList = [];
+		var titleXPath = './/*[normalize-space(translate(text(),"\u00a0"," "))="'
+			+ newItem.title.replace('"', '\\"') + '"]';
+		Z.debug("Looking for title using: " + titleXPath);
+		while(!actualByline && bylines.length != skipList.length && parentLevel < 5) {
+			Z.debug("Parent level " + parentLevel);
+			for(var i=0; i<bylines.length; i++) {
+				if(skipList.indexOf(i) !== -1) continue;
+				
+				if(parentLevel == 1) {
+					//skip bylines that contain bylines
+					var containsBylines = false;
+					for(var j=0;!containsBylines && j<bylineClasses.length; j++) {
+						containsBylines = bylines[i].getElementsByClassName(bylineClasses[j]).length;
+					}
+					if(containsBylines) {
+						Z.debug("Skipping potential byline " + i + ". Contains other bylines");
+						skipList.push(i);
+						continue;
+					}
+				}
+				
+				var bylineParent = bylines[i];
+				for(var j=0; j<parentLevel; j++) {
+					bylineParent = bylineParent.parentElement;
+				}
+				if(!bylineParent) {
+					Z.debug("Skipping potential byline " + i + ". Nowhere near title");
+					skipList.push(i);
+					continue;
+				}
+				
+				if(ZU.xpath(bylineParent, titleXPath).length) {
+					if(actualByline) {
+						//found more than one, bail
+						Z.debug('More than one possible byline found. Will not proceed');
+						return;
+					}
+					actualByline = bylines[i];
+				}
+			}
+			
+			parentLevel++;
+		}
+	}
+	
+	if(actualByline) {
+		byline = ZU.trimInternal(actualByline.textContent);
+		Z.debug("Extracting author(s) from byline: " + byline);
+		byline = byline.split(/\bby[:\s]+/i);
+		byline = byline[byline.length-1].replace(/\s*[[(].+?[)\]]\s*/g, '');
+		var authors = byline.split(/\s*(?:(?:,\s*)?and|,|&)\s*/i);
+		if(authors.length == 2 && authors[0].split(' ').length == 1) {
+			//this was probably last, first
+			newItem.creators.push(ZU.cleanAuthor(fixCase(byline), 'author', true));
+		} else {
+			for(var i=0, n=authors.length; i<n; i++) {
+				if(!authors[i].length || authors[i].indexOf('@') !== -1) {
+					//skip some odd splits and twitter handles
+					continue;
+				}
+				
+				if(authors[i].split(/\s/).length == 1) {
+					//probably corporate author
+					newItem.creators.push({
+						lastName: authors[i],
+						creatorType: 'author',
+						fieldMode: 1
+					});
+				} else {
+					newItem.creators.push(
+						ZU.cleanAuthor(fixCase(authors[i]), 'author'));
+				}
+			}
+		}
+	} else {
+		Z.debug("No reliable byline found.");
+	}
+}
+
+function finalDataCleanup(doc, newItem) {
+	/**If we already have tags - run through them one by one,
+	 * split where ncessary and concat them.
+	 * This  will deal with multiple tags, some of them comma delimited,
+	 * some semicolon, some individual
+	 */
+	if (newItem.tags.length) {
+		var tags = [];
+		for (var i in newItem.tags) {
+			newItem.tags[i] = newItem.tags[i].trim();
+			if (newItem.tags[i].indexOf(';') == -1) {
+				//split by comma, since there are no semicolons
+				tags = tags.concat( newItem.tags[i].split(/\s*,\s*/) );
+			} else {
+				tags = tags.concat( newItem.tags[i].split(/\s*;\s*/) );
+			}
+		}
+		for (var i=0; i<tags.length; i++) {
+			if (tags[i] === "") tags.splice(i, 1);
+		}
+		newItem.tags = tags;
+	}
+	
+	//Cleanup DOI
+	if (newItem.DOI){
+		newItem.DOI =newItem.DOI.replace(/^doi:\s*/, "");
+	}
+	
 	//remove itemID - comes from RDF translator, doesn't make any sense for online data
 	newItem.itemID = "";
-	newItem.libraryCatalog = doc.location.host;
+	
+	//worst case, if this is not called from another translator, use URL for title
+	if(!newItem.title && !Zotero.parentTranslator) newItem.title = newItem.url;
 }
 
 var exports = {
@@ -508,7 +668,7 @@ var exports = {
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://tools.chass.ncsu.edu/open_journal/index.php/acontracorriente/article/view/174",
+		"url": "http://acontracorriente.chass.ncsu.edu/index.php/acontracorriente/article/view/174",
 		"items": [
 			{
 				"itemType": "journalArticle",
@@ -561,9 +721,9 @@ var testCases = [
 				"abstractNote": "\"La Huelga de los Conventillos\", Buenos Aires, Nueva Pompeya, 1936. Un aporte a los estudios sobre género y clase",
 				"pages": "1-37",
 				"ISSN": "1548-7083",
-				"url": "http://tools.chass.ncsu.edu/open_journal/index.php/acontracorriente/article/view/174",
+				"url": "http://acontracorriente.chass.ncsu.edu/index.php/acontracorriente/article/view/174",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "tools.chass.ncsu.edu"
+				"libraryCatalog": "acontracorriente.chass.ncsu.edu"
 			}
 		]
 	},
@@ -893,6 +1053,116 @@ var testCases = [
 				"url": "http://www.hindawi.com/journals/mpe/2013/868174/abs/",
 				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "www.hindawi.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.salon.com/2012/10/10/junot_diaz_my_stories_come_from_trauma/",
+		"items": [
+			{
+				"itemType": "webpage",
+				"creators": [
+					{
+						"firstName": "Gregg",
+						"lastName": "Barrios",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Salon.com",
+					"LA Review of Books",
+					"science fiction",
+					"Junot Diaz",
+					"Dominican Republic",
+					"Drown",
+					"Rafael Trujillo"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					}
+				],
+				"title": "Junot Díaz: My stories come from trauma",
+				"url": "http://www.salon.com/2012/10/10/junot_diaz_my_stories_come_from_trauma/",
+				"abstractNote": "The effervescent author of \"This is How You Lose Her\" explains the darkness coursing through his fiction",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"libraryCatalog": "www.salon.com",
+				"shortTitle": "Junot Díaz"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.newyorker.com/online/blogs/backissues/2013/06/window-washers-at-the-hearst-tower.html",
+		"items": [
+			{
+				"itemType": "webpage",
+				"creators": [
+					{
+						"firstName": "Joshua",
+						"lastName": "Rothman",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Hearst Tower",
+					"architecture",
+					"archive",
+					"skyscrapers",
+					"window washers",
+					"Hearst Tower",
+					"architecture",
+					"archive",
+					"skyscrapers",
+					"window washers"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					}
+				],
+				"title": "Rescue at the Hearst Tower",
+				"publicationTitle": "The New Yorker",
+				"url": "http://www.newyorker.com/online/blogs/backissues/2013/06/window-washers-at-the-hearst-tower.html",
+				"abstractNote": "Rescuers successfully retrieved two maintenance workers at the Hearst Tower, in Midtown, who had become trapped on their scaffold.",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"libraryCatalog": "www.newyorker.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.chicagotribune.com/news/politics/clout/chi-chicagos-unicorn-new-red-divvy-bicycle-20130801,0,2833828.story",
+		"items": [
+			{
+				"itemType": "webpage",
+				"creators": [
+					{
+						"firstName": "John",
+						"lastName": "Byrne",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					}
+				],
+				"title": "Chicago's 'unicorn': new red Divvy bicycle",
+				"publicationTitle": "chicagotribune.com",
+				"url": "http://www.chicagotribune.com/news/politics/clout/chi-chicagos-unicorn-new-red-divvy-bicycle-20130801,0,2833828.story",
+				"abstractNote": "Mayor  Rahm Emanuel  hopped on the city&rsquo;s shiny, new &ldquo;unicorn&rdquo; Thursday and briefly pedaled around a Near West Side park for the benefit of a few TV cameras.",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"libraryCatalog": "www.chicagotribune.com",
+				"shortTitle": "Chicago's 'unicorn'"
 			}
 		]
 	}

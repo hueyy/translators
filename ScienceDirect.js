@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2013-05-28 01:42:17"
+	"lastUpdated": "2013-09-01 10:40:52"
 }
 
 function detectWeb(doc, url) {
@@ -54,7 +54,7 @@ function getExportLink(doc) {
 
 function getPDFLink(doc) {
 	return ZU.xpathText(doc,
-		'//div[@id="articleNav"]//div[@class="icon_pdf"]\
+		'//div[@id="articleNav"]//div[contains(@class, "icon_pdf")]\
 			/a[not(@title="Purchase PDF")]/@href[1]');
 }
 
@@ -173,13 +173,14 @@ function scrapeByExport(doc) {
 		}
 
 		ZU.doPost('/science', post, function(text) {
-				//short title is stored in T2. Fix it to ST.
-				text = text.replace(/^T2\s/mg, 'ST ');
+				//T2 doesn't appear to hold the short title anymore. Sometimes has series title, so I'm mapping this to T3,
+				//although we currently don't recognize that in RIS
+				text = text.replace(/^T2\s/mg, 'T3 ');
 
 				//Certain authors sometimes have "role" prefixes
 				text = text.replace(
 					/^((?:A[U\d]|ED)\s+-\s+)Editor-in-Chief:\s+/mg, '$1');
-
+	
 				var translator = Zotero.loadTranslator("import");
 				translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
 				translator.setString(text);

@@ -1,7 +1,7 @@
 {
 	"translatorID": "9cb70025-a888-4a29-a210-93ec52da40d4",
 	"label": "BibTeX",
-	"creator": "Simon Kornblith and Richard Karnesky",
+	"creator": "Simon Kornblith, Richard Karnesky and Emiliano heyns",
 	"target": "bib",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
@@ -15,7 +15,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2013-06-23 01:00:08"
+	"lastUpdated": "2013-11-14 23:52:21"
 }
 
 function detectImport() {
@@ -138,6 +138,11 @@ var bibtex2zoteroTypeMap = {
  */
 var months = ["jan", "feb", "mar", "apr", "may", "jun",
 			  "jul", "aug", "sep", "oct", "nov", "dec"];
+
+var jabref = {
+	format: null,
+	root: {}
+};
 
 /*
  * new mapping table based on that from Matthias Steffens,
@@ -1747,6 +1752,9 @@ function processField(item, field, value) {
 		} else {
 			item.date = value;
 		}
+	} else if(field == "date") {
+	//We're going to assume that "date" and the date parts don't occur together. If they do, we pick date, which should hold all.
+		item.date = value;
 	} else if(field == "pages") {
 		if (item.itemType == "book" || item.itemType == "thesis" || item.itemType == "manuscript") {
 			item.numPages = value;
@@ -1782,7 +1790,7 @@ function processField(item, field, value) {
 		}
 	} else if (field == "comment" || field == "annote" || field == "review") {
 		item.notes.push({note:Zotero.Utilities.text2html(value)});
-	} else if (field == "pdf") {
+	} else if (field == "pdf" || field == "path" /*Papers2 compatibility*/) {
 		item.attachments = [{path:value, mimeType:"application/pdf"}];
 	} else if (field == "sentelink") { // the reference manager 'Sente' has a unique file scheme in exported BibTeX
 		item.attachments = [{path:value.split(",")[0], mimeType:"application/pdf"}];
@@ -1887,6 +1895,150 @@ function getFieldValue(read) {
 	return value;
 }
 
+function jabrefSplit(str, sep) {
+	var quoted = false;
+	var result = [];
+
+	str = str.split('');
+	while (str.length > 0) {
+		if (result.length == 0) { result = ['']; }
+
+		if (str[0] == sep) {
+			str.shift();
+			result.push('');
+		} else {
+			if (str[0] == '\\') { str.shift(); }
+			result[result.length - 1] += str.shift();
+		}
+	}
+	return result;
+}
+
+function jabrefCollect(arr, func) {
+	if (arr == null) { return []; }
+
+	var result = [];
+
+	for (var i = 0; i < arr.length; i++) {
+		if (func(arr[i])) {
+			result.push(arr[i]);
+		}
+	}
+	return result;
+}
+
+function processComment() {
+	var comment = "";
+	var read;
+	var collectionPath = [];
+	var parentCollection, collection;
+
+	while(read = Zotero.read(1)) {
+		if (read == "}") { break; } // JabRef ought to escape '}' but doesn't; embedded '}' chars will break the import just as it will on JabRef itself
+		comment += read;
+	}
+
+	if (comment == 'jabref-meta: groupsversion:3;') {
+		jabref.format = 3;
+		return;
+	}
+
+	if (comment.indexOf('jabref-meta: groupstree:') == 0) {
+		if (jabref.format != 3) {
+			Zotero.debug("jabref: fatal: unsupported group format: " + jabref.format);
+			return;
+		}
+		comment = comment.replace(/^jabref-meta: groupstree:/, '').replace(/[\r\n]/gm, '')
+
+		var records = jabrefSplit(comment, ';');
+		while (records.length > 0) {
+			var record = records.shift();
+			var keys = jabrefSplit(record, ';');
+			if (keys.length < 2) { continue; }
+
+			var record = {id: keys.shift()};
+			record.data = record.id.match(/^([0-9]) ([^:]*):(.*)/);
+			if (record.data == null) {
+				Zotero.debug("jabref: fatal: unexpected non-match for group " + record.id);
+				return;
+			}
+			record.level = parseInt(record.data[1]);
+			record.type = record.data[2]
+			record.name = record.data[3]
+			record.intersection = keys.shift(); // 0 = independent, 1 = intersection, 2 = union
+
+			if (isNaN(record.level)) {
+				Zotero.debug("jabref: fatal: unexpected record level in " + record.id);
+				return;
+			}
+
+			if (record.level == 0) { continue; }
+			if (record.type != 'ExplicitGroup') {
+				Zotero.debug("jabref: fatal: group type " + record.type + " is not supported");
+				return;
+			}
+
+			collectionPath = collectionPath.slice(0, record.level - 1).concat([record.name]);
+			Zotero.debug("jabref: locating level " + record.level + ": " + collectionPath.join('/'));
+
+			if (jabref.root.hasOwnProperty(collectionPath[0])) {
+				collection = jabref.root[collectionPath[0]];
+				Zotero.debug("jabref: root " + collection.name + " found");
+			} else {
+				collection = new Zotero.Collection();
+				collection.name = collectionPath[0];
+				collection.type = 'collection';
+				collection.children = [];
+				jabref.root[collectionPath[0]] = collection;
+				Zotero.debug("jabref: root " + collection.name + " created");
+			}
+			parentCollection = null;
+
+			for (var i = 1; i < collectionPath.length; i++) {
+				var path = collectionPath[i];
+				Zotero.debug("jabref: looking for child " + path + " under " + collection.name);
+
+				var child = jabrefCollect(collection.children, function(n) { return (n.name == path)})
+				if (child.length != 0) {
+					child = child[0]
+					Zotero.debug("jabref: child " + child.name + " found under " + collection.name);
+				} else {
+					child = new Zotero.Collection();
+					child.name = path;
+					child.type = 'collection';
+					child.children = [];
+
+					collection.children.push(child);
+					Zotero.debug("jabref: child " + child.name + " created under " + collection.name);
+				}
+
+				parentCollection = collection;
+				collection = child;
+			}
+
+			if (parentCollection) {
+				parentCollection = jabrefCollect(parentCollection.children, function(n) { return (n.type == 'item') });
+			}
+
+			if (record.intersection == '2' && parentCollection) { // union with parent
+				collection.children = parentCollection;
+			}
+
+			while(keys.length > 0) {
+				key = keys.shift();
+				if (key != '') {
+					Zotero.debug('jabref: adding ' + key + ' to ' + collection.name);
+					collection.children.push({type: 'item', id: key});
+				}
+			}
+
+			if (parentCollection && record.intersection == '1') { // intersection with parent
+				collection.children = jabrefMap(collection.children, function(n) { parentCollection.indexOf(n) !== -1; });
+			}
+		}
+	}
+}
+
 function beginRecord(type, closeChar) {
 	type = Zotero.Utilities.trimInternal(type.toLowerCase());
 	if(type != "string") {
@@ -1944,6 +2096,9 @@ function beginRecord(type, closeChar) {
 			}
 			field = "";
 		} else if(read == ",") {						// commas reset
+			if (item.itemID == null) {
+				item.itemID = field; // itemID = citekey
+			}
 			field = "";
 		} else if(read == closeChar) {
 			if(item) {
@@ -1966,6 +2121,7 @@ function doImport() {
 			type = "";
 		} else if(type !== false) {
 			if(type == "comment") {
+				processComment();
 				type = false;
 			} else if(read == "{") {		// possible open character
 				beginRecord(type, "}");
@@ -1977,6 +2133,10 @@ function doImport() {
 				type += read;
 			}
 		}
+	}
+
+	for (var key in jabref.root) {
+		if (jabref.root.hasOwnProperty(key)) { jabref.root[key].complete(); }
 	}
 }
 
@@ -2243,7 +2403,7 @@ function doExport() {
 		if(item.publicationTitle) {
 			if(item.itemType == "bookSection" || item.itemType == "conferencePaper") {
 				writeField("booktitle", item.publicationTitle);
-			} else if(Zotero.getOption("useJournalAbbreviation")){
+			} else if(Zotero.getOption("useJournalAbbreviation") && item.journalAbbreviation){
 				writeField("journal", item.journalAbbreviation);
 			} else {
 				writeField("journal", item.publicationTitle);
@@ -2442,6 +2602,7 @@ var testCases = [
 						"title": "Attachment"
 					}
 				],
+				"itemID": "Adams2001",
 				"publicationTitle": "Bulletin of Volcanology",
 				"pages": "493–518",
 				"title": "The physical volcanology of the 1600 eruption of Huaynaputina, southern Peru",
@@ -2472,11 +2633,12 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "abramowitz+stegun",
+				"place": "New York",
+				"edition": "ninth Dover printing, tenth GPO printing",
 				"title": "Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical Tables",
 				"publisher": "Dover",
-				"date": "1964",
-				"place": "New York",
-				"edition": "ninth Dover printing, tenth GPO printing"
+				"date": "1964"
 			},
 			{
 				"itemType": "book",
@@ -2496,10 +2658,11 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "Torre2008",
+				"ISBN": "0385527403",
 				"publisher": "Doubleday",
 				"title": "The Yankee Years",
-				"date": "2008",
-				"ISBN": "0385527403"
+				"date": "2008"
 			}
 		]
 	},
@@ -2525,6 +2688,7 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "author:06",
 				"title": "Some publication title",
 				"pages": "330—331"
 			},
@@ -2546,8 +2710,8 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "conference:06",
 				"title": "Proceedings of the Xth Conference on XYZ",
-				"publicationTitle": "Proceedings of the Xth Conference on XYZ",
 				"date": "October 2006"
 			}
 		]
@@ -2569,12 +2733,13 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
-				"title": "Design of a Carbon Fiber Composite Grid Structure for the GLAST Spacecraft Using a Novel Manufacturing Technique",
-				"publisher": "Stanford Press",
-				"date": "2001",
+				"itemID": "hicks2001",
 				"place": "Palo Alto",
 				"edition": "1st,",
-				"ISBN": "0-69-697269-4"
+				"ISBN": "0-69-697269-4",
+				"title": "Design of a Carbon Fiber Composite Grid Structure for the GLAST Spacecraft Using a Novel Manufacturing Technique",
+				"publisher": "Stanford Press",
+				"date": "2001"
 			}
 		]
 	},
@@ -2595,9 +2760,10 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "Oliveira_2009",
+				"issue": "29",
 				"title": "USGS monitoring ecological impacts",
 				"volume": "107",
-				"issue": "29",
 				"publicationTitle": "Oil & Gas Journal",
 				"date": "2009",
 				"pages": "29"
@@ -2615,6 +2781,7 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "test-ticket1661",
 				"title": "non-braking space: ; accented characters: ñ and ñ; tilde operator: ∼"
 			}
 		]
@@ -2646,12 +2813,13 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
+				"itemID": "Frit2",
+				"DOI": "10.1007/s13127-011-0069-8",
 				"title": "Test of markupconversion: Italics, bold, superscript, subscript, and small caps: Mitochondrial DNA<sub>2</sub>$ sequences suggest unexpected phylogenetic position of Corso-Sardinian grass snakes (<i>Natrix cetti</i>) and <b>do not</b> support their <span style=\"small-caps\">species status</span>, with notes on phylogeography and subspecies delineation of grass snakes.",
 				"publicationTitle": "Actes du <sup>ème</sup>$ Congrès Français d'Acoustique",
 				"date": "2012",
 				"volume": "12",
-				"pages": "71-80",
-				"DOI": "10.1007/s13127-011-0069-8"
+				"pages": "71-80"
 			}
 		]
 	},
@@ -2672,9 +2840,9 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
-				"title": "Public Service Research Foundation",
+				"itemID": "american_rights_at_work_public_2012",
 				"url": "http://www.americanrightsatwork.org/blogcategory-275/",
-				"accessDate": "2012-07-27",
+				"title": "Public Service Research Foundation",
 				"date": "2012"
 			}
 		]

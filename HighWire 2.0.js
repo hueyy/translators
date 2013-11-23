@@ -2,14 +2,14 @@
 	"translatorID": "8c1f42d5-02fa-437b-b2b2-73afc768eb07",
 	"label": "HighWire 2.0",
 	"creator": "Matt Burton",
-	"target": "^[^\\?]+(content/([0-9]+[A-Z\\-]*/(?:suppl_)?[0-9]+|current|firstcite|early)|search\\?submit=|search(/results)?\\?fulltext=|cgi/collection/.+)",
+	"target": "^[^\\?]+(content/([0-9]+[A-Z\\-]*/(?:suppl_)?[0-9]+|current|firstcite|early)|search\\?(tmonth=[A-Za-z]*&pubdate_year=[0-9]*&)?submit=|search(/results)?\\?fulltext=|cgi/collection/.+)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 200,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2013-05-28 00:08:31"
+	"lastUpdated": "2013-11-19 20:51:56"
 }
 
 /*
@@ -35,7 +35,8 @@ function hasMultiple(doc, url) {
 		doc.title.indexOf("Early Edition") != -1 ||
 		url.match(/cgi\/collection\/./) ||
 		url.indexOf("content/firstcite") != -1 ||
-		url.match(/content\/early\/recent$/);
+		url.match(/content\/early\/recent$/)||
+		(url.match(/content\//) && ZU.xpathText(doc, '//div[@class="toc-citation"]'));
 }
 
 //get abstract
@@ -72,10 +73,10 @@ function getKeywords(doc) {
 	//some journals are odd and don't work with this.
 	//e.g. http://jn.nutrition.org/content/130/12/3122S.abstract
 	var keywords = ZU.xpath(doc,'//ul[contains(@class,"kwd-group")]//a');
-
 	var kwds = new Array();
 	for(var i=0, n=keywords.length; i<n; i++) {
-		kwds.push(keywords[i].textContent.trim());
+		//don't break for empty nodes
+		if(keywords[i].textContent)	kwds.push(keywords[i].textContent.trim());
 	}
 
 	return kwds;
@@ -236,11 +237,13 @@ function addEmbMeta(doc) {
 	translator.setHandler("itemDone", function(obj, item) {
 		//remove all caps in Names and Titles
 		for (i in item.creators){
+			Z.debug(item.creators[i])
 			if(item.creators[i].lastName == item.creators[i].lastName.toUpperCase()) {
 				item.creators[i].lastName =
 					ZU.capitalizeTitle(item.creators[i].lastName, true);
 			}
-			if(item.creators[i].firstName == item.creators[i].firstName.toUpperCase()) {
+			//we test for existence of first Name to not fail with spotty data. 
+			if(item.creators[i].firstName && item.creators[i].firstName == item.creators[i].firstName.toUpperCase()) {
 				item.creators[i].firstName =
 					ZU.capitalizeTitle(item.creators[i].firstName, true);
 			}
@@ -313,7 +316,7 @@ function detectWeb(doc, url) {
 	if (!highwiretest) {
 		// lets hope this installations don't tweak this...
 		highwiretest = ZU.xpath(doc,
-				"//link[@href='/shared/css/hw-global.css']").length;
+				"//link[@href='/shared/css/hw-global.css']|//link[contains(@href,'highwire.css')]").length;
 	}
 	
 	if(highwiretest) {
@@ -331,12 +334,15 @@ function doWeb(doc, url) {
 		if (!url) url = doc.documentElement.location;
 
 		//get a list of URLs to import
-		if ( doc.title.indexOf("Table of Contents") != -1 ||
+		if ( doc.title.indexOf("Table of Contents") != -1 ||		
 			url.indexOf("content/firstcite") != -1 ) {
 			var searchx = '//li[contains(@class, "toc-cit") and \
 				not(ancestor::div/h2/a/text() = "Correction" or \
 					ancestor::div/h2/a/text() = "Corrections")]';
 			var titlex = './/h4';
+		} else if (doc.title.indexOf("In this Issue") != -1){
+			var searchx = '//div[@class="toc-citation"]'
+			var titlex = './/div[@class="highwire-cite-title"]'
 		} else if ( url.indexOf("content/early/recent") != -1 ||
 					doc.title.indexOf("Early Edition") != -1) {
 						
@@ -381,6 +387,9 @@ function doWeb(doc, url) {
 
 			Zotero.Utilities.processDocuments(urls, addEmbMeta);
 		});
+	} else if(url.indexOf('.full.pdf+html') != -1) {
+		//abstract in EM is not reliable. Fetch abstract page and scrape from there.
+		ZU.processDocuments(url.replace(/\.full\.pdf\+html.*/, ''), addEmbMeta);
 	} else {
 		addEmbMeta(doc);
 	}
@@ -475,83 +484,12 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://radiographics.rsna.org/content/10/1/41.full.pdf+html?frame=sidebar",
-		"items": [
-			{
-				"itemType": "journalArticle",
-				"creators": [
-					{
-						"firstName": "M. L.",
-						"lastName": "Giger",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "K.",
-						"lastName": "Doi",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "H.",
-						"lastName": "MacMahon",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "C. E.",
-						"lastName": "Metz",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "F. F.",
-						"lastName": "Yin",
-						"creatorType": "author"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [
-					{
-						"title": "Full Text PDF",
-						"mimeType": "application/pdf"
-					},
-					{
-						"title": "Snapshot"
-					},
-					{
-						"title": "PubMed entry",
-						"mimeType": "text/html",
-						"snapshot": false
-					}
-				],
-				"language": "en",
-				"journalAbbreviation": "Radiographics",
-				"issue": "1",
-				"url": "http://radiographics.rsna.org/content/10/1/41",
-				"ISSN": "0271-5333, 1527-1323",
-				"extra": "PMID: 2296696",
-				"libraryCatalog": "radiographics.rsna.org",
-				"shortTitle": "Pulmonary nodules",
-				"title": "Pulmonary nodules: computer-aided detection in digital chest images.",
-				"date": "01/01/1990",
-				"publicationTitle": "Radiographics",
-				"volume": "10",
-				"pages": "41-51"
-			}
-		]
-	},
-	{
-		"type": "web",
 		"url": "http://bjaesthetics.oxfordjournals.org/search?fulltext=art&submit=yes&x=0&y=0",
 		"items": "multiple"
 	},
 	{
 		"type": "web",
 		"url": "http://bjaesthetics.oxfordjournals.org/content/current",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://radiographics.rsna.org/cgi/collection/professional",
 		"items": "multiple"
 	},
 	{
@@ -1117,6 +1055,78 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://oss.sagepub.com/search/results?fulltext=labor&x=0&y=0&submit=yes&journal_set=sposs&src=selected&andorexactfulltext=and",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://amj.aom.org/search?tmonth=Dec&pubdate_year=&submit=yes&submit=yes&submit=Submit&andorexacttitle=and&format=standard&firstpage=&fmonth=Jan&title=&hits=50&tyear=2013&titleabstract=&journalcode=amj&journalcode=amr&volume=&sortspec=relevance&andorexacttitleabs=and&author2=&andorexactfulltext=and&fyear=2008&author1=&doi=&fulltext=culture%20cultural&FIRSTINDEX=100",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://ajpheart.physiology.org/content/235/5/H553",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "C. F.",
+						"lastName": "Babbs",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "S. J.",
+						"lastName": "Whistler",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "G. K.",
+						"lastName": "Yim",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					},
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "PubMed entry",
+						"mimeType": "text/html",
+						"snapshot": false
+					}
+				],
+				"title": "Temporal stability and precision of ventricular defibrillation threshold data",
+				"publicationTitle": "American Journal of Physiology - Heart and Circulatory Physiology",
+				"rights": "Copyright © 1978 the American Physiological Society",
+				"section": "Article",
+				"publisher": "American Physiological Society",
+				"institution": "American Physiological Society",
+				"company": "American Physiological Society",
+				"label": "American Physiological Society",
+				"distributor": "American Physiological Society",
+				"date": "11/01/1978",
+				"url": "http://ajpheart.physiology.org/content/235/5/H553",
+				"language": "en",
+				"extra": "Over 200 measurements of the minimum damped sinusoidal current and energy for transchest electrical ventricular defibrillation (ventricular defibrillation threshold) were made to determine the stability and precision of threshold data in 15 pentobarbital-anesthetized dogs. Threshold was determined by repeated trials of fibrillation and defibrillation with successive shocks of diminishing current, each 10% less than that of the preceding shock. The lowest shock intensity that defibrillated was defined as threshold. In three groups of five dogs each, threshold was measured at intervals of 60, 15, and 5 min over periods of 8, 5, and 1 h, respectively. Similar results were obtained for all groups. There was no significant change in mean threshold current with time. Owing to a decrease in transchest impedance, threshold delivered energy decreased by 10% during the first hour of testing. The standard deviations for threshold peak current and delivered energy in a given animal were 11% and 22% of their respective mean values. Arterial blood pH, Pco2, and Po2 averaged change of pH, PCO2 and PO2 were not significantly different from zero. The data demonstrate that ventricular defibrillation threshold is a stable physiological parameter that may be measured with reasonable precision.\nPMID: 31797",
+				"volume": "235",
+				"issue": "5",
+				"pages": "H553-H558",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"libraryCatalog": "ajpheart.physiology.org",
+				"abstractNote": "Over 200 measurements of the minimum damped sinusoidal current and energy for transchest electrical ventricular defibrillation (ventricular defibrillation threshold) were made to determine the stability and precision of threshold data in 15 pentobarbital-anesthetized dogs. Threshold was determined by repeated trials of fibrillation and defibrillation with successive shocks of diminishing current, each 10% less than that of the preceding shock. The lowest shock intensity that defibrillated was defined as threshold. In three groups of five dogs each, threshold was measured at intervals of 60, 15, and 5 min over periods of 8, 5, and 1 h, respectively. Similar results were obtained for all groups. There was no significant change in mean threshold current with time. Owing to a decrease in transchest impedance, threshold delivered energy decreased by 10% during the first hour of testing. The standard deviations for threshold peak current and delivered energy in a given animal were 11% and 22% of their respective mean values. Arterial blood pH, Pco2, and Po2 averaged change of pH, PCO2 and PO2 were not significantly different from zero. The data demonstrate that ventricular defibrillation threshold is a stable physiological parameter that may be measured with reasonable precision."
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://ajpheart.physiology.org/content/235/5",
 		"items": "multiple"
 	}
 ]

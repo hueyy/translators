@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 12,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2013-06-11 06:37:37"
+	"lastUpdated": "2013-10-29 02:07:35"
 }
 
 /**
@@ -35,27 +35,39 @@ function getZoteroType(iconSrc) {
  *
  */
 
-function scrape(doc, url, callDoneWhenFinished) {
+function scrape(doc, url, callDoneWhenFinished, itemData) {
 	//we need a different replace for item displays from search results
 	if (!url) url = doc.location.href;
 	if (url.match(/\?/)) {
-		var newurl = url.replace(/\&[^/]*$|$/, "&client=worldcat.org-detailed_record&page=endnote");
+		var newurl = url.replace(/\&[^/]*$|$/, "&client=worldcat.org-detailed_record&page=endnotealt");
 	} else {
-		var newurl = url.replace(/\&[^/]*$|$/, "?client=worldcat.org-detailed_record&page=endnote");
+		var newurl = url.replace(/\&[^/]*$|$/, "?client=worldcat.org-detailed_record&page=endnotealt");
 	}
 	//Z.debug(newurl)
 	Zotero.Utilities.HTTP.doGet(newurl, function (text) {
+		//Z.debug(text);
+		
 		//2013-05-28 RIS export currently has messed up authors
 		// e.g. A1  - Gabbay, Dov M., Woods, John Hayden., Hartmann, Stephan, 
 		text = text.replace(/^((?:A1|ED)\s+-\s+)(.+)/mg, function(m, tag, value) {
-			var authors = value.replace(/[,\s]+$/, '')
-				.split('.,');
+			var authors = value.replace(/[.,\s]+$/, '')
+					.split(/[.,],/);
 			var replStr = '';
+			var author;
 			for(var i=0, n=authors.length; i<n; i++) {
-				replStr += tag + authors[i].trim() + '\n';
+					author = authors[i].trim();
+					if(author) replStr += tag + author + '\n';
 			}
 			return replStr.trim();
 		});
+		//ebooks are exported as ELEC. We need them as BOOK
+		text = text.replace(/^TY\s+-\s+ELEC\s*$/mg, 'TY  - BOOK');
+		//conference proceedings exported as CONF, but fields match BOOK better
+		text = text.replace(/TY\s+-\s+CONF\s+[\s\S]+\n\s*ER\s+-/g, function(m) {
+			return m.replace(/^TY\s+-\s+CONF\s*$/mg, 'TY  - BOOK')
+				//authors are actually editors
+				.replace(/^A1\s+-\s+/mg, 'A3  - ');
+		})
 		
 		//Zotero.debug("RIS: " + text)
 		
@@ -73,20 +85,18 @@ function scrape(doc, url, callDoneWhenFinished) {
 			item.title = item.title.replace(/\s+:/, ":")
 			
 			
-			//creators have period after firstName
+			//correct field mode for corporate authors
 			for (i in item.creators) {
-				if (item.creators[i].firstName){
-				item.creators[i].firstName = item.creators[i].firstName.replace(/\.$/, "");
-				}
-				else {
-					item.creators[i].lastName = item.creators[i].lastName.replace(/\.$/, "");
-					item.creators[i].fieldMode=1;			
+				if (!item.creators[i].firstName){
+					item.creators[i].fieldMode=1;
 				}
 			}
-			//We want ebooks to be treated like books, not webpages (is ISBN the best choice here?)
-			if (item.itemType == "webpage" && item.ISBN) {
-				item.itemType = "book";
+			
+			//attach notes
+			if(itemData && itemData.notes) {
+				item.notes.push({note: itemData.notes});
 			}
+			
 			item.complete();
 		});
 		translator.translate();
@@ -110,6 +120,7 @@ function generateItem(doc, node) {
 		type = getZoteroType(type);
 		if (type) item.itemType = type;
 	}
+	
 	return item;
 }
 
@@ -134,21 +145,44 @@ function doWeb(doc, url) {
 	var articles = [];
 	if (doc.evaluate('//div[@class="name"]/a', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) { //search results view
 		if (detectWeb(doc) == "multiple") {
-			var titles = doc.evaluate('//div[@class="name"]/a', doc, null, XPathResult.ANY_TYPE, null);
+			var titles = doc.getElementsByClassName("result");
 			var items = {};
-			var title;
-			while (title = titles.iterateNext()) {
-				items[title.href] = title.textContent;
+			var itemData = {};
+			var title, notes, url;
+			for(var i=0, n=titles.length; i<n; i++) {
+				title = ZU.xpath(titles[i], './div[@class="name"]/a');
+				if(!title.length || !title[0].href) continue;
+				url = title[0].href;
+				items[url] = title[0].textContent;
+				
+				notes = ZU.xpath(titles[i], './div[@class="description" and ./strong[contains(text(), "Notes")]]');
+				var trimStrong = false;
+				if(!notes.length) {
+					//maybe we're looking at our own list
+					notes = ZU.xpath(titles[i], './div/div[@class="description"]/div[contains(@id,"saved_comments_") and normalize-space(text())]');
+				}
+				if(notes.length) {
+					notes = ZU.trimInternal(notes[0].innerHTML)
+						.replace(/^<strong>\s*Notes:\s*<\/strong>\s*<br>\s*/i, '');
+					
+					if(notes) {
+						itemData[url] = {
+							notes: ZU.unescapeHTML(ZU.unescapeHTML(notes)) //it's double-escaped on WorldCat
+						};
+					}
+				}
 			}
 			Zotero.selectItems(items, function (items) {
 				if (!items) {
 					return true;
 				}
 				for (var i in items) {
-					articles.push(i);
+					(function(url) {
+						ZU.processDocuments(url, function(newUrl, newDoc) {
+							scrape(newUrl, newDoc, false, itemData[url]);
+						});
+					})(i);
 				}
-				//Z.debug(articles)
-				Zotero.Utilities.processDocuments(articles, scrape);
 			});
 		} else { //single item in search results, don't display a select dialog
 			var title = doc.evaluate('//div[@class="name"]/a[1]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
@@ -266,6 +300,72 @@ var testCases = [
 				"date": "2006",
 				"ISBN": "0521770599 0521779243  9780521770590 9780521779241",
 				"abstractNote": "\"Adam Smith is best known as the founder of scientific economics and as an early proponent of the modern market economy. Political economy, however, was only one part of Smith's comprehensive intellectual system. Consisting of a theory of mind and its functions in language, arts, science, and social intercourse, Smith's system was a towering contribution to the Scottish Enlightenment. His ideas on social intercourse, in fact, also served as the basis for a moral theory that provided both historical and theoretical accounts of law, politics, and economics. This companion volume provides an up-to-date examination of all aspects of Smith's thought. Collectively, the essays take into account Smith's multiple contexts - Scottish, British, European, Atlantic, biographical, institutional, political, philosophical - and they draw on all his works, including student notes from his lectures. Pluralistic in approach, the volume provides a contextualist history of Smith, as well as direct philosophical engagement with his ideas.\"--Jacket."
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.worldcat.org/title/from-lanka-eastwards-the-ramayana-in-the-literature-and-visual-arts-of-indonesia/oclc/765821302",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"lastName": "Acri",
+						"firstName": "Andrea",
+						"creatorType": "editor"
+					},
+					{
+						"lastName": "Creese",
+						"firstName": "Helen",
+						"creatorType": "editor"
+					},
+					{
+						"lastName": "Griffiths",
+						"firstName": "Arlo",
+						"creatorType": "editor"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"libraryCatalog": "Open WorldCat",
+				"language": "English",
+				"place": "Leiden",
+				"ISBN": "9067183849 9789067183840",
+				"shortTitle": "From Laṅkā eastwards",
+				"title": "From Laṅkā eastwards: the Rāmāyaṇa in the literature and visual arts of Indonesia",
+				"publisher": "KITLV Press",
+				"date": "2011"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.worldcat.org/title/newmans-relation-to-modernism/oclc/676747555",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"lastName": "Smith",
+						"firstName": "Sydney F",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"libraryCatalog": "Open WorldCat",
+				"language": "English",
+				"url": "http://www.archive.org/details/a626827800smituoft/",
+				"title": "Newman's relation to modernism",
+				"publisher": "s.n.",
+				"place": "London",
+				"date": "1912",
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	}

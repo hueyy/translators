@@ -14,7 +14,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2013-04-27 05:46:18"
+	"lastUpdated": "2013-10-29 02:01:09"
 }
 
 function detectImport() {
@@ -577,9 +577,10 @@ function processTag(item, entry) {
 				value = undefined;
 			break;
 			case "creators":
-				var creator = value.split(/\s*,\s*/);
-				value = {lastName: creator[0], firstName:creator[1], creatorType:zField[1]};
-				if(value.firstName === undefined) {	//corporate
+				var lName = value.split(/\s*,\s*/)[0];
+				var fName = value.substr(lName.length).replace(/^\s*,\s*/, '');
+				value = {lastName: lName, firstName:fName, creatorType:zField[1]};
+				if(!value.firstName) {	//corporate
 					delete value.firstName;
 					value.fieldMode = 1;
 				}
@@ -720,7 +721,7 @@ function dateRIStoZotero(risDate, zField) {
 	var date = [];
 	//we'll be very lenient about formatting
 	//First, YYYY/MM/DD/other with everything but year optional
-	var m = risDate.match(/^(\d+)(?:\/(\d{0,2})\/(\d{0,2})(?:\/?(.*))?)?/);
+	var m = risDate.match(/^(\d+)(?:\/(\d{0,2})(?:\/(\d{0,2})(?:(?:\/|\s)([^\/]*))?)?)?$/);
 	var timeCheck, part;
 	if(m) {
 		date[0] = m[1];	//year
@@ -934,11 +935,11 @@ function completeItem(item) {
 var RIS_format = /^([A-Z][A-Z0-9]) {1,2}-(?: (.*))?$/; //allow empty entries
 var preserveNewLines = ['KW', 'L1', 'L2', 'L3'];
 function getLine() {
-	var entry, lastLineLength;
+	var entry, lastLineLength, maxLineLength = 0;
 	if(getLine.buffer) {
 		entry = getLine.buffer.match(RIS_format); //this should always match
 		if(entry[2] === undefined) entry[2] = '';
-		lastLineLength = entry[2].length;
+		maxLineLength = lastLineLength = entry[2].length;
 		getLine.buffer = undefined;
 	}
 
@@ -955,32 +956,45 @@ function getLine() {
 		//otherwise this is a new entry
 		} else if(temp) {
 			entry = temp;
-			lastLineLength = entry[2].length;
+			lastLineLength = entry[0].length;
+			if(lastLineLength > maxLineLength) maxLineLength = lastLineLength;
 
 		//if this line didn't match, then we just attach it to the current value
 		//Try to figure out if this is supposed to be on a new line or not
 		} else if(entry) {
+			var rawLine = nextLine;
+			
+			//trim leading/trailing whitespace
+			nextLine = nextLine.trim();
+			
+			var newLineAdded = false;
 			//new lines would probably only be meaningful in notes and abstracts
 			if(entry[1] == 'AB' || entry[1] == 'N1' || entry[1] == 'N2') {
-				//if previous line was short, this would probably be on a new line
+				//if lines are not trimmed to ~80 characters or previous line was short,
+				// this would probably be on a new line
 				//Might consider looking for periods and capital letters
-				if(lastLineLength < 60) {
+				//empty lines imply new line
+				if(maxLineLength > 85 || lastLineLength < 60 || nextLine.length == 0) {
 					nextLine = "\n" + nextLine;
+					newLineAdded = true;
 				}
 			}
 
 			//don't remove new lines from keywords or attachments
-			if(preserveNewLines.indexOf(entry[1]) != -1) {
+			if(!newLineAdded && preserveNewLines.indexOf(entry[1]) != -1) {
 				nextLine = "\n" + nextLine;
+				newLineAdded = true;
 			}
 
 			//check if we need to add a space
-			if(entry[2].substr(entry[2].length-1) != ' ') {
+			if(!newLineAdded && entry[2].substr(entry[2].length-1) != ' ') {
 				nextLine = ' ' + nextLine;
 			}
 
-			entry[0] += nextLine;
+			entry[0] += "\n" + rawLine;
 			entry[2] += nextLine;
+			lastLineLength = rawLine.length;
+			if(lastLineLength > maxLineLength) maxLineLength = lastLineLength;
 		}
 	}
 

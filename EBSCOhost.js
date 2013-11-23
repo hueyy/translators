@@ -2,14 +2,14 @@
 	"translatorID": "d0b1914a-11f1-4dd7-8557-b32fe8a3dd47",
 	"label": "EBSCOhost",
 	"creator": "Simon Kornblith, Michael Berkowitz, Josh Geller",
-	"target": "^https?://[^/]+/(?:eds|bsi|ehost)/(?:results|detail|folder)",
+	"target": "^https?://[^/]+/(?:eds|bsi|ehost)/(?:results|detail|folder|pdfviewer)",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2013-06-06 05:39:15"
+	"lastUpdated": "2013-10-30 02:42:32"
 }
 
 function detectWeb(doc, url) {
@@ -19,8 +19,8 @@ function detectWeb(doc, url) {
 		return "multiple";
 	}
 
-	var persistentLink = ZU.xpath(doc, '//a[@class="permalink-link"]');
-	if(persistentLink.length) {
+	var persistentLink = doc.getElementsByClassName("permalink-link");
+	if(persistentLink.length && persistentLink[0].nodeName.toUpperCase() == 'A') {
 		return "journalArticle";
 	}
 }
@@ -70,6 +70,9 @@ function downloadFunction(text, url, prefs) {
 	translator.setHandler("itemDone", function(obj, item) {
 		/* Fix capitalization issues */
 		//title
+		if(!item.title && prefs.itemTitle) {
+			item.title = prefs.itemTitle;
+		}
 		if(item.title) {
 			// Strip final period from title if present
 			item.title = item.title.replace(/([^\.])\.\s*$/,'$1');
@@ -143,25 +146,33 @@ function downloadFunction(text, url, prefs) {
 				item.url = undefined;
 			}
 		}
-		if(prefs.fetchPDF) {
+		
+		if(prefs.pdfURL) {
+			item.attachments.push({
+					url: prefs.pdfURL,
+					title: "EBSCO Full Text",
+					mimeType:"application/pdf"
+			});
+			item.complete();
+		} else if(prefs.fetchPDF) {
 			var arguments = urlToArgs(url);
 			var pdf = "/ehost/pdfviewer/pdfviewer?"
 				+ "sid=" + arguments["sid"]
 				+ "&vid=" + arguments["vid"];
 			Z.debug("Fetching PDF from " + pdf);
 
-			ZU.doGet(pdf, function (text) {
-					var realpdf = text.match(/<iframe\s+id="pdfIframe"[^>]+\bsrc="([^"]+)"/i)
-						|| text.match(/<embed\s+id="pdfEmbed"[^>]+\bsrc="([^"]+)"/i);	//this is probably no longer used
+			ZU.processDocuments(pdf,
+				function(pdfDoc) {
+					var realpdf = findPdfUrl(pdfDoc);
 					if(realpdf) {
+						/* Not sure if this is still necessary. Doesn't seem to be.
 						realpdf = realpdf[1].replace(/&amp;/g, "&")	//that's & amp; (Scaffold parses it)
 											.replace(/#.*$/,'');
-		
 						if(an) {
 							realpdf = realpdf.replace(/K=\d+/,"K="+an);
 						} else {
 							Z.debug("Don't have an accession number. PDF might fail.");
-						}
+						}*/
 
 						item.attachments.push({
 								url:realpdf,
@@ -169,14 +180,13 @@ function downloadFunction(text, url, prefs) {
 								mimeType:"application/pdf"
 						});
 					} else {
-						Z.debug("Could not detect embedded pdf.");
-						var m = text.match(/<iframe[^>]+>/i) || text.match(/<embed[^>]+>/i);
-						if(m) Z.debug(m[0]);
+						Z.debug("Could not find a reference to PDF.");
 					}
 				},
 				function () {
 					Z.debug("PDF retrieval done.");
-					item.complete(); }
+					item.complete();
+				}
 			);
 		} else {
 			Z.debug("Not attempting to retrieve PDF.");
@@ -193,30 +203,38 @@ function downloadFunction(text, url, prefs) {
 //collects item url->title (in items) and item url->database info (in itemInfo)
 function getResultList(doc, items, itemInfo) {
 	var results = ZU.xpath(doc, '//li[@class="result-list-li"]');
+	//make search results work if you can't add to folder, e.g. for EBSCO used as discovery service of library such as
+  	//http://search.ebscohost.com/login.aspx?direct=true&site=eds-live&scope=site&type=0&custid=s4895734&groupid=main&profid=eds&mode=and&lang=en&authtype=ip,guest,athens
 
+	var folder = ZU.xpathText(doc, '//span[@class = "item add-to-folder"]/input/@value|.//span[@class = "item add-to-folder"]/a[1]/@data-folder')
 	var title, folderData, count = 0;
 	for(var i=0, n=results.length; i<n; i++) {
-		title = ZU.xpath(results[i], './/a[@class = "title-link color-p4"]');
+		//we're extra cautious here: When there's not folder, good chance user isn't logged in and import will fail where 
+		//there is no preview icon. We might be able to just rely on the 2nd xpath, but why take the risk
+		if (folder) title = ZU.xpath(results[i], './/a[@class = "title-link color-p4"]');
+		else title = ZU.xpath(results[i], './/a[@class = "title-link color-p4" and following-sibling::span[contains(@id, "hoverPreview")]]');
+		if(!title.length) continue;
+		if (folder) {
 		folderData = ZU.xpath(results[i],
-			'.//span[@class = "item add-to-folder"]/input/@value');
-
+			'.//span[@class = "item add-to-folder"]/input/@value|.//span[@class = "item add-to-folder"]/a[1]/@data-folder');
+		//I'm not sure if the input/@value format still exists somewhere, but leaving this in to be safe
 		//skip if we're missing something
-		if(!title.length || !folderData.length) continue;
 
-		count++;
-
-		items[title[0].href] = title[0].textContent;
 		itemInfo[title[0].href] = {
 			folderData: folderData[0].textContent,
 			//let's also store item type
 			itemType: ZU.xpathText(results[i],
-						'.//div[@class="pubtype"]/span/@class'),
+				'.//div[@class="pubtype"]/span/@class'),
+			itemTitle: ZU.xpathText(results[i], './/span[@class="title-link-wrapper"]/a'),
 			//check if PDF is available
 			fetchPDF: ZU.xpath(results[i], './/span[@class="record-formats"]\
-										/a[contains(@class,"pdf-ft")]').length,
+				/a[contains(@class,"pdf-ft")]').length,
 			hasFulltext: ZU.xpath(results[i], './/span[@class="record-formats"]\
-										/a[contains(@class,"pdf-ft") or contains(@class, "html-ft")]').length
+				/a[contains(@class,"pdf-ft") or contains(@class, "html-ft")]').length
+		} 
 		};
+		count++;
+		items[title[0].href] = title[0].textContent;
 	}
 
 	return count;
@@ -257,6 +275,87 @@ function urlToArgs(url) {
 
 	return arguments;
 }
+
+//given a pdfviewer page, extracts the PDF url
+function findPdfUrl(pdfDoc) {
+	var el;
+	var realpdf = (el = pdfDoc.getElementById('downloadLink')) && el.href; //link
+	if(!realpdf) {
+		//input
+		realpdf = (el = pdfDoc.getElementById('pdfUrl')) && el.value;
+	}
+	if(!realpdf) {
+		realpdf = (el = pdfDoc.getElementById('pdfIframe') //iframe
+				|| pdfDoc.getElementById('pdfEmbed')) //embed
+			&& el.src;
+	}
+	
+	return realpdf;
+}
+
+/**
+ * borrowed from http://www.webtoolkit.info/javascript-base64.html
+ */
+var base64KeyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+function utf8_encode(string) {
+	string = string.replace(/\r\n/g,"\n");
+	var utftext = "";
+
+	for(var n=0; n<string.length; n++) {
+		var c = string.charCodeAt(n);
+		if(c < 128) {
+			utftext += String.fromCharCode(c);
+		} else if((c > 127) && (c < 2048)) {
+			utftext += String.fromCharCode((c >> 6) | 192);
+			utftext += String.fromCharCode((c & 63) | 128);
+		} else {
+			utftext += String.fromCharCode((c >> 12) | 224);
+			utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+			utftext += String.fromCharCode((c & 63) | 128);
+		}
+	}
+	return utftext;
+}
+
+function btoa(input) {
+		var output = "";
+		var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+		var i = 0;
+		input = utf8_encode(input);
+		
+		while(i < input.length) {
+				chr1 = input.charCodeAt(i++);
+				chr2 = input.charCodeAt(i++);
+				chr3 = input.charCodeAt(i++);
+				enc1 = chr1 >> 2;
+				enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+				enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+				enc4 = chr3 & 63;
+				if(isNaN(chr2)) {
+						enc3 = enc4 = 64;
+				} else if (isNaN(chr3)) {
+						enc4 = 64;
+				}
+				output = output +
+				base64KeyStr.charAt(enc1) + base64KeyStr.charAt(enc2) +
+				base64KeyStr.charAt(enc3) + base64KeyStr.charAt(enc4);
+		}
+		return output;
+}
+/**
+ * end borrowed code
+ */
+ 
+/**
+ * EBSCOhost encodes the target url before posting the form
+ * Replicated from http://global.ebsco-content.com/interfacefiles/13.4.0.98/javascript/bundled/_layout2/master.js
+ */
+function urlSafeEncodeBase64(str) {
+	return btoa(str).replace(/\+/g, "-").replace(/\//g, "_")
+		.replace(/=*$/, function(m) { return m.length; });
+}
+
 //var counter;
 function doWeb(doc, url) {
 //counter = 0;
@@ -288,9 +387,10 @@ function doWeb(doc, url) {
 		doDelivery(doc);
 	}
 }
+
 function doDelivery(doc, itemInfo) {
 	var folderData;
-	if(!itemInfo)	{
+	if(!itemInfo||!itemInfo.folderData)	{
 		/* Get the db, AN, and tag from ep.clientData instead */
 		var script, clientData;
 		var scripts = doc.getElementsByTagName("script");
@@ -303,7 +403,7 @@ function doDelivery(doc, itemInfo) {
 		/* We now have the script containing ep.clientData */
 		clientData = clientData[1].match(/"currentRecord"\s*:\s*({[^}]*})/);
 		if (!clientData) { return false; }
-		/* If this starts throwing exceptions, we should probably start try-elsing it */
+		/* If this starts throwing exceptions, we should probably start try-catching it */
 		folderData = JSON.parse(clientData[1]);
 	} else {
 		/* Ditto for this. */
@@ -315,27 +415,38 @@ function doDelivery(doc, itemInfo) {
 	}
 
 	//some preferences for later
-	var prefs = {}
+	var prefs = {};
 	//figure out if there's a PDF available
 	//if PDFs stop downloading, might want to remove this
 	if(!itemInfo)	{
-		prefs.fetchPDF = !(ZU.xpath(doc, '//div[@id="column1"]//ul[1]/li').length	//check for left-side column
-			&& !ZU.xpath(doc, '//a[contains(@class,"pdf-ft")]').length);	//check if there's a PDF there
+		if(doc.location.href.indexOf('/pdfviewer/') != -1) {
+			prefs.pdfURL = findPdfUrl(doc);
+			prefs.fetchPDF = !!prefs.pdfURL;
+		} else {
+			prefs.fetchPDF = !(ZU.xpath(doc, '//div[@id="column1"]//ul[1]/li').length	//check for left-side column
+					&& !ZU.xpath(doc, '//a[contains(@class,"pdf-ft")]').length);	//check if there's a PDF there
+		}
 		prefs.hasFulltext = !(ZU.xpath(doc, '//div[@id="column1"]//ul[1]/li').length	//check for left-side column
 			&& !ZU.xpath(doc, '//a[contains(@class,"pdf-ft") or contains(@class, "html-ft")]').length);
+		prefs.itemTitle = ZU.xpathText(doc, '//dd[contains(@class, "citation-title")]/a/span')
+			|| ZU.xpathText(doc, '//h2[@id="selectionTitle"]');
 	} else {
 		prefs.fetchPDF = itemInfo.fetchPDF;
 		prefs.hasFulltext = itemInfo.hasFulltext;
 		prefs.itemType = ebscoToZoteroItemType(itemInfo.itemType);
+		prefs.itemTitle = itemInfo.itemTitle;
 	}
-	//Z.debug(prefs.hasFulltext)
-	//Z.debug(prefs.fetchPDF)
+	
+	if(prefs.itemTitle) {
+		prefs.itemTitle = ZU.trimInternal(prefs.itemTitle).replace(/([^.])\.$/, '$1');
+	}
+	//Z.debug(prefs);
 
 	var postURL = ZU.xpathText(doc, '//form[@id="aspnetForm"]/@action');
 	var arguments = urlToArgs(postURL);
 
 	postURL = "/ehost/delivery/ExportPanelSave/"
-		+ folderData.Db + "_" + folderData.Term + "_" + folderData.Tag
+		+ urlSafeEncodeBase64(folderData.Db + "__" + folderData.Term + "__" + folderData.Tag)
 		+ "?sid=" + arguments["sid"]
 		+ "&vid=" + arguments["vid"]
 		+ "&bdata="+arguments["bdata"]
