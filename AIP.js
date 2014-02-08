@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2013-10-20 03:35:19"
+	"lastUpdated": "2013-12-06 17:49:29"
 }
 
 function getSearchResults(doc) {
@@ -21,10 +21,10 @@ function detectWeb(doc, url) {
 		return 'multiple';
 	}
 	
-	if(ZU.xpathText(doc, '/html/head/meta[@name="citation_journal_title"]/@content')
-		|| doc.body.id == 'conferencepaper') {
+	if(ZU.xpathText(doc, '/html/head/meta[@name="citation_journal_title"]/@content')) {
 		return 'journalArticle';
 	}
+	else if(doc.body.id == 'conferencepaper') return "conferencePaper"
 }
 function doWeb(doc, url) {
 	if(detectWeb(doc, url) == 'multiple') {
@@ -174,12 +174,12 @@ var testCases = [
 						"mimeType": "application/pdf"
 					}
 				],
-				"title": "Local stabilisation of polar order at charged antiphase boundaries in antiferroelectric (Bi<sub>0.85</sub>Nd<sub>0.15</sub>)(Ti<sub>0.1</sub>Fe<sub>0.9</sub>)O<sub>3</sub>",
+				"title": "Local stabilisation of polar order at charged antiphase boundaries in antiferroelectric (Bi0.85Nd0.15)(Ti0.1Fe0.9)O3",
 				"publisher": "AIP Publishing",
-				"institution": "American Institute of Physics",
-				"company": "American Institute of Physics",
-				"label": "American Institute of Physics",
-				"distributor": "American Institute of Physics",
+				"institution": "AIP Publishing",
+				"company": "AIP Publishing",
+				"label": "AIP Publishing",
+				"distributor": "AIP Publishing",
 				"date": "2013/08/13",
 				"reportType": "Text",
 				"letterType": "Text",
@@ -208,7 +208,7 @@ var testCases = [
 		"url": "http://scitation.aip.org/content/aip/proceeding/aipcp/10.1063/1.4756630",
 		"items": [
 			{
-				"itemType": "journalArticle",
+				"itemType": "conferencePaper",
 				"creators": [
 					{
 						"firstName": "S.",
@@ -232,14 +232,18 @@ var testCases = [
 				"attachments": [
 					{
 						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
 					}
 				],
 				"title": "Evaluation of thermal resistance of building insulations with reflective surfaces",
-				"publisher": "American Institute of Physics",
-				"institution": "American Institute of Physics",
-				"company": "American Institute of Physics",
-				"label": "American Institute of Physics",
-				"distributor": "American Institute of Physics",
+				"publisher": "AIP Publishing",
+				"institution": "AIP Publishing",
+				"company": "AIP Publishing",
+				"label": "AIP Publishing",
+				"distributor": "AIP Publishing",
 				"date": "2012/09/26",
 				"reportType": "Text",
 				"letterType": "Text",
@@ -250,14 +254,17 @@ var testCases = [
 				"presentationType": "Text",
 				"postType": "Text",
 				"audioFileType": "Text",
+				"volume": "1479",
+				"issue": "1",
+				"conferenceName": "NUMERICAL ANALYSIS AND APPLIED MATHEMATICS ICNAAM 2012: International Conference of Numerical Analysis and Applied Mathematics",
 				"abstractNote": "The thermal resistance of advanced insulation materials, applied namely in civil engineering, containing reflective surfaces and air gaps, cannot be evaluated correctly using the valid European standards because of presence of the dominant nonlinear radiative heat transfer and other phenomena not included in the recommended computational formulae. The proper general physical analysis refers to rather complicated problems from classical thermodynamics, whose both existence theory and numerical analysis contain open questions and cannot be done in practice when the optimization of composition of insulation layers is required. This paper, coming from original experimental results, demonstrates an alternative simplified computational approach, taking into account the most important physical processes, useful in the design of modern insulation systems.",
 				"DOI": "10.1063/1.4756630",
 				"pages": "2204-2207",
+				"ISSN": "0094-243X, 1551-7616",
 				"url": "http://scitation.aip.org/content/aip/proceeding/aipcp/10.1063/1.4756630",
 				"libraryCatalog": "scitation.aip.org",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"publicationTitle": "AIP Conference Proceedings",
-				"volume": "1479"
+				"publicationTitle": "AIP Conference Proceedings"
 			}
 		]
 	},

@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2013-09-23 04:28:34"
+	"lastUpdated": "2013-12-23 02:48:24"
 }
 
 /*
@@ -188,6 +188,7 @@ function processFields(doc, item, fieldMap, strict) {
 
 function completeItem(doc, newItem) {
 	addHighwireMetadata(doc, newItem);
+	addOtherMetadata(doc, newItem);
 	addLowQualityMetadata(doc, newItem);
 	finalDataCleanup(doc, newItem);
 
@@ -223,7 +224,7 @@ function init(doc, url, callback, forceLoadRDF) {
 		}
 	}
 
-	var hwType, hwTypeGuess, statements = [];
+	var hwType, hwTypeGuess, generatorType, statements = [];
 
 	for(var i=0, metaTag; metaTag = metaTags[i]; i++) {
 		// Two formats allowed:
@@ -243,7 +244,7 @@ function init(doc, url, callback, forceLoadRDF) {
 			var delimIndex = tag.indexOf('.');
 			if(delimIndex === -1) delimIndex = tag.indexOf(':');
 			if(delimIndex === -1) delimIndex = tag.indexOf('_');
-			if(delimIndex === -1) continue;
+			//if(delimIndex === -1) continue;
 
 			var prefix = tag.substr(0, delimIndex).toLowerCase();
 
@@ -260,6 +261,14 @@ function init(doc, url, callback, forceLoadRDF) {
 				// This debug is for seeing what is being sent to RDF
 				//Zotero.debug(_prefixes[prefix]+prop +"=>"+value);
 				statements.push([url, _prefixes[prefix]+prop, value]);
+			} else if(tag.toLowerCase() == 'generator') {
+				var lcValue = value.toLowerCase();
+				if(lcValue.indexOf('blogger') != -1
+					|| lcValue.indexOf('wordpress') != -1
+					|| lcValue.indexOf('wooframework') != -1
+				) {	
+					generatorType = 'blogPost';
+				}
 			} else {
 				var shortTag = tag.slice(tag.lastIndexOf('citation_'));
 				switch(shortTag) {
@@ -304,7 +313,7 @@ function init(doc, url, callback, forceLoadRDF) {
 			}
 
 			var nodes = rdf.getNodes(true);
-			rdf.defaultUnknownType = hwType || hwTypeGuess ||
+			rdf.defaultUnknownType = hwType || hwTypeGuess || generatorType ||
 				//if we have RDF data, then default to webpage
 				(nodes.length ? "webpage":false);
 
@@ -320,7 +329,7 @@ function init(doc, url, callback, forceLoadRDF) {
 			callback(_itemType);
 		});
 	} else {
-		callback(exports.itemType || hwType || hwTypeGuess);
+		callback(exports.itemType || hwType || hwTypeGuess || generatorType);
 	}
 }
 
@@ -473,6 +482,45 @@ function addHighwireMetadata(doc, newItem) {
 	if(!newItem.url) {
 		newItem.url = getContentText(doc, "citation_abstract_html_url") ||
 			getContentText(doc, "citation_fulltext_html_url");
+	}
+}
+
+function addOtherMetadata(doc, newItem) {
+	// Scrape parsely metadata http://parsely.com/api/crawler.html
+	var parselyJSON = ZU.xpathText(doc, '(//x:meta[@name="parsely-page"]/@content)[1]', namespaces);
+	if(parselyJSON) {
+		try {
+			var parsely = JSON.parse(parselyJSON);
+		} catch(e) {}
+		
+		if(parsely) {
+			if(!newItem.title && parsely.title) {
+				newItem.title = parsely.title;
+			}
+			
+			if(!newItem.url && parsely.url) {
+				newItem.url = parsely.url;
+			}
+			
+			if(!newItem.date && parsely.pub_date) {
+				var date = new Date(parsely.pub_date);
+				if(!isNaN(date.getUTCFullYear())) {
+					newItem.date = ZU.formatDate({
+						year: date.getUTCFullYear(),
+						month: date.getUTCMonth(),
+						day: date.getUTCDate()
+					}, true);
+				}
+			}
+			
+			if(!newItem.creators.length && parsely.author) {
+				newItem.creators.push(ZU.cleanAuthor(''+parsely.author, 'author'));
+			}
+			
+			if(!newItem.tags.length && parsely.tags && parsely.tags.length) {
+				newItem.tags = parsely.tags;
+			}
+		}
 	}
 }
 
@@ -772,12 +820,12 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"malaria",
-					"knowledge",
-					"treatment",
-					"prevention",
 					"HIV patients",
-					"Nigeria"
+					"Nigeria",
+					"knowledge",
+					"malaria",
+					"prevention",
+					"treatment"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -793,25 +841,14 @@ var testCases = [
 				"publicationTitle": "Tanzania Journal of Health Research",
 				"rights": "Copyright for articles published in this journal is retained by the journal.",
 				"date": "2011/10/17",
-				"reportType": "Text.Serial.Journal",
-				"letterType": "Text.Serial.Journal",
-				"manuscriptType": "Text.Serial.Journal",
-				"mapType": "Text.Serial.Journal",
-				"thesisType": "Text.Serial.Journal",
-				"websiteType": "Text.Serial.Journal",
-				"presentationType": "Text.Serial.Journal",
-				"postType": "Text.Serial.Journal",
-				"audioFileType": "Text.Serial.Journal",
 				"language": "en",
 				"extra": "The synergistic interaction between Human Immunodeficiency virus (HIV) disease and Malaria makes it mandatory for patients with HIV to respond appropriately in preventing and treating malaria. Such response will help to control the two diseases. This study assessed the knowledge of 495 patients attending the HIV clinic, in Lagos University Teaching Hospital, Nigeria.&nbsp; Their treatment seeking, preventive practices with regards to malaria, as well as the impact of socio &ndash; demographic / socio - economic status were assessed. Out of these patients, 245 (49.5 %) used insecticide treated bed nets; this practice was not influenced by socio &ndash; demographic or socio &ndash; economic factors.&nbsp; However, knowledge of the cause, knowledge of prevention of malaria, appropriate use of antimalarial drugs and seeking treatment from the right source increased with increasing level of education (p &lt; 0.05). A greater proportion of the patients, 321 (64.9 %) utilized hospitals, pharmacy outlets or health centres when they perceived an attack of malaria. Educational intervention may result in these patients seeking treatment from the right place when an attack of malaria fever is perceived.",
 				"volume": "13",
 				"issue": "4",
-				"publisher": "National Institute for Medical Research",
 				"DOI": "10.4314/thrb.v13i4.63347",
-				"abstractNote": "Knowledge, treatment seeking and preventive practices in respect of malaria among patients with HIV at the Lagos University Teaching Hospital",
-				"ISSN": "0856-6496",
+				"ISSN": "1821 0 9241",
 				"url": "http://www.ajol.info/index.php/thrb/article/view/63347",
-				"accessDate": "CURRENT_TIMESTAMP",
+				"abstractNote": "Knowledge, treatment seeking and preventive practices in respect of malaria among patients with HIV at the Lagos University Teaching Hospital",
 				"libraryCatalog": "www.ajol.info"
 			}
 		]
@@ -1067,6 +1104,11 @@ var testCases = [
 						"firstName": "Gregg",
 						"lastName": "Barrios",
 						"creatorType": "author"
+					},
+					{
+						"firstName": "LA Review of",
+						"lastName": "Books",
+						"creatorType": "author"
 					}
 				],
 				"notes": [],
@@ -1088,8 +1130,8 @@ var testCases = [
 				"title": "Junot Díaz: My stories come from trauma",
 				"url": "http://www.salon.com/2012/10/10/junot_diaz_my_stories_come_from_trauma/",
 				"abstractNote": "The effervescent author of \"This is How You Lose Her\" explains the darkness coursing through his fiction",
-				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "www.salon.com",
+				"accessDate": "CURRENT_TIMESTAMP",
 				"shortTitle": "Junot Díaz"
 			}
 		]
@@ -1113,11 +1155,6 @@ var testCases = [
 					"architecture",
 					"archive",
 					"skyscrapers",
-					"window washers",
-					"Hearst Tower",
-					"architecture",
-					"archive",
-					"skyscrapers",
 					"window washers"
 				],
 				"seeAlso": [],
@@ -1130,8 +1167,9 @@ var testCases = [
 				"publicationTitle": "The New Yorker",
 				"url": "http://www.newyorker.com/online/blogs/backissues/2013/06/window-washers-at-the-hearst-tower.html",
 				"abstractNote": "Rescuers successfully retrieved two maintenance workers at the Hearst Tower, in Midtown, who had become trapped on their scaffold.",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.newyorker.com"
+				"date": "10/10/2008",
+				"libraryCatalog": "www.newyorker.com",
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	},
@@ -1163,6 +1201,40 @@ var testCases = [
 				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "www.chicagotribune.com",
 				"shortTitle": "Chicago's 'unicorn'"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.volokh.com/2013/12/22/northwestern-cant-quit-asa-boycott-member/",
+		"items": [
+			{
+				"itemType": "blogPost",
+				"creators": [
+					{
+						"firstName": "Eugene",
+						"lastName": "Kontorovich",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"boycott",
+					"israel"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					}
+				],
+				"title": "Northwestern Can't Quit ASA Over Boycott Because it is Not a Member",
+				"publicationTitle": "The Volokh Conspiracy",
+				"url": "http://www.volokh.com/2013/12/22/northwestern-cant-quit-asa-boycott-member/",
+				"abstractNote": "Northwestern University recently condemned the American Studies Association boycott of Israel. Unlike some other schools that quit their institutional membership in the ASA over the boycott, Northwestern has not. Many of my Northwestern colleagues were about to start urging a similar withdrawal.\nThen we learned from our administration that despite being listed as in institutional member by the ASA,  the university has, after checking, concluded it has no such membership, does not plan to get one, and is unclear why the ASA would list us as institutional member.\nApparently, at least several other schools listed by the ASA as institutional members say they have no such relationship.\nThe ASA has been spending a great deal of energy on political activism far from its mission, but apparently cannot keep its books in order. The association has yet to explain how it has come to list as institutional members so many schools that know nothing about such a membership. The ASA’s membership rolls may get much shorter in the coming weeks even without any quitting.\nHow this confusion came to arise is unclear. ASA membership, like that of many academic organizations, comes with a subscription to their journal. Some have suggested that perhaps  the ASA also counts as members any institution whose library happened to subscribe to the journal, ie tacking on membership to a subscription, rather than vice versa. This would not be fair on their part. A library may subscribe to all sorts of journals for academic research purposes (ie Pravda), without endorsing the organization that publishes it. That is the difference between subscription and membership.\nI eagerly await the ASA’s explanation of the situation. [...]",
+				"date": "12/22/2013",
+				"libraryCatalog": "www.volokh.com",
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	}

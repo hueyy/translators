@@ -192,5 +192,61 @@ function doWeb(doc, url) {
 }
 /** BEGIN TEST CASES **/
 var testCases = [
+	{
+		"type": "web",
+		"url": "http://ci.nii.ac.jp/search?q=test&range=0&count=20&sortorder=1&type=0",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "謙一=Kenichi Ohi",
+						"lastName": "大井",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "輿助=Yosuke Shimawaki",
+						"lastName": "嶋脇",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "拓海=Takumi Ito",
+						"lastName": "伊藤",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Li",
+						"lastName": "Yushun",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"itemID": ":2002-11",
+				"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring",
+				"publicationTitle": "生産研究",
+				"ISSN": "0037105X",
+				"date": "November 2002",
+				"volume": "54",
+				"issue": "6",
+				"pages": "384-387",
+				"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
+				"DOI": "10.11188/seisankenkyu.54.384",
+				"libraryCatalog": "CiNii"
+			}
+		]
+	}
 ]
 /** END TEST CASES **/

@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsb",
-	"lastUpdated": "2013-10-25 18:03:58"
+	"browserSupport": "gcsbv",
+	"lastUpdated": "2013-12-07 09:15:44"
 }
 
 var searchRe = new RegExp('^https?://(?:www\.)?amazon\.([^/]+)/(gp/search/|(gp/)?registry/(wishlist|registry)|exec/obidos/search-handle-url/|s/|s\\?|[^/]+/lm/|gp/richpub/)');
@@ -52,7 +52,7 @@ function doWeb(doc, url) {
 		} else if (doc.location.href.match(/\/lm\//)) { // Show selector for Lists
 			var xpath = '//span[@id="lm_asinlink95"]//a'
 		} else { // Show selector for Search results
-			var xpath = '//div[@class="productTitle"]/a |//div[@id="init-container"]//span[@class="small productTitle"]//a | //div[@class="wedding" or @class="list-items"]//span[@class="small productTitle"]//a |//a[span[@class="srTitle"]] | //div[@class="title"]/a[@class="title"]| //h3[@class="title"]/a[@class="title"] | //h3[@class="newaps"]/a';
+			var xpath = '//div[@class="productTitle"]/a |//div[@id="init-container"]//span[@class="small productTitle"]//a | //div[@class="wedding" or @class="list-items"]//span[@class="small productTitle"]//a |//a[span[@class="srTitle"]] | //div[@class="title"]/a[@class="title"]| //h3[@class="title"]/a[@class="title"] | //h3[@class="newaps"]/a|//div[@class="a-fixed-right-grid-inner"]//a';
 		}
 		var availableItems = {};
 		var links = ZU.xpath(doc, xpath);
@@ -555,7 +555,7 @@ var testCases = [
 				"publisher": "科学出版社",
 				"place": "北京",
 				"date": "2012",
-				"ISBN": "9787030329202 7030329201",
+				"ISBN": "9787030329202 : 7030329201",
 				"shortTitle": "汉语语音合成"
 			}
 		]

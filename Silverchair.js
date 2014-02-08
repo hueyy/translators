@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2013-04-17 03:09:28"
+	"lastUpdated": "2014-01-05 12:35:24"
 }
 
 /*
@@ -37,7 +37,7 @@
 function detectWeb(doc, url) {
 	//concerned about false positives - make sure this is actualy Silverchair.
 	var scm6 = ZU.xpathText(doc, '//body/@class|//script/@src');
-	var multxpath = '//div[contains(@class, "resultBlock")]/a|//div[contains(@class, "articleTitle") or contains(@class, "articleSection")]/a[contains(@href, "articleid")]';
+	var multxpath = '//div[contains(@class, "resultBlock")]/a|//div[contains(@class, "articleTitle") or contains(@class, "articleSection")]/a[contains(@href, "articleid")  or contains(@href, "articleID")]';
 	if (scm6){
 		if (scm6.indexOf("SCM6")!=-1){
 			if (url.search(/\/(article|proceeding)\.aspx\?articleid=\d+/i)!=-1) return "journalArticle";
@@ -53,7 +53,7 @@ function doWeb(doc, url){
 	var articles = new Array();
 	if(detectWeb(doc, url) == "multiple") { 
 		var items = {};
-		var titles = doc.evaluate('//div[contains(@class, "resultBlock")]/a|//div[contains(@class, "articleTitle") or contains(@class, "articleSection")]/a[contains(@href, "articleid")]', doc, null, XPathResult.ANY_TYPE, null);
+		var titles = doc.evaluate('//div[contains(@class, "resultBlock")]/a|//div[contains(@class, "articleTitle") or contains(@class, "articleSection")]/a[contains(@href, "articleid") or contains(@href, "articleID")]', doc, null, XPathResult.ANY_TYPE, null);
 		var title;
 		while (title = titles.iterateNext()) {
 			items[title.href] = title.textContent.trim();
@@ -76,7 +76,8 @@ function doWeb(doc, url){
 
 function scrape(doc, url){
 	//get tags, Journal Abbreviation, and pdflink from google highwire metadata
-	var pdflink = ZU.xpathText(doc, '//meta[@name="citation_pdf_url"]/@content');
+	var pdflink = ZU.xpathText(doc, '//a[@id="hypPDFlink"]/@href')
+		|| ZU.xpathText(doc, '//meta[@name="citation_pdf_url"]/@content');
 	var tags = ZU.xpathText(doc, '//meta[@name="dc.Keywords"]/@content');
 	var jabbr = ZU.xpathText(doc, '//meta[@name="citation_journal_abbrev"]/@content');
 	var host = url.match(/http?\:\/\/[^\/]+/)[0];
@@ -86,6 +87,7 @@ function scrape(doc, url){
 	
 	var risurl=host +"/downloadCitation.aspx?format=ris&" +articleid;
 	//we prefer the RIS because it consistently has abstracts.
+	Z.debug(risurl)
 	Zotero.Utilities.HTTP.doGet(risurl, function (text) {
 		//remove extra DOI
 		text = text.replace(/N1  - 10\..+/, "");
@@ -158,9 +160,8 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"exercise",
-					"heart",
-					"postural orthostatic tachycardia syndrome"
+					"postural orthostatic tachycardia syndrome",
+					"exercise"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -175,7 +176,7 @@ var testCases = [
 				"pages": "2858-2868",
 				"volume": "55",
 				"issue": "25",
-				"abstractNote": "Objectives  \n The purpose of this study was to test the hypothesis that a small heart coupled with reduced blood volume contributes to the postural orthostatic tachycardia syndrome (POTS) and that exercise training improves this syndrome.Background  \n Patients with POTS have marked increases in heart rate during orthostasis. However, the underlying mechanisms are unknown and the effective therapy is uncertain.Methods  \n Twenty-seven POTS patients underwent autonomic function tests, cardiac magnetic resonance imaging, and blood volume measurements. Twenty-five of them participated in a 3-month specially designed exercise training program with 19 completing the program; these patients were re-evaluated after training. Results were compared with those of 16 healthy controls.Results  \n Upright heart rate and total peripheral resistance were greater, whereas stroke volume and cardiac output were smaller in patients than in controls. Baroreflex function was similar between groups. Left ventricular mass (median [25th, 75th percentiles], 1.26 g/kg [1.12, 1.37 g/kg] vs. 1.45 g/kg [1.34, 1.57 g/kg]; p < 0.01) and blood volume (60 ml/kg [54, 64 ml/kg] vs. 71 ml/kg [65, 78 ml/kg]; p < 0.01) were smaller in patients than in controls. Exercise training increased left ventricular mass and blood volume by approximately 12% and approximately 7% and decreased upright heart rate by 9 beats/min [1, 17 beats/min]. Ten of 19 patients no longer met POTS criteria after training, whereas patient quality of life assessed by the 36-item Short-Form Health Survey was improved in all patients after training.Conclusions  \n Autonomic function was intact in POTS patients. The marked tachycardia during orthostasis was attributable to a small heart coupled with reduced blood volume. Exercise training improved or even cured this syndrome in most patients. It seems reasonable to offer POTS a new name based on its underlying pathophysiology, the “Grinch syndrome,” because in this famous children's book by Dr. Seuss, the main character had a heart that was “two sizes too small.”",
+				"abstractNote": "Objectives \nThe purpose of this study was to test the hypothesis that a small heart coupled with reduced blood volume contributes to the postural orthostatic tachycardia syndrome (POTS) and that exercise training improves this syndrome.Background\nPatients with POTS have marked increases in heart rate during orthostasis. However, the underlying mechanisms are unknown and the effective therapy is uncertain.Methods\nTwenty-seven POTS patients underwent autonomic function tests, cardiac magnetic resonance imaging, and blood volume measurements. Twenty-five of them participated in a 3-month specially designed exercise training program with 19 completing the program; these patients were re-evaluated after training. Results were compared with those of 16 healthy controls.Results\nUpright heart rate and total peripheral resistance were greater, whereas stroke volume and cardiac output were smaller in patients than in controls. Baroreflex function was similar between groups. Left ventricular mass (median [25th, 75th percentiles], 1.26 g/kg [1.12, 1.37 g/kg] vs. 1.45 g/kg [1.34, 1.57 g/kg]; p < 0.01) and blood volume (60 ml/kg [54, 64 ml/kg] vs. 71 ml/kg [65, 78 ml/kg]; p < 0.01) were smaller in patients than in controls. Exercise training increased left ventricular mass and blood volume by approximately 12% and approximately 7% and decreased upright heart rate by 9 beats/min [1, 17 beats/min]. Ten of 19 patients no longer met POTS criteria after training, whereas patient quality of life assessed by the 36-item Short-Form Health Survey was improved in all patients after training.Conclusions\nAutonomic function was intact in POTS patients. The marked tachycardia during orthostasis was attributable to a small heart coupled with reduced blood volume. Exercise training improved or even cured this syndrome in most patients. It seems reasonable to offer POTS a new name based on its underlying pathophysiology, the “Grinch syndrome,” because in this famous children's book by Dr. Seuss, the main character had a heart that was “two sizes too small.”",
 				"ISSN": "0735-1097",
 				"DOI": "10.1016/j.jacc.2010.02.043",
 				"url": "http://dx.doi.org/10.1016/j.jacc.2010.02.043",
@@ -242,8 +243,8 @@ var testCases = [
 				"creators": [
 					{
 						"lastName": "",
-						"firstName": "",
-						"creatorType": "author"
+						"creatorType": "author",
+						"fieldMode": 1
 					}
 				],
 				"notes": [],
@@ -257,17 +258,16 @@ var testCases = [
 				],
 				"title": "Improving care transitions: Optimizing medication reconciliation",
 				"date": "July 1, 2012",
-				"journalAbbreviation": "J Am Pharm Assoc.",
+				"journalAbbreviation": "J Am Pharm Assoc (2003)",
 				"pages": "e43-e52",
 				"volume": "52",
 				"issue": "4",
-				"abstractNote": "Objective  \r\n\tTo improve understanding of the medication reconciliation process, its effect on patient care and outcomes, and how pharmacists can contribute to improving this process using a standardized framework of service delivery defined in the context of medication therapy management.Summary  \r\n\tMedication reconciliation is an integral part of the care transitions process in which health care professionals collaborate to improve medication safety as the patient transitions between patient care settings or levels of care. In 2005, medication reconciliation came to the forefront of health care when the Joint Commission on Accreditation designated it as a National Patient Safety Goal. Although individual health professionals have different roles in the process, the overall focus of the medication reconciliation process is on global patient safety and improved patient outcomes.Conclusion  \r\n\tMedication reconciliation research has been increasing, but more studies are needed on the implementation and adoption of effective medication reconciliation processes, with emphasis on the identification of current best practices for medication reconciliation. The application of the foundational concepts in this publication and future work on the enhancement of the medication reconciliation process will help to improve patient safety and patient care outcomes during care transitions.",
+				"abstractNote": "Objective \nTo improve understanding of the medication reconciliation process, its effect on patient care and outcomes, and how pharmacists can contribute to improving this process using a standardized framework of service delivery defined in the context of medication therapy management.Summary\nMedication reconciliation is an integral part of the care transitions process in which health care professionals collaborate to improve medication safety as the patient transitions between patient care settings or levels of care. In 2005, medication reconciliation came to the forefront of health care when the Joint Commission on Accreditation designated it as a National Patient Safety Goal. Although individual health professionals have different roles in the process, the overall focus of the medication reconciliation process is on global patient safety and improved patient outcomes.Conclusion\nMedication reconciliation research has been increasing, but more studies are needed on the implementation and adoption of effective medication reconciliation processes, with emphasis on the identification of current best practices for medication reconciliation. The application of the foundational concepts in this publication and future work on the enhancement of the medication reconciliation process will help to improve patient safety and patient care outcomes during care transitions.",
 				"ISSN": "1544-3191",
 				"DOI": "10.1331/JAPhA.2012.12527",
 				"url": "http://dx.doi.org/10.1331/JAPhA.2012.12527",
 				"publicationTitle": "Journal of the American Pharmacists Association",
 				"libraryCatalog": "Silverchair",
-				"accessDate": "CURRENT_TIMESTAMP",
 				"shortTitle": "Improving care transitions"
 			}
 		]
@@ -279,12 +279,12 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://ajp.psychiatryonline.org/issue.aspx?journalid=13",
+		"url": "http://jbjs.org/issue.aspx?journalid=12&issueid=929420",
 		"items": "multiple"
 	},
 	{
 		"type": "web",
-		"url": "http://jbjs.org/issue.aspx",
+		"url": "http://neuro.psychiatryonline.org/issue.aspx?journalid=62&issueid=926971",
 		"items": "multiple"
 	}
 ]

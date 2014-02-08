@@ -6,6 +6,9 @@
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 200,
+	"configOptions": {
+		"getCollections": "true"
+	},
 	"displayOptions": {
 		"exportCharset": "UTF-8",
 		"exportNotes": true,
@@ -15,7 +18,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2013-11-14 23:52:21"
+	"lastUpdated": "2014-01-21 00:28:57"
 }
 
 function detectImport() {
@@ -2103,6 +2106,10 @@ function beginRecord(type, closeChar) {
 		} else if(read == closeChar) {
 			if(item) {
 				if(item.extra) item.extra = item.extra.substr(1); // chop \n
+				if (!item.publisher && item.backupPublisher){
+					item.publisher=item.backupPublisher;
+					delete item.backupPublisher;
+				}
 				item.complete();
 			}
 			return;
@@ -2134,7 +2141,6 @@ function doImport() {
 			}
 		}
 	}
-
 	for (var key in jabref.root) {
 		if (jabref.root.hasOwnProperty(key)) { jabref.root[key].complete(); }
 	}

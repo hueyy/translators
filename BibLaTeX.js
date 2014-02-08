@@ -14,11 +14,11 @@
 		"exportFileData": false,
 		"useJournalAbbreviation": false
 	},
-	"lastUpdated": "2013-07-01 14:13"
+	"lastUpdated": "2014-01-17 07:55"
 }
 
 
-//%a = first author surname
+//%a = first listed creator surname
 //%y = year
 //%t = first word of title
 var citeKeyFormat = "%a_%t_%y";
@@ -35,13 +35,12 @@ var fieldMap = {
 	issn: "ISSN",
 	url: "url",
 	doi: "DOI",
+	series: "series",
 	shorttitle: "shortTitle",
-	abstract: "abstract",
+	abstract: "abstractNote",
 	volumes: "numberOfVolumes",
 	version: "version",
 	eventtitle: "conferenceName",
-	language: "language",
-	issue: "issue",
 	pages: "pages",
 	pagetotal: "numPages"
 };
@@ -49,18 +48,13 @@ var fieldMap = {
 
 
 //POTENTIAL ISSUES
-//"programTitle", "bookTitle" //TODO, check!!
-// 
-//	accessDate:"accessDate", //only written on attached webpage snapshots by zo
-//	journalAbbreviation:"journalAbbreviation", //not supported by bl
-
-//	country:"country", //TODO if patent, should be put into 'location' 
+//accessDate:"accessDate", //only written on attached webpage snapshots by zotero
 
 
 
 var zotero2biblatexTypeMap = {
 	"book": "book",
-	"bookSection": "inbook",
+	"bookSection": "incollection",
 	"journalArticle": "article",
 	"magazineArticle": "article",
 	"newspaperArticle": "article",
@@ -108,6 +102,46 @@ var alwaysMap = {
 };
 
 
+//to map ISO language codes to babel/polyglossia language codes used
+//in biblates.
+//from list of supported languages in biblatex 2.8
+var languageMap = {
+	"ca": "catalan",
+	"hr": "croatian",
+	"cz": "czech",
+	"da": "danish",
+	"nl": "dutch",
+	"en": {
+		"": "english", //same as american
+		"US": "american",
+		"GB": "british",
+		"CA": "canadian",
+		"AU": "australian",
+		"NZ": "newzealand"
+	},
+	"fi": "finnish",
+	"fr": "french",
+	"de": {
+		"": "german",
+		"AT": "austrian"
+	},
+	//	"de":"ngerman", //FIXME: should ngerman be available via some hack?
+	//	"de-AT":"naustrian", //FIXME: same problem here
+	"el": "greek",
+	"it": "italian",
+	"nn": "norwegian",
+	"pl": "polish",
+	"pt-BR": "brazil",
+	"pt-PT": "portugese",
+	"pt": {
+		"": "portuguese",
+		"PT": "portuguese",
+		"BR": "brazil"
+	},
+	"ru": "russian",
+	"es": "spanish",
+	"sv": "swedish",
+};
 
 
 // some fields are, in fact, macros.  If that is the case then we should not put the
@@ -192,7 +226,7 @@ function tidyAccents(s) {
 
 var numberRe = /^[0-9]+/;
 // Below is a list of words that should not appear as part of the citation key
-// in includes the indefinite articles of English, German, French and Spanish, as well as a small set of English prepositions whose 
+// in includes the indefinite articles of English, German, French and Spanish, as well as a small set of English prepositions whose
 // force is more grammatical than lexical, i.e. which are likely to strike many as 'insignificant'.
 // The assumption is that most who want a title word in their key would prefer the first word of significance.
 var citeKeyTitleBannedRe = /\b(a|an|the|some|from|on|in|to|of|do|with|der|die|das|ein|eine|einer|eines|einem|einen|un|une|la|le|l\'|el|las|los|al|uno|una|unos|unas|de|des|del|d\')(\s+|\b)/g;
@@ -285,13 +319,17 @@ var citeKeyConversions = {
 			//don't export standalone notes and attachments
 			if (item.itemType == "note" || item.itemType == "attachment") continue;
 
+			var noteused = false; //a switch for keeping track whether the
+			//field "note" has been written to
 			// determine type
 			var type = zotero2biblatexTypeMap[item.itemType];
 			if (typeof (type) == "function") {
 				type = type(item);
 			}
-			if (!type) type = "misc";
 
+			//biblatex recommends us to use mvbook for multi-volume books
+			if (type == "book" && item.volume) type = "mvbook"
+			if (!type) type = "misc";
 
 			var citekey = "";
 			if (!citekey) {
@@ -313,64 +351,46 @@ var citeKeyConversions = {
 			//e.g. where fieldname translation is dependent upon type, or special transformations
 			//has to be made
 
-			//all kinds of numbers (biblatex has additional support for journal number != issue, but zotero has not)
+			//all kinds of numbers
 			if (item.reportNumber || item.seriesNumber || item.patentNumber || item.billNumber || item.episodeNumber || item.number) {
 				writeField("number", item.reportNumber || item.seriesNumber || item.patentNumber || item.billNumber || item.episodeNumber || item.number);
 			}
 
+			//split numeric and nonnumeric issue specifications (for journals) into "number" and "issue"
+			if (item.issue) { //issue
+				var jnumber = parseInt(item.issue);
+				if (!isNaN(jnumber)) {
+					writeField("number", jnumber);
+				} else {
+					writeField("issue", item.issue);
+				}
+			}
 
+
+			//publicationTitles and special titles
 			if (item.publicationTitle) {
-				if (item.itemType == "bookSection" || item.itemType == "conferencePaper") {
+				if (item.itemType == "bookSection" || item.itemType == "conferencePaper" || item.itemType == "dictionaryEntry" || item.itemType == "encyclopediaArticle") {
 					writeField("booktitle", item.publicationTitle);
 				} else if (item.itemType == "magazineArticle" || item.itemType == "newspaperArticle") {
 					writeField("journaltitle", item.publicationTitle);
 				} else if (item.itemType == "journalArticle") {
 					if (Zotero.getOption("useJournalAbbreviation")) {
-						writeField("journal", item.journalAbbreviation);
+						writeField("journaltitle", item.journalAbbreviation);
 					} else {
 						writeField("journaltitle", item.publicationTitle);
 						writeField("shortjournal", item.journalAbbreviation);
 					}
 				}
-
-				// else if (item.itemType == "website" || item.itemType == "forumPost" || item.itemType == "blogPost" || item.itemType == "tvBroadcast" || item.itemType == "radioBroadcast") {
-				//	writeField("titleaddon", item.publicationTitle);
-				// 
-				//do nothing as websiteTitle, forumTitle, blogTitle,
-				//programTitle seems
-				//to be just aliases for publicationTitle and already
-				//are correctly mapped below
-				//	    }
-				else {
-					//writeField("journaltitle", item.publicationTitle);
-					//TODO, did we miss something
-				}
-			}
-
-
-			//TODO: check what happens to bookTitle, is that also an alias for publicationTitle?
-
-
-			if (item.encyclopediaTitle || item.dictionaryTitle || item.proceedingsTitle) {
-				writeField("booktitle", item.encyclopediaTitle || item.dictionaryTitle || item.proceedingsTitle);
 			}
 
 			if (item.websiteTitle || item.forumTitle || item.blogTitle || item.programTitle) {
 				writeField("titleaddon", item.websiteTitle || item.forumTitle || item.blogTitle || item.programTitle);
 			}
 
-			//don't really know if this is the best way
-			if (item.seriesTitle) {
-				writeField("series", item.seriesTitle);
-			} else if (item.series) {
-				writeField("series", item.series);
-			}
 
-
+			//publishers
 			if (item.publisher) {
-				if (item.itemType == "thesis") {
-					writeField("school", item.publisher); //school is an acceptable alias in biblatex
-				} else if (item.itemType == "report") {
+				if (item.itemType == "thesis" || item.itemType == "report") {
 					writeField("institution", item.publisher);
 				} else {
 					writeField("publisher", item.publisher);
@@ -417,6 +437,12 @@ var citeKeyConversions = {
 				}
 			}
 
+			//presentations have a meetingName field which we want to
+			//map to note
+			if (item.meetingName) {
+				writeField("note", item.meetingName);
+				noteused = true;
+			}
 
 			if (item.creators && item.creators.length) {
 				// split creators into subcategories
@@ -431,13 +457,13 @@ var citeKeyConversions = {
 				var noEscape = false;
 
 				for each(var creator in item.creators) {
-					//var creatorString = creator.lastName;
+					var creatorString = creator.lastName;
 
 					if (creator.firstName && creator.lastName) {
 						creatorString = creator.lastName + ", " + creator.firstName;
 						//below to preserve possible corporate creators (biblatex 1.4a manual 2.3.3)
 					} else if (creator.fieldMode == true) { // fieldMode true, assume corporate author
-						creatorString = "{" + creator.lastName + "}";
+						creatorString = "{" + creatorString + "}";
 						noEscape = true;
 					}
 
@@ -498,8 +524,25 @@ var citeKeyConversions = {
 				writeField("date", Zotero.Utilities.strToISO(item.date));
 			}
 
+			//Map Languages to biblatex-field "langid" (used for
+			//hyphenation with a correct setting of the "autolang" option)
+			//if possible. See languageMap above for languagecodes to use
+			if (item.language) {
+				var lang = languageMap[item.language.slice(0, 2)]
+				if (typeof lang == 'string' || lang instanceof String) {
+					//if there are no variants for this language
+					writeField("langid", lang);
+				} else if (typeof lang == 'object') {
+					var variant = lang[item.language.slice(3, 5)];
+					if (variant) {
+						writeField("langid", variant);
+					} else {
+						writeField("langid", lang[""]); //use default variant
+					}
+				}
+			}
 
-			if (item.extra) {
+			if (item.extra && !noteused) {
 				writeField("note", item.extra);
 			}
 
@@ -515,7 +558,7 @@ var citeKeyConversions = {
 			if (item.notes && Zotero.getOption("exportNotes")) {
 				for (var i in item.notes) {
 					var note = item.notes[i];
-					writeField("annote", Zotero.Utilities.unescapeHTML(note["note"]));
+					writeField("annotation", Zotero.Utilities.unescapeHTML(note["note"]));
 				}
 			}
 

@@ -2,7 +2,7 @@
 	"translatorID": "fcf41bed-0cbc-3704-85c7-8062a0068a7a",
 	"label": "NCBI PubMed",
 	"creator": "Simon Kornblith, Michael Berkowitz, Avram Lyon, and Rintze Zelle",
-	"target": "https?://[^/]*(www|preview)[\\.\\-]ncbi[\\.\\-]nlm[\\.\\-]nih[\\.\\-]gov[^/]*/(books|pubmed|sites/pubmed|sites/entrez|entrez/query\\.fcgi\\?.*db=PubMed|myncbi/browse/collection/|myncbi/collections/)",
+	"target": "https?://[^/]*(www|preview)[\\.\\-]ncbi[\\.\\-]nlm[\\.\\-]nih[\\.\\-]gov[^/]*/(?:m/)?(books|pubmed|sites/pubmed|sites/entrez|entrez/query\\.fcgi\\?.*db=PubMed|myncbi/browse/collection/|myncbi/collections/)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 13,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2013-06-02 19:18:28"
+	"lastUpdated": "2014-01-05 14:36:04"
 }
 
 /*****************************
@@ -42,6 +42,7 @@ function getUID(doc) {
 	}
 
 	uid = ZU.xpath(doc, 'html/head/link[@media="handheld"]/@href');
+	if(!uid.length) uid = ZU.xpath(doc, 'html/head/link[@rel="canonical"]/@href'); //mobile site
 	if(uid.length == 1) {
 		uid = uid[0].textContent.match(/\/(\d+)(?:\/|$)/);
 		if(uid) return uid[1];
@@ -82,7 +83,7 @@ function detectWeb(doc, url) {
 	//try to determine if this is a book
 	//"Sections" heading only seems to show up for books
 	var maincontent = doc.getElementById('maincontent');
-	if(ZU.xpath(maincontent, './/div[@class="sections"]').length)
+	if(maincontent && ZU.xpath(maincontent, './/div[@class="sections"]').length)
 	{
 		var inBook = ZU.xpath(maincontent, './/div[contains(@class, "aff_inline_book")]').length;
 		return inBook ? "bookSection" : "book";
@@ -408,9 +409,10 @@ function doImportFromText(text, next) {
 		newItem.DOI = ZU.xpathText(articles[i], 'PubmedData/ArticleIdList/ArticleId[@IdType="doi"]');
 		
 		var PMID = ZU.xpathText(citation, 'PMID');
+		var PMCID = ZU.xpathText(articles[i], 'PubmedData/ArticleIdList/ArticleId[@IdType="pmc"]');
 		if(PMID) {
 			newItem.extra = "PMID: "+PMID;
-			
+			if (PMCID) newItem.extra += " \nPMCID: " + PMCID;
 			//this is a catalog, so we should store links as attachments
 			newItem.attachments.push({
 				title: "PubMed entry",
@@ -419,7 +421,8 @@ function doImportFromText(text, next) {
 				snapshot: false
 			});
 		}
-
+		else if (PMCID) newItem.extra += "PMCID: " + PMCID;
+		
 		newItem.complete();
 	}
 
@@ -1144,19 +1147,19 @@ var testCases = [
 						"snapshot": false
 					}
 				],
+				"title": "A map of human genome variation from population-scale sequencing",
+				"pages": "1061-1073",
 				"ISSN": "1476-4687",
 				"journalAbbreviation": "Nature",
+				"publicationTitle": "Nature",
+				"volume": "467",
 				"issue": "7319",
+				"date": "Oct 28, 2010",
 				"language": "eng",
 				"abstractNote": "The 1000 Genomes Project aims to provide a deep characterization of human genome sequence variation as a foundation for investigating the relationship between genotype and phenotype. Here we present results of the pilot phase of the project, designed to develop and compare different strategies for genome-wide sequencing with high-throughput platforms. We undertook three projects: low-coverage whole-genome sequencing of 179 individuals from four populations; high-coverage sequencing of two mother-father-child trios; and exon-targeted sequencing of 697 individuals from seven populations. We describe the location, allele frequency and local haplotype structure of approximately 15 million single nucleotide polymorphisms, 1 million short insertions and deletions, and 20,000 structural variants, most of which were previously undescribed. We show that, because we have catalogued the vast majority of common variation, over 95% of the currently accessible variants found in any individual are present in this data set. On average, each person is found to carry approximately 250 to 300 loss-of-function variants in annotated genes and 50 to 100 variants previously implicated in inherited disorders. We demonstrate how these results can be used to inform association and functional studies. From the two trios, we directly estimate the rate of de novo germline base substitution mutations to be approximately 10(-8) per base pair per generation. We explore the data with regard to signatures of natural selection, and identify a marked reduction of genetic variation in the neighbourhood of genes, due to selection at linked sites. These methods and public data will support the next phase of human genetic research.",
 				"DOI": "10.1038/nature09534",
-				"extra": "PMID: 20981092",
-				"libraryCatalog": "NCBI PubMed",
-				"title": "A map of human genome variation from population-scale sequencing",
-				"pages": "1061-1073",
-				"publicationTitle": "Nature",
-				"volume": "467",
-				"date": "Oct 28, 2010"
+				"extra": "PMID: 20981092 \nPMCID: PMC3042601",
+				"libraryCatalog": "NCBI PubMed"
 			}
 		]
 	}

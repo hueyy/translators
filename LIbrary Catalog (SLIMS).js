@@ -8,8 +8,8 @@
 	"priority": 200,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "g",
-	"lastUpdated": "2013-08-26 22:37:21"
+	"browserSupport": "gcv",
+	"lastUpdated": "2013-12-07 05:46:23"
 }
 
 /*
@@ -124,14 +124,13 @@ var testCases = [
 					}
 				],
 				"title": "Labor relations : striking a balance",
-				"accessionNumber": "28002",
 				"numPages": "553",
 				"ISBN": "9780072842",
 				"place": "Boston, Mass. :",
 				"publisher": "McGraw-Hill,",
 				"date": "2005",
 				"callNumber": "331.880973",
-				"archiveLocation": "Katalog Perpustakaan Perpustakaan Kementerian Pendidikan dan Kebudayaan RI",
+				"archiveLocation": "Perpustakaan Kemendikbud Pusat Informasi dan Humas, Kemendikbud",
 				"language": "English",
 				"libraryCatalog": "LIbrary Catalog (SLIMS)",
 				"shortTitle": "Labor relations"
