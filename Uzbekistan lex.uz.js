@@ -2,7 +2,7 @@
 	"translatorID": "e58c1b6e-effb-4a4a-8ba4-d6f0aa6ab7e0",
 	"label": "Uzbekistan lex.uz",
 	"creator": "Frank Bennett",
-	"target": "https?://(?:www\\.)?lex.uz/Pages/GetAct.aspx",
+	"target": "https?://(?:www\\.)?lex.uz/pages/getpage.aspx",
 	"minVersion": "1.0",
 	"maxVersion": "",
 	"priority": 100,
