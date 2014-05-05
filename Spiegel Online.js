@@ -2,14 +2,14 @@
 	"translatorID": "eef50507-c756-4081-86fd-700ae4ebf22e",
 	"label": "Spiegel Online",
 	"creator": "Martin Meyerhoff",
-	"target": "^http://www\\.spiegel\\.de/",
+	"target": "^https?://www\\.spiegel\\.de/",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsib",
-	"lastUpdated": "2012-05-03 09:08:01"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2014-04-04 10:16:45"
 }
 
 /*
@@ -40,37 +40,48 @@ http://www.spiegel.de/international/europe/0,1518,700530,00.html
 
 function detectWeb(doc, url) {
 
-	var spiegel_article_XPath = ".//div[@id='spArticleFunctions']";
-	
-	if (doc.evaluate(spiegel_article_XPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
+	var spiegel_article_XPath = './/div[@class="column-both"]/h2[@class="article-title"]|.//div[@class="column-wide"]/h2[contains(@class, "headline")]';
+	//the print edition is a magazine. Since the online edition is updated constantly it
+	//makes sense to treat it like a newspaper.
+	if (url.match(/\/print\//) && ZU.xpathText(doc, spiegel_article_XPath)){
+		return "magazineArticle";
+	}
+	else if (doc.evaluate(spiegel_article_XPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
 		//Zotero.debug("newspaperArticle");
 		return "newspaperArticle";
-	} else if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/thema/)){ 
+	} else if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/thema/)){ 
 		//Zotero.debug("multiple");
 		return "multiple";
-	}  else if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/suche/)){ 
+	}  else if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/suche/)){ 
 		//Zotero.debug("multiple");
 		return "multiple";
-	}  else if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/international\/search/)){ 
+	}  else if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/international\/search/)){ 
 		//Zotero.debug("multiple");
 		return "multiple";
-	} else if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/international\/topic/)){ 
+	} else if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/international\/topic/)){ 
 		//Zotero.debug("multiple");
 		return "multiple";
 	} 
 }
 
 function scrape(doc, url) {
-
-	var newItem = new Zotero.Item("newspaperArticle");
+	
+ 	if (detectWeb(doc, url)=="magazineArticle") {
+ 			var newItem = new Zotero.Item("magazineArticle");
+ 	}
+ 	else{
+		var newItem = new Zotero.Item("newspaperArticle");
+ 	}
 	newItem.url = doc.location.href; 
 
 	// This is for the title 
 	
-	var title_xPath = '//h2[@itemprop="headline"]/span[@class="spArticleHeadLine"]';
+	var title_xPath = '//div[@class="column-wide"]/h2[contains(@class, "headline")]';
 	if (doc.evaluate(title_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
 		var title = doc.evaluate(title_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 		newItem.title = title;
+	} else if (ZU.xpathText(doc, '//div[@id="spArticleColumn"]/h2')) {
+		newItem.title = ZU.xpathText(doc, '//div[@id="spArticleColumn"]/h2');
 	} else {
 		var title = doc.evaluate('//title', doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 		title = title.split(" - ")[0];
@@ -90,7 +101,7 @@ function scrape(doc, url) {
 	}
 	
 	// Author
-	var author_XPath1 = ".//p[contains(@class, 'spAuthor')]"; // Most of the time, the author has its own tag. Easy Case, really.
+	var author_XPath1 = ".//p[contains(@class, 'author')]"; // Most of the time, the author has its own tag. Easy Case, really.
 	var author_XPath2 =  ".//*[@id='spIntroTeaser']/strong/i"; // Sometimes, though, the author is in italics in the teaser.
 	if (doc.evaluate(author_XPath1, doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		var author = doc.evaluate(author_XPath1, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
@@ -126,8 +137,8 @@ function scrape(doc, url) {
 	} 
 
 	if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/spiegel/)){
-		var printurl_xPath = ".//div[@id='spArticleFunctions']/ul/li[1]/a";
-		var printurl = doc.evaluate(printurl_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
+		var printurl_xPath = ".//div[contains(@class, 'article-function-box')]/ul/li[1]/a/@href";
+		var printurl = ZU.xpathText(doc, printurl_xPath);
 		//Zotero.debug(printurl);
 		newItem.attachments.push({url:printurl, title:doc.title, mimeType:"application/pdf"});
 	} else { 
@@ -137,10 +148,13 @@ function scrape(doc, url) {
 		newItem.attachments.push({url:printurl, title:doc.title, mimeType:"text/html"});
 	}
 	
-
+	//Ausgabe/Volume für Print
+	if (ZU.xpathText(doc, '//div[@class="spiegel-magazin-title asset-title"]') && newItem.itemType == "magazineArticle"){
+		newItem.volume = ZU.xpathText(doc, '//div[@class="spiegel-magazin-title asset-title"]').match(/(\d+)\/\d{4}/)[1];
+	}
 	
 	// Summary
-	var summary_xPath = ".//p[@id='spIntroTeaser']";
+	var summary_xPath = ".//p[@class='article-intro']";
 	if (doc.evaluate(summary_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
 		var summary= doc.evaluate(summary_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 		newItem.abstractNote = Zotero.Utilities.trim(summary);
@@ -149,6 +163,7 @@ function scrape(doc, url) {
 	// Date - sometimes xpath1 doesn't yield anything. Fortunately, there's another possibility...
 	var date1_xPath = ".//h5[contains(@id, 'ShortDate')]"; 
 	var date2_xPath = "//meta[@name='date']";
+	var date3_xPath = "//div[@id='spShortDate']"
 	if (doc.evaluate(date1_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
 		var date= doc.evaluate(date1_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 		if (date.match('/')) {
@@ -157,7 +172,10 @@ function scrape(doc, url) {
 	} else if (doc.evaluate(date2_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
 		var date= doc.evaluate(date2_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().content;
 		date=date.replace(/(\d\d\d\d)-(\d\d)-(\d\d)/, '$3.$2.$1').replace(/T.+/,"");
+	} else	if (doc.evaluate(date3_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext() ){ 
+		var date= doc.evaluate(date3_xPath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 	}
+	
 	newItem.date = Zotero.Utilities.trim(date);
 	
 	if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/spiegel/)){
@@ -175,20 +193,16 @@ function doWeb(doc, url) {
 	if (detectWeb(doc, url) == "multiple") {
 		var items = new Object();
 		
-		 if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/thema/)){ 
-			var titles = doc.evaluate(".//*[@id='spTeaserColumn']/div/h3/a", doc, null, XPathResult.ANY_TYPE, null);
-		} else  if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/suche/)){ 
-			var titles = doc.evaluate(".//*[@id='spTeaserColumn']/div/a", doc, null, XPathResult.ANY_TYPE, null);
-		} else  if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/international\/search/)){ 
-			var titles = doc.evaluate("//*[@id='spTeaserColumn']/div/a", doc, null, XPathResult.ANY_TYPE, null);
-		} else  if (doc.location.href.match(/^http\:\/\/www\.spiegel\.de\/international\/topic/)){ 
-			var titles = doc.evaluate(".//*[@id='spTeaserColumn']/div/h2/a", doc, null, XPathResult.ANY_TYPE, null);
+		 if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/(suche|international\/search)/)){ 
+			var titles = doc.evaluate(".//div[@class='search-teaser']/a", doc, null, XPathResult.ANY_TYPE, null);
+		} else  if (doc.location.href.match(/^https?\:\/\/www\.spiegel\.de\/(thema\/|international\/topic)/)){ 
+			var titles = doc.evaluate(".//div[contains(@class, 'teaser')]/h2/a", doc, null, XPathResult.ANY_TYPE, null);
 		} 
 	
 		var next_title;
 		while (next_title = titles.iterateNext()) {
 			//The search searches also manager-magazin.de, which won't work
-			if (next_title.textContent != "mehr..."  && next_title.href.match(/^http:\/\/www\.spiegel\.de\//) ) { 
+			if (next_title.textContent != "mehr..."  && next_title.href.match(/^https?:\/\/www\.spiegel\.de\//) ) { 
 				items[next_title.href] = Zotero.Utilities.trim(next_title.textContent);
 			}
 		}
@@ -200,7 +214,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, function(doc) { scrape(doc, doc.location.href)});
+			Zotero.Utilities.processDocuments(articles, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -210,7 +224,7 @@ function doWeb(doc, url) {
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://www.spiegel.de/politik/deutschland/0,1518,797954,00.html",
+		"url": "http://www.spiegel.de/politik/deutschland/cdu-parteitag-partei-im-koma-a-797954.html",
 		"items": [
 			{
 				"itemType": "newspaperArticle",
@@ -223,9 +237,9 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"Betreuungsgeld",
+					"Mindestlohn",
 					"Euro-Krise",
-					"Mindestlohn"
+					"Betreuungsgeld"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -235,11 +249,13 @@ var testCases = [
 					}
 				],
 				"url": "http://www.spiegel.de/politik/deutschland/cdu-parteitag-partei-im-koma-a-797954.html",
+				"title": "CDU-Parteitag: Partei im Koma",
 				"abstractNote": "Die CDU feiert sich in Leipzig selbst, doch in Wahrheit befindet sie sich in einem traurigen Zustand: Die Partei ist in ein kollektives Koma gefallen, politische Debatten finden kaum noch statt. Hauptverantwortlich dafür ist Angela Merkel.",
-				"libraryCatalog": "Spiegel Online",
-				"title": "Partei im Koma",
 				"date": "15.11.2011",
-				"publicationTitle": "Spiegel Online"
+				"publicationTitle": "Spiegel Online",
+				"libraryCatalog": "Spiegel Online",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "CDU-Parteitag"
 			}
 		]
 	},
@@ -256,6 +272,52 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://www.spiegel.de/international/search/index.html?suchbegriff=Crisis",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.spiegel.de/spiegel/print/d-84789653.html",
+		"items": [
+			{
+				"itemType": "magazineArticle",
+				"creators": [
+					{
+						"firstName": "Alexander",
+						"lastName": "Neubacher",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Conny",
+						"lastName": "Neumann",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Steffen",
+						"lastName": "Winter",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "DER SPIEGEL 15/2012 - VEB Energiewende",
+						"mimeType": "application/pdf"
+					}
+				],
+				"url": "http://www.spiegel.de/spiegel/print/d-84789653.html",
+				"title": "VEB Energiewende",
+				"volume": "15",
+				"date": "07.04.2012",
+				"publicationTitle": "Der Spiegel",
+				"libraryCatalog": "Spiegel Online"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.spiegel.de/thema/atomkraftwerke/",
 		"items": "multiple"
 	}
 ]

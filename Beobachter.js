@@ -2,14 +2,14 @@
 	"translatorID": "a571680e-6338-46c2-a740-3cd9eb80fc7f",
 	"label": "Beobachter",
 	"creator": "ibex",
-	"target": "^http://((www\\.)?beobachter\\.ch/.)",
+	"target": "^https?://((www\\.)?beobachter\\.ch/.)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-01 20:21:22"
+	"lastUpdated": "2014-04-03 16:37:44"
 }
 
 /*
@@ -40,7 +40,7 @@ Reference URLs:
 /* Zotero API */
 function detectWeb(doc, url) {
 	// Z.debug("ibex detectWeb URL = " + url);
-	if (doc.location.href.match(/.*\/artikel\//i) && (ZU.xpath(doc, '/html/body[' + containingClass('articleSingle') + ']').length > 0)) {
+	if (doc.location.href.match(/.*\/artikel\//i) && (ZU.xpath(doc, '//div[' + containingClass('mediaarticleSingleView') + ']//h3').length > 0)) {
 		return "magazineArticle";
 	// AJAX-ified results are currently not compatible with Zotero.
 	// The following condition is not useful:
@@ -71,8 +71,7 @@ function doWeb(doc, url) {
 	} else {
 		urls.push(doc.location.href);
 	}
-	ZU.processDocuments(urls, scrape, function() { Z.done(); } );
-	Z.wait();
+	ZU.processDocuments(urls, scrape);
 }
 
 /* Zotero API */
@@ -184,14 +183,19 @@ function containingClass(className) {
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://www.beobachter.ch/natur/natuerlich-leben/wohnen-freizeit/artikel/beleuchtung_es-werde-led/",
+		"url": "http://www.beobachter.ch/natur/forschung-wissen/",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.beobachter.ch/natur/forschung-wissen/klima-wetter/artikel/blitzschlag_suche-nicht-die-buche/",
 		"items": [
 			{
 				"itemType": "magazineArticle",
 				"creators": [
 					{
-						"firstName": "Thomas",
-						"lastName": "Bürgisser",
+						"firstName": "Tanja",
+						"lastName": "Polli",
 						"creatorType": "author"
 					}
 				],
@@ -202,29 +206,22 @@ var testCases = [
 					{
 						"title": "Beobachter Article Snapshot",
 						"mimeType": "text/html",
-						"url": "http://www.beobachter.ch/natur/natuerlich-leben/wohnen-freizeit/artikel/beleuchtung_es-werde-led//print.html",
 						"snapshot": true
 					}
 				],
-				"url": "http://www.beobachter.ch/natur/natuerlich-leben/wohnen-freizeit/artikel/beleuchtung_es-werde-led/",
-				"shortTitle": "Es werde LED",
-				"title": "Beleuchtung: Es werde LED",
-				"date": "2012-01-11T15:19:21+01:00",
+				"url": "http://www.beobachter.ch/natur/forschung-wissen/klima-wetter/artikel/blitzschlag_suche-nicht-die-buche/",
+				"shortTitle": "Neun Tipps, was man tun und lassen soll, wenn man von Blitz und Donner überrascht wird.",
+				"title": "Blitze: Suche nicht die Buche!",
 				"publicationTitle": "Beobachter",
-				"abstractNote": "Die neue LED-Technologie ist sparsam und ­öffnet den Weg zum variablen Licht­design. Was ist heute schon möglich – und was sinnvoll?",
+				"abstractNote": "Neun Tipps, was man tun und lassen soll, wenn man von Blitz und Donner überrascht wird.",
 				"language": "de",
 				"ISSN": "1661-7444",
-				"issue": "19",
-				"volume": "11",
+				"issue": "23. August 2013, Beobachter 17",
+				"volume": "2013",
 				"libraryCatalog": "Beobachter",
 				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://www.beobachter.ch/natur/forschung-wissen/",
-		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

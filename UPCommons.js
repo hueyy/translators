@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-05-25 03:51:40"
+	"lastUpdated": "2013-02-08 12:01:01"
 }
 
 function detectWeb(doc, url) {
@@ -82,7 +82,7 @@ var testCases = [
 					},
 					{
 						"firstName": "Nixon",
-						"lastName": "Bahamon Rivera",
+						"lastName": "Bahamón Rivera",
 						"creatorType": "author"
 					},
 					{
@@ -151,7 +151,6 @@ var testCases = [
 						"title": "Snapshot"
 					}
 				],
-				"itemID": "http://upcommons.upc.edu/e-prints/handle/2117/14979",
 				"rights": "Open Access",
 				"DOI": "10.3390/s111211251",
 				"abstractNote": "Postprint (published version)",

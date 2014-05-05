@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-07-18 15:54:35"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2014-02-14 00:20:16"
 }
 
 function detectWeb(doc, url) {
@@ -40,7 +40,7 @@ function scrape(doc, url) {
 	
 	//author, if available
 		if (doc.evaluate('//span[@class="post-author vcard"]', doc,  null, XPathResult.ANY_TYPE, null).iterateNext()) {
-			var author = doc.evaluate('//span[@class="post-author vcard"]/span[@class="fn"]', doc,  null, XPathResult.ANY_TYPE, null).iterateNext().textContent.replace(/^\s*|\s*$/g, '');
+			var author = doc.evaluate('//span[@class="post-author vcard"]//span[@class="fn"]', doc,  null, XPathResult.ANY_TYPE, null).iterateNext().textContent.replace(/^\s*|\s*$/g, '');
 			var author = author.toLowerCase();
 			if (author.match(/\sby\s/)) {
 				var shortenAuthor = author.indexOf(" by");
@@ -48,7 +48,7 @@ function scrape(doc, url) {
 			}
 			var words = author.split(/\s/);
 				for (var i in words) {
-					words[i] = words[i][0].toUpperCase() + words[i].substr(1).toLowerCase();
+					words[i] = words[i].substr(0, 1).toUpperCase() + words[i].substr(1).toLowerCase();
 				}
 			author = words.join(" ");
 			newItem.creators.push(Zotero.Utilities.cleanAuthor(author, "author"));
@@ -142,7 +142,7 @@ var testCases = [
 				],
 				"title": "A tweet from Matt Yglesias",
 				"date": "Monday, October 24, 2011",
-				"blogTitle": "Observational Epidemiology",
+				"blogTitle": "West Coast Stat Views (on Observational Epidemiology and more)",
 				"url": "http://observationalepidemiology.blogspot.com/2011/10/tweet-from-matt-yglesias.html",
 				"libraryCatalog": "Blogger",
 				"accessDate": "CURRENT_TIMESTAMP"
@@ -156,8 +156,77 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://argentina-politica.blogspot.com/2012/05/el-sentimiento-de-inseguridad-y-la_20.html",
-		"items": "multiple"
+		"url": "http://argentina-politica.blogspot.com/2012/03/perciben-una-caida-en-la-imagen-de-la.html",
+		"items": [
+			{
+				"itemType": "blogPost",
+				"creators": [
+					{
+						"firstName": "Federico",
+						"lastName": "Gonzalez",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Cristina Kirchner",
+					"imagen"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Blogspot Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Politica Argentina - Blog de Psicología Política de Federico González: Perciben una caída en la imagen de la Presidenta",
+				"date": "domingo, 11 de marzo de 2012",
+				"blogTitle": "Politica Argentina - Blog de Psicología Política de Federico González",
+				"url": "http://argentina-politica.blogspot.com/2012/03/perciben-una-caida-en-la-imagen-de-la.html",
+				"shortTitle": "Politica Argentina - Blog de Psicología Política de Federico González"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://utotherescue.blogspot.com/2013/11/the-heart-of-matter-humanities-do-more.html",
+		"items": [
+			{
+				"itemType": "blogPost",
+				"creators": [
+					{
+						"firstName": "Michael",
+						"lastName": "Meranze",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"academic development",
+					"arts and sciences",
+					"cutting arts and humanities",
+					"guest post",
+					"Humanities and Social Science Knowledge",
+					"humanities disciplines",
+					"public purpose",
+					"thought",
+					"writing"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Blogspot Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "National Humanities Report Reinforces Stereotypes about the Humanities ~ Remaking the University",
+				"date": "Monday, November 25, 2013",
+				"blogTitle": "National Humanities Report Reinforces Stereotypes about the Humanities ~ Remaking the University",
+				"url": "http://utotherescue.blogspot.com/2013/11/the-heart-of-matter-humanities-do-more.html",
+				"libraryCatalog": "Blogger",
+				"accessDate": "CURRENT_TIMESTAMP"
+			}
+		]
 	}
 ]
 /** END TEST CASES **/

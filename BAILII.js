@@ -2,14 +2,14 @@
 	"translatorID": "5ae63913-669a-4792-9f45-e089a37de9ab",
 	"label": "BAILII",
 	"creator": "Bill McKinney",
-	"target": "http:\\/\\/www\\.bailii\\.org(?:\\/cgi\\-bin\\/markup\\.cgi\\?doc\\=)?\\/\\w+\\/cases\\/.+",
+	"target": "^https?:\\/\\/www\\.bailii\\.org(?:\\/cgi\\-bin\\/markup\\.cgi\\?doc\\=)?\\/\\w+\\/cases\\/.+",
 	"minVersion": "1.0.0b4.r1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-11 17:34:18"
+	"lastUpdated": "2014-04-03 16:36:35"
 }
 
 /*
@@ -403,17 +403,13 @@ var dict = {
 */
 
 var liiRegexp= /^http:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/([^\/]+)\/.+/
-var liiTocRegexp= /^http:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/.+\/toc[^\/]+\.html/
+// Not used
+// var liiTocRegexp= /^http:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/.+\/toc[^\/]+\.html/
 var liiCaseRegexp= /^http:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/([^\/]+)\/.+\.html/
 
 function detectWeb(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
-	if(!liiTocRegexp.test(url) && liiCaseRegexp.test(url)) {
-		return "legal_case";
+	if(liiRegexp.test(url)) {
+		return "case";
 	} else {
 		var aTags = doc.getElementsByTagName("a");
 		for(var i=0; i<aTags.length; i++) {
@@ -700,8 +696,13 @@ var testCases = [
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],
-				"attachments": [{"title":"BAILII Snapshot","mimeType":"text/html"}],
-				"title": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08 (04 October 2011)",
+				"attachments": [
+					{
+						"title": "BAILII Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08",
 				"url": "http://www.bailii.org/cgi-bin/markup.cgi?doc=/eu/cases/EUECJ/2011/C40308.html&query=copyright&method=boolean",
 				"caseName": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08",
 				"dateDecided": "04 October 2011",

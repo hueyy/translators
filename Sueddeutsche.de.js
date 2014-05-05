@@ -2,14 +2,14 @@
 	"translatorID": "2e4ebd19-83ab-4a56-8fa6-bcd52b576470",
 	"label": "Sueddeutsche.de",
 	"creator": "Martin Meyerhoff",
-	"target": "^http://www\\.sueddeutsche\\.de",
+	"target": "^https?://www\\.sueddeutsche\\.de",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-07 02:11:30"
+	"lastUpdated": "2014-04-03 19:57:18"
 }
 
 /*
@@ -41,10 +41,10 @@ Reference article: http://www.sueddeutsche.de/wissen/embryonale-stammzellen-wo-s
 */
 
 function detectWeb(doc, url) {
-	if (ZU.xpathText(doc, '//*[@id="articleTitle"]')) {
+	if (ZU.xpathText(doc, '//h2/strong')) {
 		return "newspaperArticle";
 	} else if (ZU.xpath(doc, '//div[@id="topthemen" or @class="panoramateaser" \
-						or contains(@class,"maincolumn")]\
+						or contains(@class,"maincolumn") or contains(@class, "teaser")]\
 						//a[starts-with(@class,"entry-title") \
 						and starts-with(@href,"http://www.sueddeutsche.de") \
 						and not(contains(@href,"/app/"))]').length){
@@ -55,7 +55,7 @@ function detectWeb(doc, url) {
 function scrape(doc, url) {
 	//don't parse things like image galleries
 	//e.g. http://www.sueddeutsche.de/kultur/thomas-manns-villa-in-los-angeles-weimar-am-pazifik-1.1301388
-	if(!ZU.xpathText(doc, '//*[@id="articleTitle"]')) return;
+	if(!ZU.xpathText(doc, '//h2/strong')) return;
 
 	var newItem = new Zotero.Item("newspaperArticle");
 	newItem.url = url;
@@ -65,10 +65,11 @@ function scrape(doc, url) {
 
 	// Author. This is tricky, the SZ uses the author field for whatever they like.
 	// Sometimes, there is no author.
-	var author = ZU.xpathText(doc, '//span[contains(@class, "hcard fn")]');
+	var author =  ZU.xpathText(doc, '//section[@class="authors"]//span[@class="moreInfo"]/strong')
+
 	// One case i've seen: A full sentence as the "author", with no author in it.
 	if (author && author.trim().charAt(author.length - 1) != '.') {
-		author = author.replace(/^Von\s/i, '')
+		author = author.replace(/^\s*Von\s|Ein Kommentar von/i, '')
 		// For multiple Authors, the SZ uses comma, und and u
 						.split(/\s+(?:und|u|,)\s+/);
 
@@ -83,8 +84,7 @@ function scrape(doc, url) {
 	newItem.abstractNote = ZU.xpathText(doc, '//meta[contains(@property, "og:description")]/@content');
 
 	// Date
-	newItem.date = ZU.xpathText(doc, "//*[@class='updated']/*[@class='value']")
-				.split(/\s/)[0];
+	newItem.date = ZU.xpathText(doc, "//time[@class='timeformat']").replace(/\d{2}:\d{2}/, "");
 
 	// Section
 	var section = url.match(/sueddeutsche\.de\/([^\/]+)/);
@@ -118,7 +118,7 @@ function doWeb(doc, url) {
 	if (detectWeb(doc, url) == "multiple") {
 		var links = ZU.xpath(doc,
 						'//div[@id="topthemen" or @class="panoramateaser" \
-						or contains(@class,"maincolumn")]\
+						or contains(@class,"maincolumn") or contains(@class, "teaser")]\
 						//a[starts-with(@class,"entry-title") \
 						and starts-with(@href,"http://www.sueddeutsche.de") \
 						and not(contains(@href,"/app/"))]');
@@ -137,7 +137,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			ZU.processDocuments(articles, function(doc) { scrape(doc, doc.location.href) });
+			ZU.processDocuments(articles, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -165,8 +165,11 @@ var testCases = [
 				"notes": [],
 				"tags": [
 					"Café",
+					"Internet",
+					"Polizei",
+					"SZ",
 					"Süddeutsche Zeitung",
-					"SZ"
+					"Wohnung"
 				],
 				"seeAlso": [],
 				"attachments": [
@@ -179,13 +182,12 @@ var testCases = [
 				"url": "http://www.sueddeutsche.de/politik/verdacht-gegen-hessischen-verfassungsschuetzer-spitzname-kleiner-adolf-1.1190178",
 				"title": "Verdacht gegen hessischen Verfassungsschützer: Spitzname \"Kleiner Adolf\"",
 				"abstractNote": "Als die Zwickauer Zelle in einem Kasseler Internet-Café Halit Y. hinrichtet, surft ein hessischer Verfassungsschützer dort im Netz. In seiner Wohnung findet die Polizei später Hinweise auf eine rechtsradikale Gesinnung - doch die Ermittlungen gegen den Mann werden eingestellt. Dabei bleiben viele Fragen offen.",
-				"date": "2011-11-15",
+				"date": "16. November 2011",
 				"section": "politik",
 				"publicationTitle": "sueddeutsche.de",
 				"ISSN": "0174-4917",
 				"language": "de",
 				"libraryCatalog": "Sueddeutsche.de",
-				"accessDate": "CURRENT_TIMESTAMP",
 				"shortTitle": "Verdacht gegen hessischen Verfassungsschützer"
 			}
 		]

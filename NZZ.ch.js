@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-11 09:03:16"
+	"lastUpdated": "2014-03-22 22:27:50"
 }
 
 /*
@@ -103,6 +103,7 @@ function scrape(doc) {
 	}
 
 	var authorline = getXPath('//article/address/span', doc);
+	if (!authorline) authorline = getXPath('//h6//span[@class="author"]', doc)
 	if (authorline != null) {
 		authorline = Zotero.Utilities.trimInternal(authorline.textContent);
 		//assumption of authorline: "[Interview:|Von ]name1[, name2] [und Name3][, location]"
@@ -122,6 +123,7 @@ function scrape(doc) {
 	}
 
 	var section = getXPath('//hgroup/h6/a', doc);
+	if (!section) section = getXPath('//h1/a[@class="link-info"]', doc);
 	if (section != null) {
 		var sectionText = Zotero.Utilities.trimInternal(section.textContent);
 		if (sectionText.indexOf("NZZ am Sonntag") > -1 ) {
@@ -162,7 +164,7 @@ var testCases = [
 						"snapshot": true
 					}
 				],
-				"url": "http://www.nzz.ch/nachrichten/wirtschaft/aktuell/kuoni-gta-uebernahme-1.13276960",
+				"url": "http://www.nzz.ch/aktuell/wirtschaft/uebersicht/kuoni-gta-uebernahme-1.13276960",
 				"title": "Kuoni profitiert von der GTA-Übernahme: Deutliches Umsatzplus in den ersten neun Monaten",
 				"date": "2011-11-10",
 				"publicationTitle": "Neue Zürcher Zeitung",
@@ -170,9 +172,8 @@ var testCases = [
 				"language": "de",
 				"shortTitle": "Kuoni profitiert von der GTA-Übernahme",
 				"abstractNote": "Der Reisekonzern Kuoni hat in den ersten neun Monaten von der Übernahme des Reisekonzerns Gullivers Travel Associates (GTA) profitiert. Der Umsatz stieg, und der Konzern machte Gewinn.",
-				"section": "Aktuell",
-				"libraryCatalog": "NZZ",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"section": "Wirtschaft",
+				"libraryCatalog": "NZZ"
 			}
 		]
 	},
@@ -199,7 +200,7 @@ var testCases = [
 						"snapshot": true
 					}
 				],
-				"url": "http://www.nzz.ch/aktuell/international/wie-ein-mexikanisches-staedtchen-die-boesewichte-vertrieb-1.17091747",
+				"url": "http://www.nzz.ch/aktuell/international/uebersicht/wie-ein-mexikanisches-staedtchen-die-boesewichte-vertrieb-1.17091747",
 				"title": "Wie ein mexikanisches Städtchen die Bösewichte vertrieb: Landsgemeinde als Mittel gegen das organisierte Verbrechen und korrupte Behörden",
 				"date": "2012-05-30",
 				"publicationTitle": "Neue Zürcher Zeitung",
@@ -208,8 +209,7 @@ var testCases = [
 				"shortTitle": "Wie ein mexikanisches Städtchen die Bösewichte vertrieb",
 				"abstractNote": "Mit einem Aufstand haben die Einwohner der mexikanischen Gemeinde Cherán die Holzfällermafia vertrieben. Sie haben eine Landsgemeinde gegründet und entdeckt, dass direktdemokratische Institutionen Korruption verhindern.",
 				"section": "International",
-				"libraryCatalog": "NZZ",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"libraryCatalog": "NZZ"
 			}
 		]
 	},

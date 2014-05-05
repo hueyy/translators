@@ -2,14 +2,14 @@
 	"translatorID": "488fe1e0-b7d2-406f-8257-5060418ce9b2",
 	"label": "fr-online.de",
 	"creator": "Martin Meyerhoff",
-	"target": "^http://www\\.fr-online\\.de",
+	"target": "^https?://www\\.fr-online\\.de",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-17 23:32:44"
+	"lastUpdated": "2014-04-03 17:37:43"
 }
 
 /*
@@ -39,7 +39,7 @@ http://www.fr-online.de/wirtschaft/krise/portugal-koennte-rettungspaket-benoetig
 */
 
 function detectWeb(doc, url) {
-	var FR_article_XPath = "//h2[contains(@class, 'Title')]|//h1[contains(@class, 'Title')]";
+	var FR_article_XPath = "//h1[contains(@class, 'ArticleHeadline')]|//h1[contains(@class, 'Title')]";
 	var FR_multiple_XPath = ".//*[@id='ContainerContent']/div//div[contains(@class, 'ItemHeadline')]/a"
 
 
@@ -158,10 +158,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, scrape, function () {
-				Zotero.done();
-			});
-			Zotero.wait();
+			Zotero.Utilities.processDocuments(articles, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -181,7 +178,7 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://www.fr-online.de/krise/portugal-koennte-rettungspaket-benoetigen,1471908,8251842.html",
+		"url": "http://www.fr-online.de/schuldenkrise/andeutung-des-finanzministers-portugal-koennte-rettungspaket-benoetigen,1471908,8251842.html",
 		"items": [
 			{
 				"itemType": "newspaperArticle",
@@ -195,7 +192,7 @@ var testCases = [
 						"mimeType": "text/html"
 					}
 				],
-				"url": "http://www.fr-online.de/krise/portugal-koennte-rettungspaket-benoetigen,1471908,8251842.html",
+				"url": "http://www.fr-online.de/schuldenkrise/andeutung-des-finanzministers-portugal-koennte-rettungspaket-benoetigen,1471908,8251842.html",
 				"title": "Andeutung des Finanzministers: Portugal könnte Rettungspaket benötigen",
 				"abstractNote": "Eine politische Krise in Portugal aufgrund der harten Sparvorgaben der Europäischen Union könnte ein Rettungspaket notwendig machen, fürchtet Finanzminister Fernando Teixeira dos Santos.",
 				"date": "21. März 2011",

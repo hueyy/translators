@@ -1,4 +1,4 @@
-19  # Increment number when modifying file
+36  # Increment number when modifying file
 
 96b9f483-c44d-5784-cdad-ce21b984 # Amazon
 add7c71c-21f3-ee14-d188-caf9da12 # SIRSI 2003+
@@ -56,3 +56,23 @@ c76d6c19-b4c6-4e51-bd7a-0a81752305ae  # BC Archival Network - merged with Archei
 a07bb62a-4d2d-4d43-ba08-d9679a0122f8 # ABL-CLIO no longer exists
 232903bc-7307-4058-bb1a-27cfe3e4e655 # SPIRES - replaced (and redirects to) INSPIRE which has unAPI
 0b356cb6-7fa1-4662-b6e8-7ffc9ca2cd4a # Progress of Theoretical Physics - merged with Institute of Pure and Applied Physics
+8a325571-c2a8-417a-8a25-b1dca65154c3 # JBJS AM - merged into new Silverchair translator
+e85a3134-8c1a-8644-6926-584c8565f23e # History Cooperative - site discontinued
+a2363670-7040-4cb9-8c48-6b96584e92ee # Florida University Libraries (Endeca 1) - replaced by Library Catalog (Mango)
+daa26181-71d4-48ef-8cac-54c06ff4c20e # Citebase - no longer exists
+9220fa99-b936-430e-a8ea-43ca6cb04145 # AGU Journals - moved to Wiley
+cae7d3ec-bc8d-465b-974f-8b0dcfe24290 # BIUM - moved to a (supported) Dynix catalog
+e9632edc-8032-4dc5-b2d4-284d481583e6 # SAE Inernational - replaced by SAE Papers
+4f62425a-c99f-4ce1-b7c1-5a3ac0d636a3 # Afro-Europa - Journal Defunct
+19643c25-a4b2-480d-91b7-4e0b761fb6ad # ScientificCommons - page defunct
+4c9dbe33-e64f-4536-a02f-f347fa1f187d # BioInfoBank - page defunct
+d75381ee-7d8d-4a3b-a595-b9190a06f43f # Scitation now part of AIP
+f39dbd1c-229e-4abb-8414-a09fdbda37b7 # Archives Network of Alberta - new website, now covered by Archeion
+45763818-8530-49c6-a069-34acdee1a096 # National Library of New Zealand now runs Voyager7
+f8765470-5ace-4a31-b4bd-4327b960ccd  # Springer Old doesn't exist anymore
+82174f4f-8c13-403b-99b2-affc7bc7769b # Cambridge Scientific Abstracts are now Proquest
+f1f3aa05-d752-4a46-b362-1d3dc87c7c36 # Princeton+ now (re-)unified with Primo
+31649d9d-8f7e-4b87-8678-b3e68ee98f39 # CARL/ABRC OAI Harvester - doesn't exist anymore 
+409c520b-0720-4011-8fce-70fcd9806493 # Inder Science - articles are on metapress, the translator on the publisher site is pointless
+ca6e95d1-46b9-4535-885c-df0c2d4b7f7a # Innovate Online - site defunct (and ownership transfered). 
+f880bf79-d42f-4337-b0d2-7a7de4a48b7d # X-OPAC - no more instances of this lib catalog

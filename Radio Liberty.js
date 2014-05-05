@@ -2,14 +2,14 @@
 	"translatorID": "b1c90b99-2e1a-4374-a03b-92e45f1afc55",
 	"label": "Radio Free Europe / Radio Liberty",
 	"creator": "Avram Lyon",
-	"target": "^http://www\\.rferl\\.org/|^http://www\\.azatliq\\.org/|^http://www\\.azattyq\\.org/|^http://rus\\.azattyq\\.org/|^http://da\\.azadiradio\\.org/|^http://pa\\.azadiradio\\.org/|^http://www\\.azattyk\\.org/|^http://www\\.ozodi\\.org/|^http://www\\.ozodlik\\.org/|^http://www\\.evropaelire\\.org/|^http://www\\.slobodnaevropa\\.org/|^http://www\\.makdenes\\.org/|^http://www\\.iraqhurr\\.org/|^http://www\\.radiofarda\\.com/|^http://www\\.azatutyun\\.am/|^http://www\\.azadliq\\.org/|^http://www\\.svaboda\\.org/|^http://www\\.tavisupleba\\.org/|^http://www\\.azathabar\\.com/|^http://www\\.svobodanews\\.ru/|^http://www\\.europalibera\\.org/|^http://www\\.radiosvoboda\\.org/",
+	"target": "^https?://(www\\.rferl\\.org/|www\\.azatliq\\.org/|www\\.azattyq\\.org/|rus\\.azattyq\\.org/|da\\.azadiradio\\.org/|pa\\.azadiradio\\.org/|www\\.azattyk\\.org/|www\\.ozodi\\.org/|www\\.ozodlik\\.org/|www\\.evropaelire\\.org/|www\\.slobodnaevropa\\.org/|www\\.makdenes\\.org/|www\\.iraqhurr\\.org/|www\\.radiofarda\\.com/|www\\.azatutyun\\.am/|www\\.azadliq\\.org/|www\\.svaboda\\.org/|www\\.svoboda\\.org/|www\\.tavisupleba\\.org/|www\\.azathabar\\.com/|www\\.svobodanews\\.ru/|www\\.europalibera\\.org/|www\\.radiosvoboda\\.org/)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-07-24 00:40:23"
+	"lastUpdated": "2014-04-04 10:15:37"
 }
 
 /*
@@ -56,7 +56,7 @@
 	Belarus:	http://www.svaboda.org/
 	Georgian:	http://www.tavisupleba.org/
 	Turkmen:	http://www.azathabar.com/
-	Russian:	http://www.svobodanews.ru/
+	Russian:	http://www.svobodanews.ru/ and svoboda.org
 	Moldovan:	http://www.europalibera.org/ (Romanian)
 	Ukrainian:	http://www.radiosvoboda.org/
  
@@ -74,6 +74,7 @@
  information and the translator does not load it.
 */
 
+var item;
 function detectWeb(doc, url){
 	if (url.match(/\/content\/|\/archive\/news|\/archive\/ru_news_zone/)) {
 		// The translator uses this type because RFE/RL generally has a place of publication
@@ -85,38 +86,38 @@ function detectWeb(doc, url){
 }
 
 function doWeb(doc, url){
-	var n = doc.documentElement.namespaceURI;
-	var ns = n ? function(prefix) {
-		if (prefix == 'x') return n; else return null;
-	} : null;
 	
 	var articles = new Array();
 	if (detectWeb(doc, url) == "multiple") {
-		var results = doc.evaluate('//div[@class="searchResultItem"]', doc, ns, XPathResult.ANY_TYPE, null);
+		var results = doc.evaluate('//div[@class="searchResultItem"]', doc, null, XPathResult.ANY_TYPE, null);
 		var items = new Array();
 		var result;
 		while(result = results.iterateNext()) {
-			var link = doc.evaluate('./a[@class="resultLink"]', result, ns, XPathResult.ANY_TYPE, null).iterateNext();
+			var link = doc.evaluate('./a[@class="resultLink"]', result, null, XPathResult.ANY_TYPE, null).iterateNext();
 			var title = link.textContent;
 			var url = link.href;
 			items[url] = title;
 		}
-		items = Zotero.selectItems(items);
-		if(!items) return true;
-		for (var i in items) {
-			articles.push(i);
-		}
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				articles.push(i);
+			}
+			Zotero.Utilities.processDocuments(articles, scrape);	
+		});
 	} else {
-		articles = [url];
+		scrape(doc, url);
 	}
 	
-	Zotero.Utilities.processDocuments(articles, function(doc) {
+function scrape(doc, url){
 		item = new Zotero.Item("newspaperArticle");
 		item.title = Zotero.Utilities.trimInternal(
-			doc.evaluate('//h1', doc, ns, XPathResult.ANY_TYPE, null).iterateNext().textContent
+			doc.evaluate('//h1', doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent
 		);
 		
-		var author = doc.evaluate('//div[@id="article"]//div[@class="author"]', doc, ns, XPathResult.ANY_TYPE, null);
+		var author = doc.evaluate('//div[@id="article"]//div[@class="author"]', doc, null, XPathResult.ANY_TYPE, null);
 		if ((author = author.iterateNext()) !== null) {
 			author = author.textContent;
 			// Sometimes we have "By Author"
@@ -138,12 +139,12 @@ function doWeb(doc, url){
 			item.creators.push(cleaned);
 		}
 		// The section should _always_ be present
-		item.section = doc.evaluate('//div[@id="article" or @class="middle_content"]/h2', doc, ns, XPathResult.ANY_TYPE, null).iterateNext().textContent.trim();
+		item.section = ZU.xpathText(doc, '//div[@id="article" or contains(@class, "middle_content")]/h2');
 
 		// This exposes a limitation of Zotero's date handling; the Afghan services
 		// use the Hijri calendar, and mixed sorting looks funny-- I'd like to be able
 		// to mark such dates to be handled appropriately
-		var date = doc.evaluate('//div[@id="article"]//p[@class="article_date"]', doc, ns, XPathResult.ANY_TYPE, null);
+		var date = doc.evaluate('//div[@id="article"]//p[@class="article_date"]', doc, null, XPathResult.ANY_TYPE, null);
 		if ((date = date.iterateNext()) !== null) {
 			// sometimes not present
 			item.date = Zotero.Utilities.trimInternal(date.textContent);
@@ -155,7 +156,7 @@ function doWeb(doc, url){
 		// 	characters that may occur in city names.
 		//	This all-caps class is borrowed from utilities.js and augmented by
 		//	the basic Cyrillic capital letters.
-		var textnode = doc.evaluate('//div[@id="article"]//div[@class="zoomMe"]', doc, ns, XPathResult.ANY_TYPE, null).iterateNext();
+		var textnode = doc.evaluate('//div[@id="article"]//div[@class="zoomMe"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 		if (textnode) {
 			var text = textnode.textContent;
 			hits = text.match(/([A-ZА-Я \u0400-\u042f]+) \((.*)\) --/);
@@ -171,7 +172,7 @@ function doWeb(doc, url){
 		}
 
 		item.url = url;
-		item.publicationTitle = doc.evaluate('//h2[@id="header_logo_anchor" or @id="header_logo"]//span', doc, ns, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+		item.publicationTitle = doc.evaluate('//h2[@id="header_logo_anchor" or @id="header_logo"]//span', doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent.trim();
 
 		// Language map:
 		var map = {
@@ -195,6 +196,7 @@ function doWeb(doc, url){
 			"www.tavisupleba.org" : "Georgian",
 			"www.azathabar.com" : "Turkmen",
 			"www.svobodanews.ru" : "Russian",
+			"www.svoboda.org"	 : "Russian",
 			"www.europalibera.org" : "Romanian",
 			"www.radiosvoboda.org" : "Ukrainian"
 		}
@@ -208,18 +210,17 @@ function doWeb(doc, url){
 		*/
 		item.attachments.push({url:url, title: (item.publicationTitle + " Snapshot"), mimeType:"text/html"});
 
-		var listenLink = doc.evaluate('//li[@class="listenlink"]/a', doc, ns, XPathResult.ANY_TYPE, null).iterateNext();
+		var listenLink = doc.evaluate('//li[@class="listenlink"]/a', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 		if (listenLink) {
 				Zotero.Utilities.doGet(listenLink.href, addAudio, null);
 		} else item.complete();
 
-	}, function() {Zotero.done();});
-	Zotero.wait();
+	}
 }
 
 function addAudio(text) {
 	// http://realaudio.rferl.org/TB/2011/03/29/20110329-183936-TB-clip.mp3
-	var audio = text.match(/http:\/\/(realaudio|audioarchive)\.rferl\.org[^"]*\.mp3/);
+	var audio = text.match(/https?:\/\/(realaudio|audioarchive)\.rferl\.org[^"]*\.mp3/);
 	if (audio) item.attachments.push({url:audio[0], mimeType:"application/octet-stream", title:"RFE/RL Audio"})
 	item.complete();
 }
@@ -266,7 +267,7 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://www.svobodanews.ru/archive/ru_news_zone/20111105/17/17.html?id=24382010",
+		"url": "http://www.svoboda.org/content/news/24382010.html",
 		"items": [
 			{
 				"itemType": "newspaperArticle",
@@ -276,17 +277,18 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"url": false,
-						"title": " Радио Свобода  Snapshot",
+						"title": "Радио Свобода Snapshot",
 						"mimeType": "text/html"
 					}
 				],
 				"title": "Партия \"Яблоко\" перевела свою предвыборную программу на 18 языков",
 				"section": "Новости",
-				"url": "http://www.svobodanews.ru/archive/ru_news_zone/20111105/17/17.html?id=24382010",
+				"date": "Опубликовано 05.11.2011 06:49",
+				"url": "http://www.svoboda.org/content/news/24382010.html",
 				"publicationTitle": "Радио Свобода",
 				"language": "Russian",
-				"libraryCatalog": "Radio Free Europe / Radio Liberty"
+				"libraryCatalog": "Radio Free Europe / Radio Liberty",
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	}

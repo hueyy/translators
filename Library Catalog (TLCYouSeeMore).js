@@ -9,8 +9,11 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-05-26 21:20:37"
+	"lastUpdated": "2013-06-09 13:07:04"
 }
+
+/* other example here: http://ocl.tlcdelivers.com/TLCScripts/interpac.dll?LabelDisplay&LastResult=Search%26Config=ysm%26FormId=6588839%26Branch=,0,%26LimitsId=0%26StartIndex=0%26SearchField=7%26SearchType=1%26SearchData=food%26NotAddToHistory=1%26ItemsPerPage=30%26SortField=0%26PeriodLimit=-1%26SearchAvailableOnly=0&DataNumber=52182&RecordNumber=52182&SearchAvailableOnly=0&FormId=6588839&ItemField=1&Config=ysm&Branch=,0, 
+but test won't work on that page */
 
 function detectWeb(doc, url) {
 	var detailRe = new RegExp("TLCScripts/interpac\.dll\?.*LabelDisplay.*RecordNumber=[0-9]");
@@ -91,45 +94,6 @@ function doWeb(doc, url) {
 } 
 /** BEGIN TEST CASES **/
 var testCases = [
-	{
-		"type": "web",
-		"url": "http://tlc.oconeesc.com/TLCScripts/interpac.dll?LabelDisplay&LastResult=Search%26Config=ysm%26FormId=206680182%26Branch=,0,%26LimitsId=0%26StartIndex=0%26SearchField=7%26SearchType=1%26SearchData=argentina%26NotAddToHistory=1%26ItemsPerPage=30%26SortField=0%26PeriodLimit=-1%26SearchAvailableOnly=0&DataNumber=31922&RecordNumber=31922&SearchAvailableOnly=0&FormId=206680182&ItemField=1&Config=ysm&Branch=,0,",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "Martin",
-						"lastName": "Hintz",
-						"creatorType": "author"
-					}
-				],
-				"notes": [
-					{
-						"note": "Includes index"
-					},
-					{
-						"note": "An introduction to the history, geography, economics, customs, and people of the eighth largest nation in the world"
-					}
-				],
-				"tags": [
-					"Argentina",
-					"Juvenile literature",
-					"Argentina"
-				],
-				"seeAlso": [],
-				"attachments": [],
-				"title": "Argentina",
-				"place": "Chicago",
-				"publisher": "Childrens Press",
-				"date": "1985",
-				"numPages": "127",
-				"series": "Enchantment of the world",
-				"callNumber": "F2808.2 .H56 1985",
-				"libraryCatalog": "tlc.oconeesc.com Library Catalog"
-			}
-		]
-	},
 	{
 		"type": "web",
 		"url": "http://martinsburg.lib.wv.us/TLCScripts/interpac.dll?LabelDisplay&LastResult=Search%26Config=1ysm%26FormId=167489996%26Branch=,1,104,102,103,105,%26LimitsId=167358921%26StartIndex=0%26SearchField=16777216%26SearchType=1%26SearchData=argentina%26NotAddToHistory=1%26ItemsPerPage=20%26SortField=0%26PeriodLimit=-1%26SearchAvailableOnly=0&DataNumber=468041&RecordNumber=468041&SearchAvailableOnly=0&FormId=167489996&ItemField=1&Config=1ysm&Branch=,1,104,102,103,105,",

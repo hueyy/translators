@@ -2,126 +2,101 @@
 	"translatorID": "6ec8008d-b206-4a4c-8d0a-8ef33807703b",
 	"label": "The Economist",
 	"creator": "Michael Berkowitz",
-	"target": "^http://(www\\.)?economist\\.com/",
-	"minVersion": "1.0.0b4.r5",
+	"target": "^https?://(www\\.)?economist\\.com/",
+	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-01-30 22:42:25"
+	"lastUpdated": "2014-04-04 09:55:12"
 }
 
 function detectWeb(doc, url) {
-	   if (doc.location.href.indexOf("search") != -1) {
-		/* Multiple article download disabled-- broken.
-		TODO Fix multiple article download. */
-			   //return "multiple";
-	   } else if (doc.location.href.toLowerCase().indexOf("node") != -1) {
-			   return "magazineArticle";
-	   }
+	if (doc.location.href.indexOf("/search/") != -1) {
+		return "multiple";
+	} else if (ZU.xpathText(doc, '//h3[@class="headline"]')) {
+		return "magazineArticle";
+	} else if (ZU.xpathText(doc, '//div[@class="view-content"]//div[@class="article"]') || ZU.xpathText(doc, '//div[@id="column-content"]//section[contains(@class, "news-package")]')){
+		return "multiple";
+	} 
+
 }
 
 function scrape(doc, url) {
-	   var namespace = doc.documentElement.namespaceURI;
-	   var nsResolver = namespace ? function(prefix) {
-			   if (prefix == "x" ) return namespace; else return null;
-	   } : null;
 
-	   newItem = new Zotero.Item("magazineArticle");
-	   newItem.ISSN = "0013-0613";
-	   newItem.url = doc.location.href;
-	   newItem.publicationTitle = "The Economist";
+	newItem = new Zotero.Item("magazineArticle");
+	newItem.ISSN = "0013-0613";
+	newItem.url = doc.location.href;
+	newItem.publicationTitle = "The Economist";
 
 
-	   //get headline
-	   var title = new Array();
-	   if (doc.title && doc.title != "" && doc.title != "Economist.com") {
-			   title = doc.title.split(" | ");
-	   } else {
-		title.push(doc.evaluate('//div[@class="clear"][@id="pay-barrier"]/div[@class="col-left"]/div[@class="article"]/font/b', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent);
-	   }
+	//get headline
+	var title = ZU.xpathText(doc, '//h3[@class="headline"]');
+	if (!title) title = ZU.xpathText(doc, '//meta[@property="og:title"]/@content');
+	newItem.title = title;
 
+	if (doc.evaluate('//div[@class="clear"][@id="pay-barrier"]/div[@class="col-right"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
+		newItem.extra = "(Subscription only)";
+	}
 
-	   if (title.length == 1) {
-			   title.push = title;
-	   } else {
-			   title = title.slice(0, title.length - 1);
-			   title = title.join(": ");
-	   }
-	   newItem.title = title;
-
-	   if (doc.evaluate('//div[@class="clear"][@id="pay-barrier"]/div[@class="col-right"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext() ) {
-			   newItem.extra =  "(Subscription only)";
-	   }
-
-	if (newItem.extra == "(Subscription only)"){ newItem.complete(); return;}
-	   //get abstract
-	   if (doc.evaluate('//div[@id="content"]/div[@class="clear top-border"]/div[@class="col-left"]/h2', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext() ) {
-			   newItem.abstractNote = doc.evaluate('//div[@id="content"]/div[@class="clear top-border"]/div[@class="col-left"]/h2', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
-	   } else if (doc.evaluate('//div[@class="clear"][@id="pay-barrier"]/div[@class="col-left"]/div[@class="article"]/p/strong', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext() ) {
-			   newItem.abstractNote = doc.evaluate('//div[@class="clear"][@id="pay-barrier"]/div[@class="col-left"]/div[@class="article"]/p/strong', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
-	   } else if (doc.evaluate('//div[@id="content"]/div[@class="clear top-border"]/div[@class="col-left"]/p[3]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
-	   		newItem.abstractNote = doc.evaluate('//div[@id="content"]/div[@class="clear top-border"]/div[@class="col-left"]/p[3]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
-	   }
-	   if (newItem.abstractNote) newItem.abstractNote = Zotero.Utilities.trimInternal(newItem.abstractNote);
-	   //get date and extra stuff
-   if (doc.evaluate('//p[@class="ec-article-info"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext() ) {
-			   newItem.date = Zotero.Utilities.trim(doc.evaluate('//p[@class="ec-article-info"]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.split("|")[0]);
-	   }
-	
+	if (newItem.extra == "(Subscription only)") {
+		newItem.complete();
+		return;
+	}
+	//get abstract
+	var abstract = ZU.xpathText(doc, '//h1[@class="rubric"]');
+	if (!abstract) abstract = ZU.xpathText(doc, '//meta[@property="og:description"]/@content');
+	newItem.abstractNote = abstract;
+	//get date and extra stuff
+	newItem.date = ZU.xpathText(doc, '//time[@class="date-created"]')
 	var url = doc.location.href;
-	   newItem.attachments = [
-	   		{url:url.replace("displaystory", "PrinterFriendly"), title:"The Economist Snapshot", mimeType:"text/html"}
-	   	];
-	   	
-	   newItem.complete();
+	newItem.attachments = [{
+		document: doc,
+		title: "The Economist Snapshot",
+		mimeType: "text/html"
+	}];
+
+	newItem.complete();
 }
 
 
 function doWeb(doc, url) {
-	   var namespace = doc.documentElement.namespaceURI;
-	   var nsResolver = namespace ? function(prefix) {
-			   if (prefix == "x" ) return namespace; else return null;
-	   } : null;
 
-	   var urls = new Array();
+	var urls = new Array();
 
-	   if (doc.title == "Search | Economist.com") {
-			   var items = new Array();
-			   var uris = new Array();
-			   var results = doc.evaluate('//ol[@class="search-results"]/li/h2/a', doc, nsResolver, XPathResult.ANY_TYPE, null);
-			   var headline = results.iterateNext();
-			   while (headline) {
-					   items.push(headline.textContent);
-					   uris.push(headline.href);
-					   Zotero.debug(headline.href);
-					   headline = results.iterateNext();
-			   }
+	if (detectWeb(doc, url) == "multiple") {
 
-			   var newItems = new Object();
-			   for (var i = 0 ; i <items.length ; i++) {
-					   newItems[uris[i]] = items[i];
-			   }
-
-			   newItems = Zotero.selectItems(newItems);
-			   if (!newItems) {
-					   return true;
-			   }
-
-			   for (var i in newItems) {
-					   urls.push(i);
-			   }
-	   } else if (doc.location.href.toLowerCase().indexOf("node") != -1) {
-			   scrape(doc, url);
-			   return;
-	   }
-	   
-	   Zotero.Utilities.processDocuments(urls, scrape, function() { Zotero.done(); });
-	   
-	   Zotero.wait();
-}
-/** BEGIN TEST CASES **/
+		var articles = new Array();
+		var items = {};
+		//search results
+		var titles = doc.evaluate('//div[contains(@class, "gs-title")]/a[@class="gs-title" and not(contains(@href, "topics"))]', doc, null, XPathResult.ANY_TYPE, null);
+		//sections
+		if (!titles.iterateNext()){
+			var titles = doc.evaluate('//section[contains(@class, "news-package")]//article/a|//section[contains(@class, "news-package")]//ul/li/div/a[@class="headline"]', doc, null, XPathResult.ANY_TYPE, null);
+		}
+		//print ToC
+		if (!titles.iterateNext()){
+			var titles = doc.evaluate('//div[@class="article"]/a[@class="node-link"]', doc, null, XPathResult.ANY_TYPE, null);
+		}
+		
+		var title;
+		while (title = titles.iterateNext()) {
+			items[title.href] = title.textContent.trim();
+		}
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				articles.push(i);
+			}
+			Zotero.Utilities.processDocuments(articles, scrape)
+		})
+	} else{
+		scrape(doc, url);
+	}
+}/** BEGIN TEST CASES **/
 var testCases = [
 	{
 		"type": "web",
@@ -135,7 +110,6 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"url": "http://www.economist.com/node/21538214",
 						"title": "The Economist Snapshot",
 						"mimeType": "text/html"
 					}
@@ -143,13 +117,22 @@ var testCases = [
 				"ISSN": "0013-0613",
 				"url": "http://www.economist.com/node/21538214",
 				"publicationTitle": "The Economist",
-				"title": "Asia-Pacific trade initiatives: Dreams and realities",
+				"title": "Dreams and realities",
+				"abstractNote": "A battle over American-led free trade brews in Asia",
 				"date": "Nov 12th 2011",
-				"libraryCatalog": "The Economist",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"shortTitle": "Asia-Pacific trade initiatives"
+				"libraryCatalog": "The Economist"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.economist.com/printedition/2013-12-07",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.economist.com/world/united-states",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

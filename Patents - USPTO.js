@@ -2,18 +2,18 @@
 	"translatorID": "232e24fe-2f68-44fc-9366-ecd45720ee9e",
 	"label": "Patents - USPTO",
 	"creator": "Bill McKinney",
-	"target": "^http://patft\\.uspto\\.gov/netacgi/nph-Parser.+",
-	"minVersion": "1.0.0b4.r1",
+	"target": "^https?://(patft|appft1)\\.uspto\\.gov/netacgi/nph-Parser.+",
+	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-03-12 01:20:48"
+	"lastUpdated": "2014-04-04 10:11:27"
 }
 
 function detectWeb(doc, url) {
-	var re = new RegExp("^http://patft\.uspto\.gov/netacgi/nph-Parser");
+	var re = new RegExp("^https?://(patft|appft1)\.uspto\.gov/netacgi/nph-Parser");
 	if (doc.title.match(/Search Results:/)){
 		return "multiple"
 	}
@@ -57,6 +57,7 @@ function scrape(doc) {
 	for(var i=0; i<cellTags.length; i++) {
 
 		var s = new String(cellTags[i].innerHTML);
+		//Z.debug(s)
 		if (s.indexOf("United States Patent") > -1) {
 			
 			tmpStr = cellTags[i+1].childNodes[0].innerHTML;
@@ -69,36 +70,7 @@ function scrape(doc) {
 			newItem.issueDate = tmpStr;
 			continue;
 		}
-		if (s.indexOf("Assignee") > -1) {
-			tmpStr = cellTags[i+1].innerHTML;
-			tmpStr = tmpStr.replace(/<\/?\w+>/gi, "");
-			newItem.assignee = tmpStr;
-			continue;
-		}
-		if (s.indexOf("Inventors") > -1) {
-			tmpStr = cellTags[i+1].innerHTML;
-			
-			var inventors = tmpStr.split(/<b>,/ig);
-			for (var j=0; j<inventors.length; j++) {
-				var tmpInventor = inventors[j];
-				tmpInventor = tmpInventor.replace(/<\/?\w+>/gi, "");
-				tmpInventor = tmpInventor.replace(/\([^\)]+\)/gi, "");
-				tmpInventor = tmpInventor.replace(/^\s+/gi, "");
-				
-				var names = tmpInventor.split(";");
-				if (names) {
-					var lname = names[0];
-					var fname = names[1];
-					lname = lname.replace(/^\s+/gi, "");
-					lname = lname.replace(/\s+$/gi, "");
-					fname= fname.replace(/^\s+/gi, "");
-					fname= fname.replace(/\s+$/gi, "");
-					newItem.creators.push({lastName:lname, firstName:fname, creatorType:"inventor"});
-				}
-			}
-			continue;
-		}
-		
+	
 		// references
 		if (s.indexOf("<a href=\"/netacgi/nph-Parser?Sect2") > -1) {
 				tmpRefs = tmpRefs + cellTags[i].childNodes[0].innerHTML + " ";
@@ -118,44 +90,70 @@ function scrape(doc) {
 		}
 	
 	}
+	var inventors = ZU.xpath(doc, '//td[contains(text(), "Inventors")]/following-sibling::td/b|//th[contains(text(), "Inventors")]/following-sibling::td/b');
+ 	var inventor;
+
+	for (i in inventors){
+		Z.debug( inventors[i].textContent)
+		var inventor = inventors[i].textContent.replace(/^\s*;\s*/, "").replace(/;/, ",")
+		newItem.creators.push(ZU.cleanAuthor(inventor, "inventor", true))
+	}
+	
+	var assignee = ZU.xpathText(doc, '//td[contains(text(), "Assignee")]/following-sibling::td/b|//th[contains(text(), "Assignee")]/following-sibling::td/b');
+	newItem.assignee = assignee;
 //References currenlty broken
 	//newItem.references = tmpRefs;
 	newItem.complete();
 }
 
 function doWeb(doc, url) {
-if(detectWeb(doc, url) == "patent") {
+	if(detectWeb(doc, url) == "patent") {
 		scrape(doc);
 	} else {
-		var items = Zotero.Utilities.getItemArray(doc, doc, "^http://patft\.uspto\.gov/netacgi/nph-Parser.+");
-		items = Zotero.selectItems(items);
-		
-		if(!items) {
-			return true;
-		}
-		
+		var items = Zotero.Utilities.getItemArray(doc, doc, "^https?://(patft|appft1)\.uspto\.gov/netacgi/nph-Parser.+");
 		var uris = new Array();
-		for(var i in items) {
-			uris.push(i);
-		}
-		
-		Zotero.Utilities.processDocuments(uris, function(doc) { scrape(doc) },
-			function() { Zotero.done(); }, null);
-		
-		Zotero.wait();
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				uris.push(i);
+			}
+			Zotero.Utilities.processDocuments(uris, scrape);	
+		});
 	}
-}/** BEGIN TEST CASES **/
+}	/** BEGIN TEST CASES **/
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&co1=AND&d=PTXT&s1=krypto&OS=krypto&RS=krypto",
+		"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=krypto&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect2=PTO1&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&d=PALL&RefSrch=yes&Query=PN%2F7360954",
 		"items": [
 			{
 				"itemType": "patent",
 				"creators": [
 					{
-						"lastName": "Roskind",
-						"firstName": "James",
+						"firstName": "Terry R.",
+						"lastName": "Seaver",
+						"creatorType": "inventor"
+					},
+					{
+						"firstName": "Pirooz",
+						"lastName": "Tooyserkani",
+						"creatorType": "inventor"
+					},
+					{
+						"firstName": "Donald B.",
+						"lastName": "Stone",
+						"creatorType": "inventor"
+					},
+					{
+						"firstName": "Sharat",
+						"lastName": "Prasad",
 						"creatorType": "inventor"
 					}
 				],
@@ -163,20 +161,50 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
-				"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&co1=AND&d=PTXT&s1=krypto&OS=krypto&RS=krypto",
-				"patentNumber": "8196189",
-				"issueDate": "June 5, 2012",
-				"assignee": "AOL LLC\n (Dulles, \nVA)",
-				"abstractNote": "A secure distributed single-login authentication system comprises a\n     client and a server. The client collects authentication credentials from\n     a user and tests credentials at a variety of potential authentication\n     servers to check where the login is valid. It combines a password with a\n     time-varying salt and a service-specific seed in a message digesting\n     hash, generating a first hash value. The client sends the hash value with\n     a user name and the time-varying salt to a selected server. The server\n     extracts the user name and looks up the user name in the server's\n     database. If an entry is found, it retrieves the password, performing the\n     same hash function on the combination of user name, service-specific\n     seed, and password to generate a second hash value, comparing the values.\n     If the values match, the user is authenticated. Thus, the system never\n     reveals the password to authentication agents that might abuse the\n     information.",
-				"shortTitle": "United States Patent",
-				"title": "United States Patent: 8196189 - Simple, secure login with multiple authentication providers"
+				"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect2=PTO1&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&d=PALL&RefSrch=yes&Query=PN%2F7360954",
+				"title": "United States Patent: 7360954 - Low speed data path for SFP-MSA interface",
+				"patentNumber": "7360954",
+				"issueDate": "April 22, 2008",
+				"abstractNote": "Methods and apparatus for enabling a protected circuit path to be created\n     efficiently are disclosed. In accordance with one embodiment of the\n     present invention, a method for creating a protected circuit path within\n     an optical network system includes identifying a first node, a second\n     node, and a third node. Once the nodes are identified, a pseudo link or a\n     virtual link may be created between the second node and the third node. A\n     first circuit path is then routed between the first node and the second\n     node, and a second circuit path which protects that first circuit path is\n     routed between the first node and the third node using the pseudo link.",
+				"assignee": "Cisco Technology, Inc.",
+				"libraryCatalog": "Patents - USPTO",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "United States Patent"
 			}
 		]
 	},
 	{
 		"type": "web",
-		"url": "http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=0&f=S&l=50&TERM1=krypto&FIELD1=&co1=AND&TERM2=&FIELD2=&d=PTXT",
-		"items": "multiple"
+		"url": "http://appft1.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&co1=AND&d=PG01&s1=20130047261&OS=20130047261&RS=20130047261",
+		"items": [
+			{
+				"itemType": "patent",
+				"creators": [
+					{
+						"firstName": "Graeme John",
+						"lastName": "Proudler",
+						"creatorType": "inventor"
+					},
+					{
+						"firstName": "Chris I.",
+						"lastName": "Dalton",
+						"creatorType": "inventor"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"url": "http://appft1.uspto.gov/netacgi/nph-Parser?Sect1=PTO2&Sect2=HITOFF&p=1&u=%2Fnetahtml%2FPTO%2Fsearch-bool.html&r=1&f=G&l=50&co1=AND&d=PG01&s1=20130047261&OS=20130047261&RS=20130047261",
+				"title": "United States Patent Application: 0130047261 - Data Access Control",
+				"patentNumber": "20130047261",
+				"issueDate": "A1",
+				"abstractNote": "A set of data is provided to an application executed in an environment\n     within which the application is restricted from making its output\n     available outside the environment. An operation performed on the set of\n     data by the application is inspected. A determination of whether an\n     output of the application is satisfactory is reached based on the\n     inspection. If the output is determined satisfactory, the output of the\n     application is made available outside the environment.",
+				"libraryCatalog": "Patents - USPTO",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "United States Patent Application"
+			}
+		]
 	}
 ]
 /** END TEST CASES **/

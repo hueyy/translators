@@ -2,14 +2,14 @@
 	"translatorID": "587709d3-80c5-467d-9fc8-ed41c31e20cf",
 	"label": "eLibrary.ru",
 	"creator": "Avram Lyon",
-	"target": "^http://elibrary\\.ru/",
+	"target": "^https?://elibrary\\.ru/",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-04-01 21:59:07"
+	"lastUpdated": "2014-04-03 17:36:01"
 }
 
 /*
@@ -39,95 +39,42 @@ function detectWeb(doc, url){
 }
 
 function doWeb(doc, url){
-	var n = doc.documentElement.namespaceURI;
-	var ns = n ? function(prefix) {
-		if (prefix == 'x') return n; else return null;
-	} : null;
-	
 	var articles = new Array();
 	if (detectWeb(doc, url) == "multiple") {
-		var results = doc.evaluate('//table[@id="restab"]//tr[@bgcolor = "#f5f5f5"]/td[2]', doc, ns, XPathResult.ANY_TYPE, null);
+		var results = doc.evaluate('//table[@id="restab"]//tr[@bgcolor = "#f5f5f5"]/td[2]', doc, null,XPathResult.ANY_TYPE, null);
 		var items = new Array();
 		var result;
 		while(result = results.iterateNext()) {
-			var link = doc.evaluate('./a', result, ns, XPathResult.ANY_TYPE, null).iterateNext();
+			var link = doc.evaluate('./a', result, null,XPathResult.ANY_TYPE, null).iterateNext();
 			var title = link.textContent;
 			var url = link.href;
 			items[url] = title;
 		}
-		items = Zotero.selectItems(items);
-		if(!items) return true;
-		for (var i in items) {
-			articles.push(i);
+		Zotero.selectItems(items, function (items) {
+				if (!items) {
+					return true;
+				}
+				for (i in items) {
+					articles.push(i);
+				}
+				Zotero.Utilities.processDocuments(articles, scrape);
+		});
+		} else {
+			scrape(doc);
 		}
-		Zotero.Utilities.processDocuments(articles, scrape, function() {Zotero.done();});
-	} else {
-		scrape(doc);
-	}
-	
-	Zotero.wait();
 }
 
 function scrape (doc) {
-	var n = doc.documentElement.namespaceURI;
-	var ns = n ? function(prefix) {
-		if (prefix == 'x') return n; else return null;
-	} : null;
-		var datablock = doc.evaluate('//td[@align="right" and @width="100%" and @valign="top"]', doc, ns, XPathResult.ANY_TYPE, null).iterateNext();
-		
-		var tableLabels = doc.evaluate('./table/tbody/tr[1]/td[@bgcolor="#dddddd"][1]|./table//table[1]//tr[1]/td[@bgcolor="#dddddd"][1]', datablock, ns, XPathResult.ANY_TYPE, null);
-
-		var titleBlock, authorBlock, publicationBlock, metaBlock, codeBlock, keywordBlock,  abstractBlock, referenceBlock;
-		var t = 0,  label;	// Table number and label
-		while ((label = tableLabels.iterateNext()) !== null) {
-			t++;
-			label = label.textContent;
-
-			switch (label) {
-				case "Названиепубликации":
-					titleBlock = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have titleBlock");
-					break;
-				case "Авторы":
-					authorBlock  = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have authorBlock");
-					break;
-				case "Журнал":
-				case "Издательство":
-					metaBlock = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have metaBlock");
-					break;
-				case "Коды":
-					codeBlock  = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have codeBlock");
-					break;
-				case "Ключевыеслова":
-					keywordBlock  = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have keywordBlock");
-					break;
-				case "Аннотация":
-					abstractBlock  = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have abstractBlock");
-					break;
-				case "Списоклитературы":
-					referenceBlock  = doc.evaluate('./table['+t+']',  datablock, ns, XPathResult.ANY_TYPE, null).iterateNext();
-					Zotero.debug("have referenceBlock");
-					break;
-				case "Переводнаяверсия":
-				default:
-					Zotero.debug("Unknown/unsupported block: "+ label);
-					break;
-			}
-		}
+		var datablock = ZU.xpath(doc, '//td[@align="left" and @valign="top"]//tr[2]/td[@align="left" and @valign="top"]');
 		
 		var item = new Zotero.Item();
 		/*var pdf = false;
 		// Now see if we have a free PDF to download
-		var pdfImage = doc.evaluate('//a/img[@src="/images/pdf_green.gif"]', doc, ns, XPathResult.ANY_TYPE, null).iterateNext();
+		var pdfImage = doc.evaluate('//a/img[@src="/images/pdf_green.gif"]', doc, null,XPathResult.ANY_TYPE, null).iterateNext();
 		if (pdfImage) {
 			// A green PDF is a free one. We need to construct the POST request
 			var postData = [], postField;
-			var postNode = doc.evaluate('//form[@name="results"]/input', doc, ns, XPathResult.ANY_TYPE, null);
+			var postNode = doc.evaluate('//form[@name="results"]/input', doc, null,XPathResult.ANY_TYPE, null);
 			while ((postField = postNode.iterateNext()) !== null) {
 				postData.push(postField.name + "=" +postField.value);
 			}
@@ -141,9 +88,13 @@ function scrape (doc) {
 
 		item.title = doc.title.match(/eLIBRARY.RU - (.*)/)[1];
 		
+		var title = ZU.xpathText(datablock, "./table[1]");
+		var authorBlock = ZU.xpath(datablock, "./table[2]");
+		
 		if (authorBlock) {
+			
 		// Sometimes we don't have links, just bold text
-		var authorNode = doc.evaluate('.//td[2]/center//b', authorBlock, ns, XPathResult.ANY_TYPE, null);
+		var authorNode = doc.evaluate('.//td[2]/span//b', authorBlock[0], null,XPathResult.ANY_TYPE, null);
 		while ((author = authorNode.iterateNext()) !== null) {
 			// Remove organizations; by URL or by node name
 			if ((author.href && !author.href.match(/org_about\.asp/)
@@ -181,31 +132,44 @@ function scrape (doc) {
 			} else { Zotero.debug("Skipping presumed affiliation: " + author.textContent) ; } 
 		}
 		}
+		
+		var metaBlock = ZU.xpath(datablock, "./table[3]//table");
+		
 		// This is the table of metadata. We could walk through it, but I found it easier
 		// to just make a 2-d array of XPaths of field names values.
 		var mapped = false;
-		var metaPieces = [['.//table[1]//tr[1]/td[1]','.//table[1]//tr[1]/td[2]'],
-							['.//table[1]//tr[2]/td[1]','.//table[1]//tr[2]/td[2]'],
-							['.//table[2]//tr[1]/td[1]','.//table[2]//tr[1]/td[2]'],
-							['.//table[2]//tr[1]/td[3]','.//table[2]//tr[1]/td[4]'],
-							['.//table[2]//tr[2]/td[1]','.//table[2]//tr[2]/td[2]'],
-							['.//table[2]//tr[2]/td[3]','.//table[2]//tr[2]/td[4]'],
-							['.//table[2]//tr[3]/td[1]','.//table[2]//tr[3]/td[2]'],
-							['.//table[2]//tr[3]/td[3]','.//table[2]//tr[3]/td[4]'],
-							['.//table[2]//tr[4]/td[1]','.//table[2]//tr[4]/td[2]'],
-							['.//table[2]//tr[4]/td[3]','.//table[2]//tr[4]/td[4]']]
+		var metaPieces = [['.//tr[1]/td[1]/text()[1]','.//tr[1]/td[1]/font[1]'],
+							['.//tr[1]/td[1]/text()[3]','.//tr[1]/td[1]/font[2]'],
+							['.//tr[3]/td[1]/text()[2]','.//tr[3]/td[1]/a[1]'],
+							['.//tr[3]/td[1]/text()[4]','.//tr[3]/td[1]/font[1]'],
+							['.//tr[3]/td[1]/text()[6]','.//tr[3]/td[1]/font[2]'],
+							['.//tr[5]/td[1]/text()[1]','.//tr[5]/td[1]/a[1]']]
 		for (i in metaPieces) {
 			mapped = mapper(metaPieces[i][0], metaPieces[i][1], metaBlock, doc);
 			item[mapped[0]] = mapped[1];
 		}
 		if (item.extra) item.extra = "Цитируемость в РИНЦ: " + item.extra;
+		
+		var journalBlock = ZU.xpath(datablock, "./table[4]");
+		item.publicationTitle = ZU.xpathText(journalBlock, ".//a[1]");
+		item.ISSN = ZU.xpathText(journalBlock, ".//tr[2]//font[last()]");
+	
+		var keywordBlock = ZU.xpath(datablock, "./table[5]")[0];
+		if (keywordBlock) {
+			var tag, tagNode = doc.evaluate('.//td[2]/a', keywordBlock, null,XPathResult.ANY_TYPE, null);
+			while ((tag = tagNode.iterateNext()) !== null)
+					item.tags.push(tag.textContent);
+		}
+	
+		var abstractBlock = ZU.xpath(datablock, "./table[6]")[0];
 		if (abstractBlock)
-			item.abstractNote = doc.evaluate('./tbody/tr/td[2]/table/tbody/tr/td/font', abstractBlock, ns, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+			item.abstractNote = ZU.xpathText(abstractBlock, './tbody/tr[2]/td[2]/p');
 		
 		// Set type
 		switch (item.itemType) {
 			case "обзорная статья": // Would be "review article"
 			case "научная статья":
+			case "статья в журнале":
 				item.itemType = "journalArticle";
 				break;
 			case "учебное пособие":
@@ -223,14 +187,14 @@ function scrape (doc) {
 		
 		/*if (referenceBlock) {
 			var note = Zotero.Utilities.trimInternal(
-							doc.evaluate('./tbody/tr/td[2]/table', referenceBlock, ns, XPathResult.ANY_TYPE, null)
+							doc.evaluate('./tbody/tr/td[2]/table', referenceBlock, null,XPathResult.ANY_TYPE, null)
 							.iterateNext().textContent);
 			Zotero.debug(note);
 			item.notes.push(note);
 		}*/
-		
+/*		
 		if (codeBlock) {
-			item.extra += ' '+ doc.evaluate('.//td[2]', codeBlock, ns, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+			item.extra += ' '+ doc.evaluate('.//td[2]', codeBlock, null,XPathResult.ANY_TYPE, null).iterateNext().textContent;
  			var doi = item.extra.match(/DOI: (10\.[^\s]+)/);
  			if (doi) {
 	 			item.DOI = doi[1];
@@ -238,12 +202,8 @@ function scrape (doc) {
 	 		}
  		}
 		
-		if (keywordBlock) {
-			var tag, tagNode = doc.evaluate('.//td[2]/a', keywordBlock, ns, XPathResult.ANY_TYPE, null);
-			while ((tag = tagNode.iterateNext()) !== null)
-					item.tags.push(tag.textContent);
-		}
-
+		
+*/
 		if (item.title.toUpperCase() == item.title) {
 			Zotero.debug("Trying to fix all-uppers");
 			item.title = item.title.substr(0,1) + item.title.toLowerCase().substr(1);
@@ -255,38 +215,41 @@ function scrape (doc) {
 }
 
 function mapper (from, to, block, doc) {
-	var name = doc.evaluate(from, block, null, XPathResult.ANY_TYPE, null).iterateNext();
-	var value = doc.evaluate(to, block, null, XPathResult.ANY_TYPE, null).iterateNext();
+	var name = ZU.xpath(block, from)[0];
+	var value = ZU.xpath(block, to)[0];
 	if (!name || !value) return false;
 	var key = false;
+	//Z.debug(name.textContent.trim())
 	switch (name.textContent.trim()) {
 		case "Журнал":
 			key = "publicationTitle"; break;
 		case "Издательство":
 			key = "publisher"; break;
-		case "Год издания":
-		case "Год выпуска":
+		case "Год издания:":
+		case "Год выпуска:":
+		case "Год:":
 			key = "date"; break;
 		case "Том":
 			key = "volume"; break;
-		case "Номер":
+		case "Номер:":
 			key = "issue"; break;
 		case "ISSN":
 			key = "ISSN"; break;
-		case "Страницы":
+		case "Страницы:":
 			key = "pages"; break;
-		case "Язык":
+		case "Язык:":
 			key = "language"; break;
 		case "Место издания":
 			key = "place"; break;
 		case "Цит. в РИНЦ":
 			key = "extra"; break;
-		case "Тип":
+		case "Тип:":
 			key = "itemType"; break;
 		default:
 			Zotero.debug("Unmapped field: "+name.textContent.trim());
 	}
 	return [key, value.textContent.trim()];
+	
 }/** BEGIN TEST CASES **/
 var testCases = [
 	{
@@ -303,7 +266,7 @@ var testCases = [
 				"creators": [
 					{
 						"firstName": "М. В.",
-						"lastName": "Свет",
+						"lastName": "СВЕТ",
 						"creatorType": "author"
 					}
 				],
@@ -312,14 +275,12 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [],
 				"title": "Иноязычные заимствования в художественной прозе на иврите в XX в",
-				"publicationTitle": "Вестник Московского университета. Серия 13: Востоковедение",
-				"publisher": "Издательство Московского государственного университета",
-				"date": "2007",
-				"ISSN": "0320-8095",
-				"extra": "Цитируемость в РИНЦ: 0",
-				"issue": "1",
-				"pages": "40-58",
 				"language": "русский",
+				"issue": "1",
+				"date": "2007",
+				"pages": "40-58",
+				"publicationTitle": "ВЕСТНИК МОСКОВСКОГО УНИВЕРСИТЕТА. СЕРИЯ 13: ВОСТОКОВЕДЕНИЕ",
+				"ISSN": "0320-8095",
 				"libraryCatalog": "eLibrary.ru"
 			}
 		]
@@ -332,52 +293,52 @@ var testCases = [
 				"itemType": "journalArticle",
 				"creators": [
 					{
-						"firstName": "Супрун Иван",
-						"lastName": "Иванович",
+						"firstName": "ИВАН ИВАНОВИЧ",
+						"lastName": "СУПРУН",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "Ульяновская Елена",
-						"lastName": "Владимировна",
+						"firstName": "ЕЛЕНА ВЛАДИМИРОВНА",
+						"lastName": "УЛЬЯНОВСКАЯ",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "Седов Евгений",
-						"lastName": "Николаевич",
+						"firstName": "ЕВГЕНИЙ НИКОЛАЕВИЧ",
+						"lastName": "СЕДОВ",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "Седышева Галина",
-						"lastName": "Алексеевна",
+						"firstName": "ГАЛИНА АЛЕКСЕЕВНА",
+						"lastName": "СЕДЫШЕВА",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "Серова Зоя",
-						"lastName": "Михайловна",
+						"firstName": "ЗОЯ МИХАЙЛОВНА",
+						"lastName": "СЕРОВА",
 						"creatorType": "author"
 					}
 				],
 				"notes": [],
 				"tags": [
-					"сорт",
-					"ЯБЛОНЯ",
-					"иммунитет",
+					"APPLE-TREE",
+					"IMMUNITY",
+					"SCAB",
+					"VARIETY",
+					"ИММУНИТЕТ",
 					"ПАРША",
-					"variety",
-					"apple-tree",
-					"Immunity",
-					"Scab"
+					"СОРТ",
+					"ЯБЛОНЯ"
 				],
 				"seeAlso": [],
 				"attachments": [],
 				"title": "Использование молекулярно-генетических методов установления закономерностей наследования для выявления доноров значимых признаков яблони",
-				"publicationTitle": "Плодоводство и виноградарство Юга России",
-				"publisher": "Северо-Кавказский зональный научно-исследовательский институт садоводства и виноградарства Россельхозакадемии",
-				"date": "2012",
-				"extra": "Цитируемость в РИНЦ: 0      УДК: 634.1:631.52",
-				"issue": "13",
-				"pages": "1-10",
 				"language": "русский",
+				"issue": "13",
+				"date": "2012",
+				"pages": "1-10",
+				"extra": "Цитируемость в РИНЦ: 1",
+				"publicationTitle": "ПЛОДОВОДСТВО И ВИНОГРАДАРСТВО ЮГА РОССИИ",
+				"ISSN": "2219-5335",
 				"abstractNote": "На основе полученных новых знаний по формированию и проявлению ценных селекционных признаков выделены новые доноры и комплексные доноры значимых признаков яблони.",
 				"libraryCatalog": "eLibrary.ru"
 			}

@@ -2,22 +2,17 @@
 	"translatorID": "58ab2618-4a25-4b9b-83a7-80cd0259f896",
 	"label": "Gallica",
 	"creator": "Sylvain Machefert",
-	"target": "^http://gallica\\.bnf\\.fr",
+	"target": "^https?://gallica\\.bnf\\.fr",
 	"minVersion": "1.0.0b3.r1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-04-27 13:03:31"
+	"lastUpdated": "2014-04-04 10:09:18"
 }
 
 function detectWeb(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
 	var indexSearch = url.toString().indexOf('http://gallica.bnf.fr/Search');
 	var indexArk = url.toString().indexOf('http://gallica.bnf.fr/ark:');
 	var indexSNE = url.toString().indexOf('http://gallica.bnf.fr/VisuSNE');
@@ -25,7 +20,7 @@ function detectWeb(doc, url) {
 	if (indexSearch == 0)
 	{
 		var errorXpath = '//div[@class="errorMessage"]';
-		if  (elt = doc.evaluate(errorXpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+		if  (elt = doc.evaluate(errorXpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			// We are on a search page result but it can be an empty result page.
 			// Nothing to return;
 		}
@@ -37,7 +32,7 @@ function detectWeb(doc, url) {
 	else if (indexArk == 0)
 	{
 		var iconxpath = '//div[@class="contenu1"]/img';
-		if (elt = doc.evaluate(iconxpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext())
+		if (elt = doc.evaluate(iconxpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext())
 		{
 			var icon = elt.getAttribute('src');
 			return getDoctypeGallica(icon);
@@ -45,7 +40,7 @@ function detectWeb(doc, url) {
 		
 		// For some biblio, the icon picture is located in another div ...
 		var iconxpath = '//div[@class="titrePeriodiqueGauche"]/img';
-		if  (elt = doc.evaluate(iconxpath, doc, nsResolver,
+		if  (elt = doc.evaluate(iconxpath, doc, null,
 		XPathResult.ANY_TYPE, null).iterateNext())
 		{
 			var icon = elt.getAttribute('src');
@@ -98,68 +93,63 @@ function getDoctypeGallica(img)
 }
 
 function doWeb(doc, url) {
-		var namespace = doc.documentElement.namespaceURI;
-		var nsResolver = namespace ? function(prefix) {
-				if (prefix == 'x') return namespace; else return null;
-		} : null;
-		
 		if (detectWeb(doc, url) == "multiple") 
 		{
-			var availableItems = new Array();
+			var availableItems = {};
 			var xpath = '//div[@class="resultats_line"]';
 			
-			var elmts = doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null);
+			var elmts = doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null);
 			var elmt = elmts.iterateNext();
 			
 			var itemsId = new Array();
 			
 			var i = 1;
 			do {
-				var id = doc.evaluate('.//div[@class="resultat_id"]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
-				var this_result = doc.evaluate('div[@class="resultat_desc"]/div[@class="titre"]/a', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+				var id = doc.evaluate('.//div[@class="resultat_id"]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+				var this_result = doc.evaluate('div[@class="resultat_desc"]/div[@class="titre"]/a', elmt, null, XPathResult.ANY_TYPE, null).iterateNext();
 				availableItems[i] = Zotero.Utilities.cleanTags(this_result.getAttribute('title'));
 				
 				i++;
 			} while (elmt = elmts.iterateNext());
 
-			var items = Zotero.selectItems(availableItems);
-			
-			for (var i in items) {
-				// All informations are available on search result page. We don't need to query 
-				// every subpage with scrape. We'are going to call the special Gallica scrape function
-				// This function (scrapeGallica) is reused in scrape.
-				var fullpath = '//div[@class="resultats_line"][' + i + ']';
-				
-				var item_element = doc.evaluate(fullpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
-				if (item_element != undefined)
-				{
-					var detail = doc.evaluate('.//div[@class="notice"]', item_element, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
-	
-					var iconType = doc.evaluate('.//span[@class="picto"]/img', item_element, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
-					var docType = getDoctypeGallica(iconType.getAttribute('src'));
+			Z.selectItems(availableItems, function(items) {
+				for (var i in items) {
+					// All informations are available on search result page. We don't need to query 
+					// every subpage with scrape. We'are going to call the special Gallica scrape function
+					// This function (scrapeGallica) is reused in scrape.
+					var fullpath = '//div[@class="resultats_line"][' + i + ']';
 					
-					var docUrl = doc.evaluate('.//div[@class="liens"]/a', item_element, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
-					docUrl = docUrl.getAttribute("href");
-					
-					scrapeGallica(doc, nsResolver, detail, docType, docUrl);
+					var item_element = doc.evaluate(fullpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+					if (item_element != undefined)
+					{
+						var detail = doc.evaluate('.//div[@class="notice"]', item_element, null, XPathResult.ANY_TYPE, null).iterateNext();
+		
+						var iconType = doc.evaluate('.//span[@class="picto"]/img', item_element, null, XPathResult.ANY_TYPE, null).iterateNext();
+						var docType = getDoctypeGallica(iconType.getAttribute('src'));
+						
+						var docUrl = doc.evaluate('.//div[@class="liens"]/a', item_element, null, XPathResult.ANY_TYPE, null).iterateNext();
+						docUrl = docUrl.getAttribute("href");
+						
+						scrapeGallica(doc,  detail, docType, docUrl);
+					}
 				}
-			}
+			})	
 		}
 		else
 		{
 			var docType = detectWeb(doc, url);
 			var xpath = '//div[@class="notice"]';
-			var detail = doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
-			scrapeGallica(doc, nsResolver, detail, docType, "");
+			var detail = doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+			scrapeGallica(doc,  detail, docType, "");
 		}
 }
 
-function scrapeGallica(doc, nsResolver, div, type, direct_url)
+function scrapeGallica(doc, div, type, direct_url)
 {
 	var item = new Zotero.Item;
 	item.itemType = type;
 	
-	var elmts = doc.evaluate('p', div, nsResolver, XPathResult.ANY_TYPE, null);
+	var elmts = doc.evaluate('p', div, null, XPathResult.ANY_TYPE, null);
 	
 	var elmt = elmts.iterateNext();
 
@@ -213,7 +203,7 @@ function scrapeGallica(doc, nsResolver, div, type, direct_url)
 			{
 				item.ISSN = temp;	
 			}
-			else if (contenu.match(/^http:\/\//))
+			else if (contenu.match(/^https?:\/\//))
 			{
 				// If identifier starts with http it is the url of the document
 				item.url = contenu;
@@ -286,13 +276,14 @@ var testCases = [
 				],
 				"seeAlso": [],
 				"attachments": [],
-				"language": "French",
+				"title": "Miguel Cervantès / par É. Cat,...",
+				"publisher": "Gedalge (Paris)",
+				"date": "1892",
+				"language": "Français",
 				"rights": "domaine public",
 				"url": "http://gallica.bnf.fr/ark:/12148/bpt6k58121413",
 				"libraryCatalog": "Gallica",
-				"title": "Miguel Cervantès / par É. Cat,...",
-				"publisher": "Gedalge (Paris)",
-				"date": "1892"
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	},

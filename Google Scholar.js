@@ -2,14 +2,14 @@
 	"translatorID": "57a00950-f0d1-4b41-b6ba-44ff0fc30289",
 	"label": "Google Scholar",
 	"creator": "Simon Kornblith, Frank Bennett, Aurimas Vinckevicius",
-	"target": "^https?://scholar\\.google\\.(?:com|cat|(?:com?\\.)?[a-z]{2})/scholar(?:_case)?\\?",
+	"target": "^https?://scholar\\.google\\.(?:com|cat|(?:com?\\.)?[a-z]{2})/(?:scholar(?:_case)?\\?|citations\\?)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsib",
-	"lastUpdated": "2012-07-21 22:55:01"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2014-03-17 19:59:24"
 }
 
 /*
@@ -45,9 +45,21 @@ var detectWeb = function (doc, url) {
 	if (url.indexOf('/scholar_case?') != -1 &&
 		url.indexOf('about=') == -1) {
 			return "case";
-	} else if( ZU.xpath(doc,
-		'//div[@class="gs_r"]//div[@class="gs_ri"]//a[contains(@href,"q=related:")]')
-		.length ) {
+	} else if(url.indexOf('/citations?') != -1) {
+		//individual saved citation
+		var link = ZU.xpathText(doc, '//a[@class="gsc_title_link"]/@href');
+		if(!link) return;
+		
+		if(link.indexOf('/patents?') != -1) {
+			return 'patent';
+		} else if(link.indexOf('/scholar_case?') != -1) {
+			return 'case';
+		} else {
+			//Can't distinguish book from journalArticle
+			//Both have "Journal" fields
+			return 'journalArticle';
+		}
+	} else if( getViableResults(doc).length ) {
 		return "multiple";
 	}
 }
@@ -81,11 +93,22 @@ function setGSPCookie(doc, cookie) {
 function setCookieThroughPrefs(doc, callback) {
 	url = doc.location.href.replace(/hl\=[^&]*&?/, "")
 			.replace("scholar?",
-				"scholar_setprefs?hl=en&scis=yes&scisf=4&submit=Save+Preferences&");
+				"scholar_settings?");
 	ZU.doGet(url, function(scisigDoc) {
 		var scisig = /<input\s+type="?hidden"?\s+name="?scisig"?\s+value="([^"]+)"/
 					.exec(scisigDoc);
-		url = url + "&scisig="+scisig[1];
+		if(!scisig) {
+			Z.debug('Could not locate scisig');
+			var form = scisigDoc.match(/<form.+?<\/form>/ig);
+			if(!form) {
+				Z.debug('No forms found on page.');
+				Z.debug(scisigDoc);
+			} else {
+				Z.debug(form.join('\n\n'));
+			}
+		}
+		url = url.replace("scholar_settings?", "scholar_setprefs?")
+			+ "&scis=yes&scisf=4&submit=&scisig="+scisig[1];
 		//set prefernces
 		Z.debug('Submitting settings to Google Scholar: ' + url);
 		ZU.doGet(url, function(response) { callback(doc); });
@@ -102,6 +125,7 @@ function prepareCookie(doc, callback) {
 		}
 		callback(doc);
 	} else {
+		Z.debug("Attempting to set cookie through GS Settings page");
 		//some proxies do not pass cookies through, so we need to set this by
 		//going to the preferences page
 		setCookieThroughPrefs(doc, callback);
@@ -130,7 +154,7 @@ function decrementCounter(doc) {
 
 //determine item type from a result node
 function determineType(result) {
-	var titleHref =  ZU.xpathText(result, './/h3[@class="gs_rt"]//a[1]/@href');
+	var titleHref =  ZU.xpathText(result, './/h3[@class="gs_rt"]/a[1]/@href');
 
 	if(titleHref) {
 		if(titleHref.indexOf('/scholar_case?') != -1) {
@@ -139,28 +163,36 @@ function determineType(result) {
 			return 'patent';
 		} else if(titleHref.indexOf('/books?') != -1) {
 			return 'book';
-		} else {
+		} else if(titleHref.indexOf('/citations?') == -1){
+			//not a saved citation
 			return 'article';
 		}
 	}
 
-	/**if there is no link (i.e. [CITATION]), we can determine this by
-	 * the second line.
+	/**if there is no link (i.e. [CITATION]), or we're looking at saved citations
+	 * we can determine this by the second line.
 	 * Patents have the word Patent here
 	 * Cases seem to always start with a number
-	 * Articles/books don't start with numbers
+	 * Books just have year after last dash
+	 * Articles are assumed to be everything else
 	 * 
 	 * This is probably not going to work with google scholar in other languages
 	 */
 	var subTitle = ZU.xpathText(result, './/div[@class="gs_a"]');
 	if(!subTitle) return 'article';
+	
+	subTitle = subTitle.trim();
 
-	if(subTitle.match(/\bpatent\s+\d/i)) {
+	if(subTitle.search(/\bpatent\s+\d/i) != -1) {
 		return 'patent';
 	}
 
-	if(subTitle.match(/^\s*\d/)) {
+	if(subTitle.search(/^\d/) != -1) {
 		return 'case';
+	}
+	
+	if(subTitle.search(/-\s*\d+$/) != -1) {
+		return 'book';
 	}
 
 	return 'article';
@@ -188,6 +220,13 @@ getAttachment.mimeTypes = {
  * Scraper functions *
  *********************/
 
+function getViableResults(doc) {
+	 return ZU.xpath(doc, '//div[@class="gs_r"]\
+					[.//div[@class="gs_fl"]/a[contains(@href,"q=info:")\
+						or contains(@href,"q=related:")\
+						or contains(@onclick, "gs_ocit(event")]]');
+}
+
 function scrapeArticleResults(doc, articles) {
 	for(var i=0, n=articles.length; i<n; i++) {
 		//using closure so we can link a doGet response to a PDF url
@@ -199,6 +238,14 @@ function scrapeArticleResults(doc, articles) {
 					translator.setString(text);
 	
 					translator.setHandler('itemDone', function(obj, item) {
+						if(item.creators.length) {
+							var lastCreatorIndex = item.creators.length-1,
+								lastCreator = item.creators[lastCreatorIndex];
+							if(lastCreator.lastName === "others" && lastCreator.firstName === "") {
+								item.creators.splice(lastCreatorIndex, 1);
+							}
+						}
+						
 						//clean author names
 						for(var j=0, m=item.creators.length; j<m; j++) {
 							if(!item.creators[j].firstName) continue;
@@ -211,11 +258,23 @@ function scrapeArticleResults(doc, articles) {
 						}
 
 						//attach linked page as snapshot if available
-						var snapshotUrl = ZU.xpathText(article.result,
-							'.//h3[@class="gs_rt"]//a/@href');
+						var snapshotUrl = ZU.xpath(article.result,
+							'(.//h3[@class="gs_rt"]/a\
+							|.//a[@class="gsc_title_link"])[1]');
+						if(snapshotUrl.length) {
+							snapshotUrl = snapshotUrl[0].href;
+						} else {
+							snapshotUrl = undefined;
+						}
+						
+						//don't attach snapshots of the citation view in google scholar
+						if(snapshotUrl && snapshotUrl.indexOf('/citations?') != -1) {
+							snapshotUrl = undefined;
+						}
+						
 						var linkTitle = ZU.xpathText(article.result,
-							'.//h3[@class="gs_rt"]');
-                        Zotero.debug("XXX - getting attachment: "+snapshotUrl+" "+linkTitle);
+							'(.//h3[@class="gs_rt"]|.//a[@class="gsc_title_link"])[1]');
+
 						var attachment;
 						if(linkTitle && snapshotUrl) {
 							//try to get an attachment
@@ -237,11 +296,19 @@ function scrapeArticleResults(doc, articles) {
 
 						//attach files linked on the right
 						var pdf = ZU.xpath(article.result,
-							'.//div[contains(@class,"gs_ri")]\
-							//a[./node()[starts-with(text(),"[")]]');
+							'(./div[contains(@class,"gs_fl")]\
+								//a[.//span[@class="gs_ctg2"]]\
+							|.//div[contains(@class,"gsc_title_ggi")]\
+								//a[.//span[@class="gsc_title_ggt"]])');
 						for(var i=0, n=pdf.length; i<n; i++) {
-							var attach = getAttachment(pdf[i].href,
-														pdf[i].textContent);
+							var title = pdf[i].childNodes[0];
+							if(title.classList.contains('gs_ctg2')
+								|| title.classList.contains('gsc_title_ggt')) {
+								//we actually want parent here on saved citation pages
+								title = title.parentNode;
+							}
+							var attach = getAttachment(pdf[i].href, title.textContent);
+							
 							if(!attach) continue;
 
 							//drop attachment linked by the main link
@@ -278,11 +345,28 @@ function scrapeArticleResults(doc, articles) {
 
 function scrapeCaseResults(doc, cases) {
 	for(var i=0, n=cases.length; i<n; i++) {
-		var titleString = ZU.xpathText(cases[i].result, './/h3[@class="gs_rt"]');
-		var citeletString = ZU.xpathText(cases[i].result, './/div[@class="gs_a"]');
+		var titleString = ZU.xpathText(cases[i].result, './/h3[@class="gs_rt"]')
+			|| ZU.xpathText(cases[i].result, './/a[@class="gsc_title_link"]');
+		var citeletString = ZU.xpathText(cases[i].result, './/div[@class="gs_a"]')
+			|| ZU.xpathText(cases[i].result, './/div[@class="gsc_merged_snippet"]/div[./following-sibling::div]');
+		
+		if(citeletString) citeletString = ZU.trimInternal(citeletString);
 	
 		var attachmentFrag = ZU.xpathText(cases[i].result,
-								'.//h3[@class="gs_rt"]//a/@href');
+			'(.//h3[@class="gs_rt"]/a|.//a[@class="gsc_title_link"])[1]/@href');
+		if(attachmentFrag.indexOf('/citations?') != -1) {
+			attachmentFrag = null;
+			//build attachment link when importing from saved citations
+			var caseId = ZU.xpathText(cases[i].result, '(.//div[@class="gs_fl"]\
+				/a[contains(@href,"cites=") or contains(@href,"about=")]/@href)[1]');
+			if(caseId) caseId = caseId.match(/\b(?:cites|about)=(\d+)/);
+			if(caseId) caseId = caseId[1];
+			if(caseId) {
+				attachmentFrag = 'http://scholar.google.com/scholar_case?'
+					+ 'case=' + caseId;
+			}
+		}
+		
 		if (attachmentFrag) {
 			var attachmentLinks = [attachmentFrag];
 		} else {
@@ -386,8 +470,25 @@ function scrapePatentResults(doc, patents) {
 					}
 
 					//attach google patents page
-					var patentUrl = ZU.xpathText(result,
-									'.//h3[@class="gs_rt"]//a[1]/@href');
+					var attachmentDone = false;
+					if(item.patentNumber && item.country) {
+						attachmentDone = true;
+						item.attachments.push({
+							title: 'Google Patents PDF',
+							url: 'http://patentimages.storage.googleapis.com/pdfs/'
+								+ item.country.toUpperCase()
+								+ item.patentNumber.replace(/\D+/g, '')
+								+ '.pdf',
+							mimeType: 'application/pdf'
+						});
+					}
+					
+					var patentUrl;
+					if(!attachmentDone && result) {
+						patentUrl = ZU.xpathText(result,
+							'(.//h3[@class="gs_rt"]/a[1]|//a[@class="gsc_title_link"])[1]/@href');
+					}
+					
 					if(patentUrl) {
 						item.attachments.push({
 							title: 'Google Patents page',
@@ -409,7 +510,7 @@ function scrapePatentResults(doc, patents) {
 /** Until SOP is "fixed" we'll scrape as much information as we can from the
  * result block instead of using Google Patents translator
 		var patentUrl = ZU.xpathText(patents[i].result,
-									'./h3[@class="gs_ri"]/a[1]/@href');
+									'.//h3[@class="gs_rt"]/a[1]/@href');
 
 		if(patentUrl) {
 			(function(doc, url) {
@@ -437,9 +538,36 @@ function scrapePatentResults(doc, patents) {
 
 
 function doWeb(doc, url) {
-	// Invoke the case or the listing scraper, as appropriate.
-	// In a listings page, this forces use of bibtex data and English page version
-	if (url.indexOf('/scholar_case?') != -1) {
+	var type = detectWeb(doc, url);
+	if(type != 'multiple' && url.indexOf('/citations?') != -1) {
+		//individual saved citation
+		var citationKey = ZU.xpathText(doc,
+			'(//div[@id="gsc_md_cont"]/form|//form[@id="gsc_eaf"])[1]\
+				/input[@name="s"]/@value'
+		);
+		if(!citationKey) throw new Error("Could not find citation key");
+		
+		var data = {
+			bibtexUrl: '/citations?view_op=export_citations&hl=en&citilm=1&cit_fmt=0'
+				+ '&citation_for_view=' + citationKey
+				+ '&s=' + citationKey,
+			result: doc.getElementById('gsc_ccl')
+		};
+		
+		switch(type) {
+			case 'patent':
+				scrapePatentResults(doc, [data]);
+			break;
+			case 'case':
+				scrapeCaseResults(doc, [data]);
+			break;
+			case 'book':
+			case 'journalArticle':
+				scrapeArticleResults(doc, [data]);
+		}
+	} else if(type == 'case') {
+		// Invoke the case or the listing scraper, as appropriate.
+		// In a listings page, this forces use of bibtex data and English page version
 		scrapeCase(doc, url);
 	} else {
 		/**Having RefWorks set in the preferences as the default citation export
@@ -448,19 +576,36 @@ function doWeb(doc, url) {
 		 * We should always be able to build bibtex links from the Related articles
 		 * link.
 		 */
-		var results = ZU.xpath(doc,
-			'//div[@class="gs_r"]\
-				[.//div[@class="gs_ri"]//a[contains(@href,"q=info:") or contains(@href,"q=related:")]]');
+		var results = getViableResults(doc);
 
 		var items = new Object();
 		var resultDivs = new Object();
 		var bibtexUrl;
 		for(var i=0, n=results.length; i<n; i++) {
 			bibtexUrl = ZU.xpathText(results[i],
-				'.//div[@class="gs_ri"]//a[contains(@href,"q=info:") or contains(@href,"q=related:")][1]/@href')
-				.replace(/\/scholar.*?\?/,'/scholar.bib?')
-				.replace(/=related:/,'=info:')
-				+ '&ct=citation&cd=1&output=citation';
+					'.//div[@class="gs_fl"]/a[contains(@href,"q=info:")\
+						or contains(@href,"q=related:")][1]/@href');
+			if(bibtexUrl) {
+				bibtexUrl = bibtexUrl.replace(/\/scholar.*?\?/,'/scholar.bib?')
+					.replace(/=related:/,'=info:')
+					+ '&ct=citation&cd=1&output=citation';
+			} else {
+				Z.debug('Could not find a good link to construct BibTeX URL\n'
+					+ 'Creating BibTeX URL from scratch');
+				bibtexUrl = ZU.xpathText(results[i],
+					'.//div[@class="gs_fl"]/a[contains(@onclick, "gs_ocit(event")]\
+						[1]/@onclick');
+				var id;
+				if(!bibtexUrl
+					|| !(id = bibtexUrl.match(/gs_ocit\(event,\s*(['"])([^)]+?)\1/)) ) {
+					if(!bibtexUrl) Z.debug('onclick not found');
+					throw new Error('Could not build a BibTeX URL');
+				}
+				
+				bibtexUrl = '/scholar.bib?q=info:' + id[2]	
+					+ ':scholar.google.com/&ct=citation&cd=1&output=citation';
+				Z.debug('Constructed BibTeX URL: ' + bibtexUrl);
+			}
 			items[bibtexUrl] = ZU.xpathText(results[i], './/h3[@class="gs_rt"]');
 
 			//keep the result div for extra information
@@ -702,7 +847,8 @@ ItemFactory.prototype.getTitle = function () {
 
 ItemFactory.prototype.getDocketNumber = function (doc) {
 	var docNumFrag = doc.evaluate(
-		'//center[preceding-sibling::center//h3[@id="gsl_case_name"]]',
+		'//center[preceding-sibling::center//h3[@id="gsl_case_name"]]\
+		| //div[@class="gsc_value" and preceding-sibling::div[text()="Docket id"]]',
 		doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 	if (docNumFrag) {
 		this.v.docketNumber = docNumFrag.textContent

@@ -2,14 +2,14 @@
 	"translatorID": "b56f856e-934e-4b46-bc58-d61dccc9f32f",
 	"label": "Mainichi Daily News",
 	"creator": "Frank Bennett",
-	"target": "^http://((?:search\\.)*mdn\\.)?mainichi\\.jp/(?:$|result\\?|mdnnews/|perspectives/|features?/|arts/|travel/|search/|english/)",
+	"target": "^https?://((?:search\\.)*mdn\\.)?mainichi\\.jp/(?:$|result\\?|mdnnews/|perspectives/|features?/|arts/|travel/|search/|english/)",
 	"minVersion": "2.0b7",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-07-12 23:02:38"
+	"lastUpdated": "2014-04-03 17:46:23"
 }
 
 // #################################
@@ -56,7 +56,7 @@ var doWeb = function (doc, url) {
 	type = detectWeb(doc, url);
 	if (type === "multiple") {
 		availableItems = {};
-		if (url.match(/^http:\/\/search\.mdn\.mainichi\.jp\/result\?|mainichi.jp\/search/)){
+		if (url.match(/^https?:\/\/search\.mdn\.mainichi\.jp\/result\?|mainichi.jp\/search/)){
 			xpath = '//div[@class="ResultTitle"]/a[contains(@href, "mdn.mainichi.jp")] | //div[@class="popIn_ArticleTitle"]/a[@class="popInLink"]';
 		} else {
 			xpath = '//h1[@class="NewsTitle"]/a[@href]|//ul[@class="Mark"]/li/a[@href]';
@@ -81,7 +81,6 @@ var doWeb = function (doc, url) {
 			for (var i in availableItems) {
 			scrapeAndParse(i, availableItems[i]);
 			}
-			Zotero.wait();	
 		});
 
 	} else if (type === "newspaperArticle") {
@@ -175,7 +174,7 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://mainichi.jp/english/english/newsselect/news/20120713p2g00m0dm036000c.html",
+		"url": "http://mainichi.jp/english/english/perspectives/news/20131230p2a00m0na010000c.html",
 		"items": [
 			{
 				"itemType": "newspaperArticle",
@@ -189,13 +188,14 @@ var testCases = [
 						"mimeType": "text/html"
 					}
 				],
-				"title": "Japan to push Tomioka silk mill as World Cultural Heritage candidate",
+				"title": "Editorial: Gov't compensation for nuclear disaster must respect range of choices",
 				"publicationTitle": "Mainichi Daily News",
 				"edition": "online edition",
-				"url": "http://mainichi.jp/english/english/newsselect/news/20120713p2g00m0dm036000c.html",
-				"date": "2012-07-13",
+				"url": "http://mainichi.jp/english/english/perspectives/news/20131230p2a00m0na010000c.html",
+				"date": "2013-12-30",
 				"libraryCatalog": "Mainichi Daily News",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"accessDate": "CURRENT_TIMESTAMP",
+				"shortTitle": "Editorial"
 			}
 		]
 	}

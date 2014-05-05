@@ -2,14 +2,14 @@
 	"translatorID": "a29d22b3-c2e4-4cc0-ace4-6c2326144332",
 	"label": "CABI - CAB Abstracts",
 	"creator": "Sebastian Karcher",
-	"target": "^https?://www\\.cabidirect\\.org/",
-	"minVersion": "2.1.9",
+	"target": "^https?://www\\.cabi?direct\\.org/",
+	"minVersion": "3.0.4",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsib",
-	"lastUpdated": "2012-05-11 06:22:36"
+	"lastUpdated": "2012-12-13 16:39:11"
 }
 
 /*
@@ -63,7 +63,7 @@ function detectWeb(doc, url) {
 		}
 	};
 	if (hwType) return hwType;
-	else if (url.match(/\/search\.html\?/)) {
+	else if (url.match(/\/search\.html/)) {
 		return "multiple";
 	}
 	return false;
@@ -123,7 +123,10 @@ function scrape(doc, url) {
 			}];
 			item.complete();
 		});
-		translator.translate();
+		translator.getTranslatorObject(function(trans) {
+			trans.options.itemType = type;
+			trans.doImport();
+		});
 	});
 }
 /** BEGIN TEST CASES **/

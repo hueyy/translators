@@ -1,605 +1,324 @@
 {
 	"translatorID": "96b9f483-c44d-5784-cdad-ce21b984fe01",
 	"label": "Amazon.com",
-	"creator": "Sean Takats and Michael Berkowitz",
+	"creator": "Sean Takats, Michael Berkowitz, and Simon Kornblith",
 	"target": "^https?://(?:www\\.)?amazon",
-	"minVersion": "2.1",
+	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-06-04 22:47:56"
+	"lastUpdated": "2014-04-18 13:56:21"
 }
 
 function detectWeb(doc, url) {
-	var suffixRe = new RegExp("https?://(?:www\.)?amazon\.([^/]+)/");
-	var suffixMatch = suffixRe.exec(url);
-	var suffix = suffixMatch[1];
-	var searchRe = new RegExp('^https?://(?:www\.)?amazon\.' + suffix + '/(gp/search/|exec/obidos/search-handle-url/|s/|s\\?|[^/]+/lm/|gp/richpub/)');
-	if(searchRe.test(doc.location.href)) {
+	if(getSearchResults(doc, url)) {
 		return (Zotero.isBookmarklet ? "server" : "multiple");
 	} else {
-		var xpath = '//input[@name="ASIN"]';
+		var xpath = '//input[contains(@name, "ASIN")]';
 		if(doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			if(Zotero.isBookmarklet) return "server";
 			
 			var elmt = doc.evaluate('//input[@name="storeID"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 			if(elmt) {
 				var storeID = elmt.value;
-				if (storeID=="books"){
-					return "book";
-				}
-				else if (storeID=="music"){
+				//Z.debug(storeID);
+				if (storeID=="music"|storeID=="dmusic"){
 					return "audioRecording";
-				}
-				else if (storeID=="dvd"|storeID=="video"|storeID=="movies-tv"){
+				} else if (storeID=="dvd"|storeID=="dvd-de"|storeID=="video"|storeID=="movies-tv"){
 					return "videoRecording";
-				}
-				else {
+				} else if (storeID=="videogames"|storeID=="mobile-apps") {
+					return "computerProgram";
+				} else {
 					return "book";
 				}
-			}
-			else {
+			} else {
 				return "book";
 			}
 		}
 	}
 }
 
-var suffix;
-function doWeb(doc, url) {
-	var suffixRe = new RegExp("https?://(?:www\.)?amazon\.([^/]+)/");
-	var suffixMatch = suffixRe.exec(url);
-	suffix = suffixMatch[1];
-
-	var searchRe = new RegExp('^https?://(?:www\.)?amazon\.' + suffix + '/(gp/search/|exec/obidos/search-handle-url/|s/|s\\?|[^/]+/lm/|gp/richpub/)');
-	var m = searchRe.exec(doc.location.href);
-	var uris = new Array();
-	if (suffix == "co.jp"){
-		suffix = "jp";
+function getSearchResults(doc, url) {
+	//search results
+	var links = [],
+		container = doc.getElementById('atfResults')
+			|| doc.getElementById('mainResults'); //e.g. http://www.amazon.com/Mark-LeBar/e/B00BU8L2DK
+	if(container) {
+		links = ZU.xpath(container, './div[starts-with(@id,"result_")]//h3/a')
 	}
-	if (suffix == ".com") suffix = "com";
-	if(m) {
-		var availableItems = new Array();
-		
-		
-		if(doc.location.href.match(/gp\/richpub\//)){ // Show selector for Guides
-			var xpath = '//a[(contains(@href, "ref=cm_syf_dtl_pl") or contains(@href, "ref=cm_syf_dtl_top")) and preceding-sibling::b]';
-		} else if (doc.location.href.match(/\/lm\//)) { // Show selector for Lists
-			var xpath = '//span[@id="lm_asinlink95"]//a'
-		} else { // Show selector for Search results
-			var xpath = '//div[@class="productTitle"]/a | //a[span[@class="srTitle"]] | //div[@class="title"]/a[@class="title"]| //h3[@class="title"]/a[@class="title"] | //h3[@class="newaps"]/a';
+	
+	if(!links.length) {
+		//wish lists
+		container = doc.getElementById('item-page-wrapper');
+		if(container) {
+			links = ZU.xpath(container, './/a[starts-with(@id, "itemName_")]');
 		}
-		var elmts = doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null);
-		var elmt = elmts.iterateNext();
-		var asins = new Array();
-		var i = 0;
-		var asinRe = new RegExp('/(dp|product)/([^/]+)/');
-		do {
-			var link = elmt.href;
-			var searchTitle = elmt.textContent;
-			if  (asinRe.exec(link)) {
-				var asinMatch = asinRe.exec(link);
-				availableItems[i] = searchTitle;
-				asins[i] = asinMatch[2];
-				i++;
-			}
-		} while (elmt = elmts.iterateNext());
-		
-		Zotero.selectItems(availableItems, function(items) {
-			if(!items) {
-				return true;
-			}
+	}
+	
+	if(!links.length) return false;
+	
+	var availableItems = {}, found = false,
+		asinRe = /\/(?:dp|product)\/(?:[^?#]+)\//;
+	for(var i=0; i<links.length; i++) {
+		var elmt = links[i];
+		if(asinRe.test(elmt.href)) {
+			availableItems[elmt.href] = elmt.textContent.trim();
+			found = true;
+		}
+	}
+	
+	return found ? availableItems : false;
+}
+
+function doWeb(doc, url) {
+	if(detectWeb(doc, url) == 'multiple') {
+		Zotero.selectItems(getSearchResults(doc, url), function(items) {
+			if(!items) return true;
 			
-			for(var i in items) {
-				var timestamp = encodeURIComponent(generateISODate());
-				var params = "AWSAccessKeyId=AKIAIPYIWJ24AGZJ64AA&AssociateTag=httpwwwdig0e7-20&ItemId=" + Zotero.Utilities.trim(asins[i]) + "&Operation=ItemLookup&ResponseGroup=ItemAttributes&Service=AWSECommerceService&Timestamp="+timestamp+"&Version=2011-08-01";
-				var signString = "GET\necs.amazonaws."+suffix+"\n/onca/xml\n"+params;
-				var signature = b64_hmac_sha256("054vk/Lt3LJMxch1srIHUbvI+2T/fZ6E5c0qwlbj", signString);
-				signature = encodeURIComponent(signature);
-				uris.push("http://ecs.amazonaws." + suffix + "/onca/xml?"+params+"&Signature="+signature+"%3D"); //wants the %3D for some reason
-			}
-			
-			Zotero.Utilities.HTTP.doGet(uris, parseXML, function() {Zotero.done();}, null);
+			var links = [];
+			for(var i in items) links.push(i);
+			Zotero.Utilities.processDocuments(links, scrape);
 		});
 
 	} else {
-		var elmts = doc.evaluate('//input[@name = "ASIN"]', doc, null, XPathResult.ANY_TYPE, null);
-		var elmt;
-		while(elmt = elmts.iterateNext()) {
-			var asin = elmt.value;
-		}
-		var timestamp = encodeURIComponent(generateISODate()); 
-		var params = "AWSAccessKeyId=AKIAIPYIWJ24AGZJ64AA&AssociateTag=httpwwwdig0e7-20&ItemId=" + Zotero.Utilities.trim(asin) + "&Operation=ItemLookup&ResponseGroup=ItemAttributes&Service=AWSECommerceService&Timestamp="+timestamp+"&Version=2011-08-01";
-		var signString = "GET\necs.amazonaws."+suffix+"\n/onca/xml\n"+params;
-		var signature = b64_hmac_sha256("054vk/Lt3LJMxch1srIHUbvI+2T/fZ6E5c0qwlbj", signString);
-		signature = encodeURIComponent(signature);		
-		uris.push("http://ecs.amazonaws." + suffix + "/onca/xml?"+params+"&Signature="+signature+"%3D"); //wants the %3D for some reason
-		Zotero.Utilities.HTTP.doGet(uris, parseXML, function() {Zotero.done();}, null);
+		scrape(doc, url);
 	}
-	Zotero.wait();
 }
 
-function parseXML(text) {
-	text = text.replace(/<!DOCTYPE[^>]*>/, "").replace(/<\?xml[^>]*\?>/, "");
-	var texts = text.split("<Items>");
-	texts = texts[1].split("</ItemLookupResponse>");
-	text = "<Items>" + texts[0];
-	var xml = (new DOMParser()).parseFromString(text, "text/xml");
-	var publisher = "";
+function addLink(doc, item) {
+	item.attachments.push({title:"Amazon.com Link", snapshot:false, mimeType:"text/html", url:doc.location.href});
+}
 
-	if (!ZU.xpath(xml, "//Errors").length) {
-		var publisher = getXPathNodeTrimmed(xml, "Publisher");
-		var binding = getXPathNodeTrimmed(xml, "Binding");
-		var productGroup = getXPathNodeTrimmed(xml, "ProductGroup");
-			
-		if (productGroup=="Book") {
-			var newItem = new Zotero.Item("book");
-			newItem.publisher = publisher;
-			getCreatorNodes(xml, "Author", newItem, "author");
-			getBookCreatorNodes(xml, newItem);
+
+var CREATOR = {
+	"Actors":"castMember",
+	"Directors":"director",
+	"Producers":"producer"
+};
+
+var DATE = [
+	"Original Release Date",
+	"DVD Release Date"
+];
+
+//localization
+var i15dFields = {
+	'ISBN' : ['ISBN-13', 'ISBN-10', 'ISBN', '条形码'],
+	'Publisher': ['Publisher', 'Verlag', 'Editora', '出版社', 'Editeur',  'Éditeur', 'Editore', 'Editor'],
+	'Hardcover': ['Hardcover', 'Gebundene Ausgabe', '精装', 'ハードカバー', 'Relié', 'Copertina rigida', 'Tapa dura'],
+	'Paperback' : ['Paperback', 'Taschenbuch', '平装', 'ペーパーバック', 'Broché', 'Copertina flessibile', 'Tapa blanda'],
+	'Print Length' : ['Print Length', 'Seitenzahl der Print-Ausgabe', '紙の本の長さ', "Nombre de pages de l'édition imprimée", "Longueur d'impression", 'Lunghezza stampa', 'Longitud de impresión', 'Número de páginas'],//TODO: Chinese label
+	'Language' : ['Language', 'Sprache', '语种', '言語', 'Langue', 'Lingua', 'Idioma'],
+	'Actors' : ['Actors', 'Darsteller', 'Acteurs', 'Attori', 'Actores', '出演'],
+	'Directors' : ['Directors', 'Regisseur(e)', 'Réalisateurs', 'Regista', 'Directores', '監督'],
+	'Producers' : ['Producers'],
+	'Run Time' : ['Run Time', 'Spieldauer', 'Durée', 'Durata', 'Duración', '時間'],
+	'Studio' : ['Studio', 'Estudio', '販売元'],
+	'Audio CD' : ['Audio CD', 'CD', 'CD de audio'],
+	'Label' : ['Label', 'Etichetta', 'Étiquette', 'Sello', '发行公司', 'レーベル'],
+	'Total Length' : ['Total Length', 'Gesamtlänge', 'Durée totale', 'Lunghezza totale', 'Duración total', '収録時間'],
+	'Translator' : ["Translator", "Übersetzer", "Traduttore", "Traductor", "翻訳"],
+	'Illustrator' : ["Illustrator", "Illustratore", "Ilustrador", "イラスト"]
+};
+
+function getField(info, field) {
+	//returns the value for the key 'field' or any of its
+	//corresponding (language specific) keys of the array 'info'
+	
+	if(!i15dFields[field]) return;
+	
+	for(var i=0; i<i15dFields[field].length; i++) {
+		if(info[i15dFields[field][i]] !== undefined) return info[i15dFields[field][i]];	
+	}
+}
+
+function get_nextsibling(n) {
+	//returns next sibling of n, or if it was the last one
+	//returns next sibling of its parent node, or... --> while(x == null)
+	//accepts only element nodes (type 1) or nonempty textnode (type 3)
+	//and skips everything else
+	var x=n.nextSibling;
+	while (x == null || (x.nodeType != 1 && (x.nodeType != 3 || x.textContent.match(/^\s*$/) ))) {
+		if (x==null) {
+			x = get_nextsibling(n.parentNode);
+		} else {
+			x=x.nextSibling;
 		}
-		else if (productGroup == "Music") {
-			var newItem = new Zotero.Item("audioRecording");
-			newItem.label = publisher;
-			newItem.audioRecordingType = binding;
-			getCreatorNodes(xml, "Artist", newItem, "performer");
-		}
-		else if (productGroup == "DVD" | productGroup == "Video") {
-			var newItem = new Zotero.Item("videoRecording");
-			newItem.studio = publisher;
-			newItem.videoRecordingType = binding;
-			getCreatorNodes(xml, "Actor", newItem, "castMember");
-			getCreatorNodes(xml, "Director", newItem, "director");
-		}
-		else{
-			var newItem = new Zotero.Item("book");
-			newItem.publisher = publisher;
-			getCreatorNodes(xml, "Author", newItem, "author");
-			getBookCreatorNodes(xml, newItem);
-		}
+	}
+	return x;	
+}
+
+function scrape(doc, url) {
+	// Scrape HTML for items without ISBNs, because Amazon doesn't provide an easy way for
+	// open source projects like us to use their API
+	Z.debug("Scraping from Page")		
+	var department = ZU.xpathText(doc, '//li[contains(@class, "nav-category-button")]/a').trim();
+	var item = new Zotero.Item(detectWeb(doc, url) || "book");
+
+	
+	// Old design
+	var titleNode = ZU.xpath(doc, '//span[@id="btAsinTitle"]')[0] ||
+	// New design encountered 06/30/2013					
+		ZU.xpath(doc, '//h1[@id="title"]/span')[0]||
+		ZU.xpath(doc, '//h1[@id="title"]')[0]||
+		ZU.xpath(doc, '//div[@id="title_row"]')[0]
 		
-		newItem.runningTime = getXPathNodeTrimmed(xml, "RunningTime");
+	item.title = ZU.trimInternal(titleNode.textContent).replace(/(?: [(\[].+[)\]])+$/, "");
+	
+	var nextLine = get_nextsibling(titleNode);
+	if ( ZU.xpath(nextLine, './/a[@href]').length == 0 &&  nextLine.tagName != "A") { //e.g. http://www.amazon.com/dp/1118728963
+		nextLine = get_nextsibling(nextLine);
+	}
+
+	//we dont want div id=contributorContainer...
+	//or some fake link with javascript functions...
+	authors = ZU.xpath(nextLine, './a[@href] | ./span/a[@href] | ./span/span//a[@href]');
+	if (authors.length == 0) authors = [ nextLine ];
+	for(var i=0; i<authors.length; i++) {
+		var author = authors[i].textContent.trim().replace(/\([^\)]*\)/,"");
+		if(author) {
+			var creatorRoleNode = get_nextsibling(authors[i]);
+			if (creatorRoleNode.tagName == "A") {
+				creatorRoleNode = get_nextsibling(creatorRoleNode);
+			}
+			var creatorRoleText = ZU.trimInternal(creatorRoleNode.textContent).replace("(","").replace(")","");
+			if (i15dFields["Translator"].indexOf(creatorRoleText) > -1) {
+				item.creators.push(ZU.cleanAuthor(author, 'translator'));
+			} else if (i15dFields["Illustrator"].indexOf(creatorRoleText) > -1) {
+				item.creators.push(ZU.cleanAuthor(author, 'contributor'));
+			} else {
+				item.creators.push(ZU.cleanAuthor(author, 'author'));
+			}
+			if (item.creators[item.creators.length -1].firstName == "") {
+				item.creators[item.creators.length -1].fieldMode = 1;
+				delete item.creators[item.creators.length -1].firstName;
+			}
+		}
+	}
+	
+	//Abstract
+	var abstractNode = doc.getElementById('postBodyPS');
+	if (abstractNode) {
+		item.abstractNote = abstractNode.textContent.trim();
+		if (!item.abstractNote) {
+			var iframe = abstractNode.getElementsByTagName('iframe')[0];
+			if(iframe) {
+				abstractNode = iframe.contentWindow.document.getElementById('iframeContent');
+				item.abstractNote = abstractNode.textContent.trim();
+			}
+		}
+	}
+	
+	// Extract info into an array
+	var info = {},
+		els = ZU.xpath(doc, '//div[@class="content"]/ul/li[b]');
+	if(els.length) {
+		for(var i=0; i<els.length; i++) {
+			var el = els[i],
+				key = ZU.xpathText(el, 'b[1]').trim()
+			if(key) {
+				info[key.replace(/\s*:$/, "")] = el.textContent.substr(key.length+1).trim();
+			}
+		}
+	} else {
+		// New design encountered 06/30/2013
+		els = ZU.xpath(doc, '//tr[td[@class="a-span3"]][td[@class="a-span9"]]');
+		for(var i=0; i<els.length; i++) {
+			var el = els[i],
+				key = ZU.xpathText(el, 'td[@class="a-span3"]'),
+				value = ZU.xpathText(el, 'td[@class="a-span9"]');
+			if(key && value) info[key.trim()] = value.trim();
+		}
+	}
+	// Date
+	for(var i=0; i<DATE.length; i++) {
+		item.date = info[DATE[i]];
+		if(item.date) break;
+	}
+	if(!item.date) {
+		for(var i in info) {
+			var m = /\(([^)]+ [0-9]{4})\)/.exec(info[i]);
+			if(m) item.date = m[1];
+		}
+	}
+	
+	// Books
+	var publisher = getField(info, 'Publisher');
+	if(publisher) {
+		var m = /([^;(]+)(?:; *([^(]*))?( \([^)]*\))?/.exec(publisher);
+		item.publisher = m[1];
+		item.edition = m[2];
+	}
+	item.ISBN = getField(info, 'ISBN');
+	if (item.ISBN) {
+		item.ISBN = ZU.cleanISBN(item.ISBN);
+	}
+	var pages = getField(info, 'Hardcover') || getField(info, 'Paperback') || getField(info, 'Print Length');
+	if(pages) item.numPages = parseInt(pages, 10);
+	item.language = getField(info, 'Language');
+	//add publication place from ISBN translator, see at the end
+	
+	// Video
+	var clearedCreators = false;
+	for(var i in CREATOR) {
+		if(getField(info, i)) {
+			if(!clearedCreators) {
+				item.creators = [];
+				clearedCreators = true;
+			}
+			var creators = getField(info, i).split(/ *, */);
+			for(var j=0; j<creators.length; j++) {
+				item.creators.push(ZU.cleanAuthor(creators[j], CREATOR[i]));
+			}
+		}
+	}
+	item.studio = getField(info, 'Studio');
+	item.runningTime = getField(info, 'Run Time');
+	if (!item.runningTime) item.runningTime = getField(info, 'Total Length');
+	item.language = getField(info, 'Language');
+	// Music
+	item.label = getField(info, 'Label');
+	if(getField(info, 'Audio CD')) {
+		item.audioRecordingType = "Audio CD";
+	} else if(department == "Amazon MP3 Store") {
+		item.audioRecordingType = "MP3";
+	}
+	
+	addLink(doc, item);
+	
+	//we search for translators for a given ISBN
+	//and try to figure out the missing publication place
+	if(item.ISBN && !item.place) {
+		Z.debug("Searching for additional metadata by ISBN: " + item.ISBN);
+		var search = Zotero.loadTranslator("search");
+		search.setHandler("translators", function(obj, translators) {
+			search.setTranslator(translators);
+			search.setHandler("itemDone", function(obj, lookupItem) {
+				Z.debug(lookupItem.libraryCatalog);
+				if (lookupItem.place) {
+					//e.g. [Paris]
+					item.place = lookupItem.place.replace("[","").replace("]","");
+				}
+			});
+			search.translate();
+		});
+		search.setHandler("error", function(error) {
+			// we mostly need this handler to prevent the default one from kicking in
+			Z.debug("ISBN search for " + item.ISBN + " failed: " + error);
+		});
+		search.setHandler("done", function() {
+			item.complete();
+		});
+		search.setSearch({ ISBN: item.ISBN });
+		search.getTranslators();
 		
-		//Retrieve Creators as Authors if no creator found above
-		if (newItem.creators.length == 0){
-			getDefaultCreatorNodes(xml,newItem);
-		}
-		
-		newItem.date = getXPathNodeTrimmed(xml, "PublicationDate");
-		if (!newItem.date){
-			newItem.date = getXPathNodeTrimmed(xml, "ReleaseDate");
-		}
-		newItem.edition = getXPathNodeTrimmed(xml, "Edition");
-		newItem.ISBN = getXPathNodeTrimmed(xml, "ISBN");
-		newItem.numPages = getXPathNodeTrimmed(xml, "NumberOfPages");
-		var title = getXPathNodeTrimmed(xml, "Title");
-		if(title.lastIndexOf("(") != -1 && title.lastIndexOf(")") == title.length-1) {
-			title = title.substring(0, title.lastIndexOf("(")-1);
-		}
-		var ASIN = getXPathNodeTrimmed(xml, "ASIN");
-		if (ASIN){
-			var url = "http://www.amazon." + suffix + "/dp/" + ASIN;
-			newItem.attachments.push({title:"Amazon.com Link", snapshot:false, mimeType:"text/html", url:url});
-		}
-		
-		newItem.extra = getXPathNodeTrimmed(xml, "OriginalReleaseDate");
-		
-		newItem.title = title;
-		newItem.complete();
+	} else {
+		item.complete();
 	}
+	
 }
-
-function getXPathNodeTrimmed(xml, name) {
-	var node = ZU.xpath(xml, "//"+name);
-	var val = "";
-	if(node.length){
-		val = Zotero.Utilities.trimInternal(node[0].textContent);
-	}
-	return val;
-}
-
-function getCreatorNodes(xml, name, newItem, creatorType) {
-	var nodes = ZU.xpath(xml, "//"+name);
-	for(var i=0; i<nodes.length; i++) {
-		newItem.creators.push(Zotero.Utilities.cleanAuthor(nodes[i].textContent, creatorType));
-	}
-}
-function getBookCreatorNodes(xml, newItem) {
-	var roleArray = new Array;
-	var roles = ZU.xpath(xml,"//"+"Creator/@Role");
-	for(var i=0; i<roles.length; i++){
-		roleArray.push(roles[i].textContent.toLowerCase());
-		fixRoleArray(roleArray); /*Ensures that book editors, 
-			translators, series editors, and contributors are 
-			scraped as such and ignores other creators*/
-	}
-	var nodes = ZU.xpath(xml, "//Creator");
-	for(var i=0; i<nodes.length; i++) {
-		if(roleArray[i] != "other"){
-			newItem.creators.push(Zotero.Utilities.cleanAuthor(nodes[i].textContent, roleArray[i]));
-		}
-	}
-}
-
-function getDefaultCreatorNodes(xml, newItem) {
-	var roleArray = new Array
-	var roles = ZU.xpath(xml,"//"+"Creator/@Role");
-	for(var i=0; i<roles.length; i++){
-		roleArray.push(roles[i].textContent.toLowerCase())
-	}
-	var nodes = ZU.xpath(xml, "//Creator");
-	for(var i=0; i<nodes.length; i++) {
-		newItem.creators.push(Zotero.Utilities.cleanAuthor(nodes[i].textContent, roleArray[i]));
-	}
-}
-
-function fixRoleArray(roleArray){
-	/*used for books only*/
-	for(var i=0; i<roleArray.length; i++){
-		switch(roleArray[i]){
-			case "author":
-				break;
-			case "translator":
-				break;
-			case "editor":
-				break;
-			case "series editor":
-				break;
-			case "contributor":
-				break;
-			default:
-				roleArray[i] = "other";
-		}
-	}
-}
-
-function generateISODate(){
-	var ts = new Date();
-	var isodate = ts.getUTCFullYear()+"-"+Zotero.Utilities.lpad(ts.getUTCMonth()+1, "0", 2)+"-"+Zotero.Utilities.lpad(ts.getUTCDate(), "0", 2)+"T"+Zotero.Utilities.lpad(ts.getUTCHours(), "0", 2)+":"+Zotero.Utilities.lpad(ts.getUTCMinutes(), "0", 2)+":"+Zotero.Utilities.lpad(ts.getUTCSeconds(), "0", 2)+"Z";
-	return isodate;
-}
-
-/*
- * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
- * in FIPS 180-2
- * Version 2.2 Copyright Angel Marin, Paul Johnston 2000 - 2009.
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- * Distributed under the BSD License
- * See http://pajhome.org.uk/crypt/md5 for details.
- * Also http://anmar.eu.org/projects/jssha2/
- */
-
-/*
- * Configurable variables. You may need to tweak these to be compatible with
- * the server-side, but the defaults work in most cases.
- */
-var hexcase = 0;  /* hex output format. 0 - lowercase; 1 - uppercase        */
-var b64pad  = ""; /* base-64 pad character. "=" for strict RFC compliance   */
-
-/*
- * These are the functions you'll usually want to call
- * They take string arguments and return either hex or base-64 encoded strings
- */
-function hex_sha256(s)    { return rstr2hex(rstr_sha256(str2rstr_utf8(s))); }
-function b64_sha256(s)    { return rstr2b64(rstr_sha256(str2rstr_utf8(s))); }
-function any_sha256(s, e) { return rstr2any(rstr_sha256(str2rstr_utf8(s)), e); }
-function hex_hmac_sha256(k, d)
-  { return rstr2hex(rstr_hmac_sha256(str2rstr_utf8(k), str2rstr_utf8(d))); }
-function b64_hmac_sha256(k, d)
-  { return rstr2b64(rstr_hmac_sha256(str2rstr_utf8(k), str2rstr_utf8(d))); }
-function any_hmac_sha256(k, d, e)
-  { return rstr2any(rstr_hmac_sha256(str2rstr_utf8(k), str2rstr_utf8(d)), e); }
-
-/*
- * Perform a simple self-test to see if the VM is working
- */
-function sha256_vm_test()
-{
-  return hex_sha256("abc").toLowerCase() ==
-			"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
-}
-
-/*
- * Calculate the sha256 of a raw string
- */
-function rstr_sha256(s)
-{
-  return binb2rstr(binb_sha256(rstr2binb(s), s.length * 8));
-}
-
-/*
- * Calculate the HMAC-sha256 of a key and some data (raw strings)
- */
-function rstr_hmac_sha256(key, data)
-{
-  var bkey = rstr2binb(key);
-  if(bkey.length > 16) bkey = binb_sha256(bkey, key.length * 8);
-
-  var ipad = Array(16), opad = Array(16);
-  for(var i = 0; i < 16; i++)
-  {
-	ipad[i] = bkey[i] ^ 0x36363636;
-	opad[i] = bkey[i] ^ 0x5C5C5C5C;
-  }
-
-  var hash = binb_sha256(ipad.concat(rstr2binb(data)), 512 + data.length * 8);
-  return binb2rstr(binb_sha256(opad.concat(hash), 512 + 256));
-}
-
-/*
- * Convert a raw string to a hex string
- */
-function rstr2hex(input)
-{
-  try { hexcase } catch(e) { hexcase=0; }
-  var hex_tab = hexcase ? "0123456789ABCDEF" : "0123456789abcdef";
-  var output = "";
-  var x;
-  for(var i = 0; i < input.length; i++)
-  {
-	x = input.charCodeAt(i);
-	output += hex_tab.charAt((x >>> 4) & 0x0F)
-		   +  hex_tab.charAt( x        & 0x0F);
-  }
-  return output;
-}
-
-/*
- * Convert a raw string to a base-64 string
- */
-function rstr2b64(input)
-{
-  try { b64pad } catch(e) { b64pad=''; }
-  var tab = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  var output = "";
-  var len = input.length;
-  for(var i = 0; i < len; i += 3)
-  {
-	var triplet = (input.charCodeAt(i) << 16)
-				| (i + 1 < len ? input.charCodeAt(i+1) << 8 : 0)
-				| (i + 2 < len ? input.charCodeAt(i+2)      : 0);
-	for(var j = 0; j < 4; j++)
-	{
-	  if(i * 8 + j * 6 > input.length * 8) output += b64pad;
-	  else output += tab.charAt((triplet >>> 6*(3-j)) & 0x3F);
-	}
-  }
-  return output;
-}
-
-/*
- * Convert a raw string to an arbitrary string encoding
- */
-function rstr2any(input, encoding)
-{
-  var divisor = encoding.length;
-  var remainders = Array();
-  var i, q, x, quotient;
-
-  /* Convert to an array of 16-bit big-endian values, forming the dividend */
-  var dividend = Array(Math.ceil(input.length / 2));
-  for(i = 0; i < dividend.length; i++)
-  {
-	dividend[i] = (input.charCodeAt(i * 2) << 8) | input.charCodeAt(i * 2 + 1);
-  }
-
-  /*
-   * Repeatedly perform a long division. The binary array forms the dividend,
-   * the length of the encoding is the divisor. Once computed, the quotient
-   * forms the dividend for the next step. We stop when the dividend is zero.
-   * All remainders are stored for later use.
-   */
-  while(dividend.length > 0)
-  {
-	quotient = Array();
-	x = 0;
-	for(i = 0; i < dividend.length; i++)
-	{
-	  x = (x << 16) + dividend[i];
-	  q = Math.floor(x / divisor);
-	  x -= q * divisor;
-	  if(quotient.length > 0 || q > 0)
-		quotient[quotient.length] = q;
-	}
-	remainders[remainders.length] = x;
-	dividend = quotient;
-  }
-
-  /* Convert the remainders to the output string */
-  var output = "";
-  for(i = remainders.length - 1; i >= 0; i--)
-	output += encoding.charAt(remainders[i]);
-
-  /* Append leading zero equivalents */
-  var full_length = Math.ceil(input.length * 8 /
-									(Math.log(encoding.length) / Math.log(2)))
-  for(i = output.length; i < full_length; i++)
-	output = encoding[0] + output;
-
-  return output;
-}
-
-/*
- * Encode a string as utf-8.
- * For efficiency, this assumes the input is valid utf-16.
- */
-function str2rstr_utf8(input)
-{
-  var output = "";
-  var i = -1;
-  var x, y;
-
-  while(++i < input.length)
-  {
-	/* Decode utf-16 surrogate pairs */
-	x = input.charCodeAt(i);
-	y = i + 1 < input.length ? input.charCodeAt(i + 1) : 0;
-	if(0xD800 <= x && x <= 0xDBFF && 0xDC00 <= y && y <= 0xDFFF)
-	{
-	  x = 0x10000 + ((x & 0x03FF) << 10) + (y & 0x03FF);
-	  i++;
-	}
-
-	/* Encode output as utf-8 */
-	if(x <= 0x7F)
-	  output += String.fromCharCode(x);
-	else if(x <= 0x7FF)
-	  output += String.fromCharCode(0xC0 | ((x >>> 6 ) & 0x1F),
-									0x80 | ( x         & 0x3F));
-	else if(x <= 0xFFFF)
-	  output += String.fromCharCode(0xE0 | ((x >>> 12) & 0x0F),
-									0x80 | ((x >>> 6 ) & 0x3F),
-									0x80 | ( x         & 0x3F));
-	else if(x <= 0x1FFFFF)
-	  output += String.fromCharCode(0xF0 | ((x >>> 18) & 0x07),
-									0x80 | ((x >>> 12) & 0x3F),
-									0x80 | ((x >>> 6 ) & 0x3F),
-									0x80 | ( x         & 0x3F));
-  }
-  return output;
-}
-
-/*
- * Encode a string as utf-16
- */
-function str2rstr_utf16le(input)
-{
-  var output = "";
-  for(var i = 0; i < input.length; i++)
-	output += String.fromCharCode( input.charCodeAt(i)        & 0xFF,
-								  (input.charCodeAt(i) >>> 8) & 0xFF);
-  return output;
-}
-
-function str2rstr_utf16be(input)
-{
-  var output = "";
-  for(var i = 0; i < input.length; i++)
-	output += String.fromCharCode((input.charCodeAt(i) >>> 8) & 0xFF,
-								   input.charCodeAt(i)        & 0xFF);
-  return output;
-}
-
-/*
- * Convert a raw string to an array of big-endian words
- * Characters >255 have their high-byte silently ignored.
- */
-function rstr2binb(input)
-{
-  var output = Array(input.length >> 2);
-  for(var i = 0; i < output.length; i++)
-	output[i] = 0;
-  for(var i = 0; i < input.length * 8; i += 8)
-	output[i>>5] |= (input.charCodeAt(i / 8) & 0xFF) << (24 - i % 32);
-  return output;
-}
-
-/*
- * Convert an array of big-endian words to a string
- */
-function binb2rstr(input)
-{
-  var output = "";
-  for(var i = 0; i < input.length * 32; i += 8)
-	output += String.fromCharCode((input[i>>5] >>> (24 - i % 32)) & 0xFF);
-  return output;
-}
-
-/*
- * Main sha256 function, with its support functions
- */
-function sha256_S (X, n) {return ( X >>> n ) | (X << (32 - n));}
-function sha256_R (X, n) {return ( X >>> n );}
-function sha256_Ch(x, y, z) {return ((x & y) ^ ((~x) & z));}
-function sha256_Maj(x, y, z) {return ((x & y) ^ (x & z) ^ (y & z));}
-function sha256_Sigma0256(x) {return (sha256_S(x, 2) ^ sha256_S(x, 13) ^ sha256_S(x, 22));}
-function sha256_Sigma1256(x) {return (sha256_S(x, 6) ^ sha256_S(x, 11) ^ sha256_S(x, 25));}
-function sha256_Gamma0256(x) {return (sha256_S(x, 7) ^ sha256_S(x, 18) ^ sha256_R(x, 3));}
-function sha256_Gamma1256(x) {return (sha256_S(x, 17) ^ sha256_S(x, 19) ^ sha256_R(x, 10));}
-function sha256_Sigma0512(x) {return (sha256_S(x, 28) ^ sha256_S(x, 34) ^ sha256_S(x, 39));}
-function sha256_Sigma1512(x) {return (sha256_S(x, 14) ^ sha256_S(x, 18) ^ sha256_S(x, 41));}
-function sha256_Gamma0512(x) {return (sha256_S(x, 1)  ^ sha256_S(x, 8) ^ sha256_R(x, 7));}
-function sha256_Gamma1512(x) {return (sha256_S(x, 19) ^ sha256_S(x, 61) ^ sha256_R(x, 6));}
-
-var sha256_K = new Array
-(
-  1116352408, 1899447441, -1245643825, -373957723, 961987163, 1508970993,
-  -1841331548, -1424204075, -670586216, 310598401, 607225278, 1426881987,
-  1925078388, -2132889090, -1680079193, -1046744716, -459576895, -272742522,
-  264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986,
-  -1740746414, -1473132947, -1341970488, -1084653625, -958395405, -710438585,
-  113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291,
-  1695183700, 1986661051, -2117940946, -1838011259, -1564481375, -1474664885,
-  -1035236496, -949202525, -778901479, -694614492, -200395387, 275423344,
-  430227734, 506948616, 659060556, 883997877, 958139571, 1322822218,
-  1537002063, 1747873779, 1955562222, 2024104815, -2067236844, -1933114872,
-  -1866530822, -1538233109, -1090935817, -965641998
-);
-
-function binb_sha256(m, l)
-{
-  var HASH = new Array(1779033703, -1150833019, 1013904242, -1521486534,
-					   1359893119, -1694144372, 528734635, 1541459225);
-  var W = new Array(64);
-  var a, b, c, d, e, f, g, h;
-  var i, j, T1, T2;
-
-  /* append padding */
-  m[l >> 5] |= 0x80 << (24 - l % 32);
-  m[((l + 64 >> 9) << 4) + 15] = l;
-
-  for(i = 0; i < m.length; i += 16)
-  {
-	a = HASH[0];
-	b = HASH[1];
-	c = HASH[2];
-	d = HASH[3];
-	e = HASH[4];
-	f = HASH[5];
-	g = HASH[6];
-	h = HASH[7];
-
-	for(j = 0; j < 64; j++)
-	{
-	  if (j < 16) W[j] = m[j + i];
-	  else W[j] = safe_add(safe_add(safe_add(sha256_Gamma1256(W[j - 2]), W[j - 7]),
-											sha256_Gamma0256(W[j - 15])), W[j - 16]);
-
-	  T1 = safe_add(safe_add(safe_add(safe_add(h, sha256_Sigma1256(e)), sha256_Ch(e, f, g)),
-														  sha256_K[j]), W[j]);
-	  T2 = safe_add(sha256_Sigma0256(a), sha256_Maj(a, b, c));
-	  h = g;
-	  g = f;
-	  f = e;
-	  e = safe_add(d, T1);
-	  d = c;
-	  c = b;
-	  b = a;
-	  a = safe_add(T1, T2);
-	}
-
-	HASH[0] = safe_add(a, HASH[0]);
-	HASH[1] = safe_add(b, HASH[1]);
-	HASH[2] = safe_add(c, HASH[2]);
-	HASH[3] = safe_add(d, HASH[3]);
-	HASH[4] = safe_add(e, HASH[4]);
-	HASH[5] = safe_add(f, HASH[5]);
-	HASH[6] = safe_add(g, HASH[6]);
-	HASH[7] = safe_add(h, HASH[7]);
-  }
-  return HASH;
-}
-
-function safe_add (x, y)
-{
-  var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-  return (msw << 16) | (lsw & 0xFFFF);
-}
-
-
 
 /** BEGIN TEST CASES **/
 var testCases = [
@@ -623,16 +342,18 @@ var testCases = [
 					{
 						"title": "Amazon.com Link",
 						"snapshot": false,
-						"mimeType": "text/html",
-						"url": false
+						"mimeType": "text/html"
 					}
 				],
-				"publisher": "Amulet Books",
-				"date": "2010-04-01",
-				"edition": "Reprint",
-				"ISBN": "0810989891",
-				"numPages": "320",
 				"title": "Test",
+				"abstractNote": "Now in paperback! Pass, and have it made. Fail, and suffer the consequences. A master of teen thrillers tests readers’ courage in an edge-of-your-seat novel that echoes the fears of exam-takers everywhere. Ann, a teenage girl living in the security-obsessed, elitist United States of the very near future, is threatened on her way home from school by a mysterious man on a black motorcycle. Soon she and a new friend are caught up in a vast conspiracy of greed involving the mega-wealthy owner of a school testing company. Students who pass his test have it made; those who don’t, disappear . . . or worse. Will Ann be next? For all those who suspect standardized tests are an evil conspiracy, here’s a thriller that really satisfies! Praise for Test “Fast-paced with short chapters that end in cliff-hangers . . . good read for moderately reluctant readers. Teens will be able to draw comparisons to contemporary society’s shift toward standardized testing and ecological concerns, and are sure to appreciate the spoofs on NCLB.” —School Library Journal “Part mystery, part action thriller, part romance . . . environmental and political overtones . . . fast pace and unique blend of genres holds attraction for younger teen readers.” —Booklist",
+				"date": "April 1, 2010",
+				"publisher": "Amulet Paperbacks",
+				"edition": "Reprint edition",
+				"ISBN": "9780810989894",
+				"numPages": 320,
+				"language": "English",
+				"place": "New York",
 				"libraryCatalog": "Amazon.com"
 			}
 		]
@@ -652,7 +373,7 @@ var testCases = [
 					{
 						"firstName": "My Bloody",
 						"lastName": "Valentine",
-						"creatorType": "performer"
+						"creatorType": "author"
 					}
 				],
 				"notes": [],
@@ -662,14 +383,13 @@ var testCases = [
 					{
 						"title": "Amazon.com Link",
 						"snapshot": false,
-						"mimeType": "text/html",
-						"url": "http://www.amazon.com/dp/B000002LRJ"
+						"mimeType": "text/html"
 					}
 				],
+				"title": "Loveless",
+				"date": "November 5, 1991",
 				"label": "Sire / London/Rhino",
 				"audioRecordingType": "Audio CD",
-				"date": "1991-11-05",
-				"title": "Loveless",
 				"libraryCatalog": "Amazon.com"
 			}
 		]
@@ -715,6 +435,26 @@ var testCases = [
 						"firstName": "Spike",
 						"lastName": "Jonze",
 						"creatorType": "director"
+					},
+					{
+						"firstName": "Charlie",
+						"lastName": "Kaufman",
+						"creatorType": "producer"
+					},
+					{
+						"firstName": "Edward",
+						"lastName": "Saxon",
+						"creatorType": "producer"
+					},
+					{
+						"firstName": "Jonathan",
+						"lastName": "Demme",
+						"creatorType": "producer"
+					},
+					{
+						"firstName": "Peter",
+						"lastName": "Saraf",
+						"creatorType": "producer"
 					}
 				],
 				"notes": [],
@@ -724,19 +464,342 @@ var testCases = [
 					{
 						"title": "Amazon.com Link",
 						"snapshot": false,
-						"mimeType": "text/html",
-						"url": "http://www.amazon.com/dp/B00005JLRE"
+						"mimeType": "text/html"
 					}
 				],
-				"studio": "Sony Pictures Home Entertainment",
-				"videoRecordingType": "DVD",
-				"runningTime": "114",
-				"date": "2003-05-20",
-				"ISBN": "0767879805",
 				"title": "Adaptation",
+				"date": "May 20, 2003",
+				"studio": "Sony Pictures Home Entertainment",
+				"runningTime": "114 minutes",
+				"language": "English (Dolby Digital 2.0 Surround), English (Dolby Digital 5.1), English (DTS 5.1), French (Dolby Digital 5.1)",
 				"libraryCatalog": "Amazon.com"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.com/gp/registry/registry.html?ie=UTF8&id=1Q7ELHV59D7N&type=wishlist",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.fr/Candide-Fran%C3%A7ois-Marie-Voltaire-Arouet-dit/dp/2035866014/ref=sr_1_2?s=books&ie=UTF8&qid=1362329827&sr=1-2",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "François-Marie",
+						"lastName": "Voltaire",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Candide",
+				"abstractNote": "Que signifie ce nom \"Candide\" : innocence de celui qui ne connaît pas le mal ou illusion du naïf qui n'a pas fait l'expérience du monde ? Voltaire joue en 1759, après le tremblement de terre de Lisbonne, sur ce double sens. Il nous fait partager les épreuves fictives d'un jeune homme simple, confronté aux leurres de l'optimisme, mais qui n'entend pas désespérer et qui en vient à une sagesse finale, mesurée et mystérieuse. Candide n'en a pas fini de nous inviter au gai savoir et à la réflexion.",
+				"date": "17 août 2011",
+				"publisher": "Larousse",
+				"ISBN": "9782035866011",
+				"numPages": 176,
+				"language": "Français",
+				"place": "Paris",
+				"libraryCatalog": "Amazon.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.de/Fiktionen-Erz%C3%A4hlungen-Jorge-Luis-Borges/dp/3596105811/ref=sr_1_1?ie=UTF8&qid=1362329791&sr=8-1",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Jorge Luis",
+						"lastName": "Borges",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Fiktionen: Erzählungen 1939 - 1944",
+				"abstractNote": "Gleich bei seinem Erscheinen in den 40er Jahren löste Jorge Luis Borges’ erster Erzählband »Fiktionen« eine literarische Revolution aus. Erfundene Biographien, fiktive Bücher, irreale Zeitläufe und künstliche Realitäten verflocht Borges zu einem geheimnisvollen Labyrinth, das den Leser mit seinen Rätseln stets auf neue herausfordert. Zugleich begründete er mit seinen berühmten Erzählungen wie»›Die Bibliothek zu Babel«, «Die kreisförmigen Ruinen« oder»›Der Süden« den modernen »Magischen Realismus«.   »Obwohl sie sich im Stil derart unterscheiden, zeigen zwei Autoren uns ein Bild des nächsten Jahrtausends: Joyce und Borges.« Umberto Eco",
+				"date": "1. Mai 1992",
+				"publisher": "FISCHER Taschenbuch",
+				"edition": "Auflage: 12",
+				"ISBN": "9783596105816",
+				"numPages": 192,
+				"language": "Deutsch",
+				"place": "Frankfurt am Main",
+				"libraryCatalog": "Amazon.com",
+				"shortTitle": "Fiktionen"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.co.uk/Tale-Two-Cities-ebook/dp/B004EHZXVQ/ref=sr_1_1?s=books&ie=UTF8&qid=1362329884&sr=1-1",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Charles",
+						"lastName": "Dickens",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "A Tale of Two Cities",
+				"date": "1 Dec 2010",
+				"publisher": "Public Domain Books",
+				"numPages": 238,
+				"language": "English",
+				"libraryCatalog": "Amazon.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.it/Emil-Astrid-Lindgren/dp/888203867X/ref=sr_1_1?s=books&ie=UTF8&qid=1362324961&sr=1-1",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Astrid",
+						"lastName": "Lindgren",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "B.",
+						"lastName": "Berg",
+						"creatorType": "contributor"
+					},
+					{
+						"firstName": "A. Palme",
+						"lastName": "Sanavio",
+						"creatorType": "translator"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Emil",
+				"abstractNote": "Si pensa che soprattutto in una casa moderna, con prese elettriche, gas, balconi altissimi un bambino possa mettersi in pericolo: Emil vive in una tranquilla casa di campagna, ma riesce a ficcare la testa in una zuppiera e a rimanervi incastrato, a issare la sorellina Ida in cima all'asta di una bandiera, e a fare una tale baldoria alla fiera del paese che i contadini decideranno di organizzare una colletta per spedirlo in America e liberare così la sua povera famiglia. Ma questo succederà nel prossimo libro di Emil, perché ce ne sarà un altro, anzi due, tante sono le sue monellerie. Età di lettura: da 7 anni.",
+				"date": "26 giugno 2008",
+				"publisher": "Nord-Sud",
+				"edition": "3 edizione",
+				"ISBN": "9788882038670",
+				"numPages": 72,
+				"language": "Italiano",
+				"place": "Milano",
+				"libraryCatalog": "Amazon.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.cn/%E5%9B%BE%E4%B9%A6/dp/B007CUSP3A",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"lastName": "吕士楠",
+						"creatorType": "author",
+						"fieldMode": 1
+					},
+					{
+						"lastName": "初敏",
+						"creatorType": "author",
+						"fieldMode": 1
+					},
+					{
+						"lastName": "许洁萍",
+						"creatorType": "author",
+						"fieldMode": 1
+					},
+					{
+						"lastName": "贺琳",
+						"creatorType": "author",
+						"fieldMode": 1
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "汉语语音合成:原理和技术",
+				"abstractNote": "《汉语语音合成:原理和技术》介绍语音合成的原理和针对汉语的各项合成技术，以及应用的范例。全书分基础篇和专题篇两大部分。基础篇介绍语音合成技术的发展历程和作为语音合成技术基础的声学语音学知识，尤其是作者获得的相关研究成果（填补了汉语语音学知识中的某些空白），并对各种合成器的工作原理和基本结构进行系统的阐述。专题篇结合近十年来国内外技术发展的热点和方向，讨论韵律分析与建模、数据驱动的语音合成方法、语音合成数据库的构建技术、文语转换系统的评估方法、语音合成技术的应用等。 《汉语语音合成:原理和技术》面向从事语言声学、语音通信技术，特别是语音合成的科学工作者、工程技术人员、大学教师、研究生和高年级的大学生，可作为他们研究、开发、进修的参考书。",
+				"publisher": "科学出版社",
+				"edition": "第1版",
+				"ISBN": "9787030329202",
+				"numPages": 373,
+				"place": "Beijing",
+				"libraryCatalog": "Amazon.com",
+				"shortTitle": "汉语语音合成"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.co.uk/Walt-Disney-Pixar-Up-DVD/dp/B0029Z9UQ4/ref=sr_1_1?s=dvd&ie=UTF8&qid=1395560537&sr=1-1&keywords=up",
+		"items": [
+			{
+				"itemType": "videoRecording",
+				"creators": [
+					{
+						"firstName": "Ed",
+						"lastName": "Asner",
+						"creatorType": "castMember"
+					},
+					{
+						"firstName": "Christopher",
+						"lastName": "Plummer",
+						"creatorType": "castMember"
+					},
+					{
+						"firstName": "Jordan",
+						"lastName": "Nagai",
+						"creatorType": "castMember"
+					},
+					{
+						"firstName": "Pete",
+						"lastName": "Docter",
+						"creatorType": "director"
+					},
+					{
+						"firstName": "Bob",
+						"lastName": "Peterson",
+						"creatorType": "director"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Walt Disney / Pixar - Up",
+				"date": "15 Feb 2010",
+				"studio": "Walt Disney Studios Home Entertainment",
+				"runningTime": "96 minutes",
+				"language": "English",
+				"libraryCatalog": "Amazon.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.de/dp/B00GKBYC3E/",
+		"items": [
+			{
+				"itemType": "audioRecording",
+				"creators": [
+					{
+						"firstName": "Various",
+						"lastName": "artists",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Die Eiskönigin Völlig Unverfroren",
+				"runningTime": "1:08:59",
+				"libraryCatalog": "Amazon.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.co.jp/gp/product/0099578077/",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Haruki",
+						"lastName": "Murakami",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"title": "1Q84: Books 1, 2 and 3",
+				"publisher": "Vintage",
+				"ISBN": "9780099578079",
+				"numPages": 1328,
+				"language": "英語, 英語, 不明",
+				"place": "London",
+				"libraryCatalog": "Amazon.com",
+				"shortTitle": "1Q84"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.com/Mark-LeBar/e/B00BU8L2DK",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

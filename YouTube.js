@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-02-23 16:47:56"
+	"lastUpdated": "2014-03-22 22:52:29"
 }
 
 function detectWeb(doc, url){
@@ -21,11 +21,15 @@ function detectWeb(doc, url){
 		return "videoRecording";
 	}
 	//Search results
-	if ( ZU.xpath(doc, '//div[@class="result-item-main-content"]//a[contains(@href, "/watch?v=")]').length ){
+	if ( ZU.xpath(doc, '//ol[@id="search-results"]//a[contains(@href, "/watch?v=")]').length ){
 		return "multiple";
 	}
 	//playlists
-	if ( ZU.xpath(doc, '//a[contains(@class,"video-tile") and contains(@href,"/watch?")][descendant::span[starts-with(@class,"title")]]').length ){	
+	if ( ZU.xpath(doc, '//td[@class="pl-video-title"]/a[contains(@class,"sessionlink") and contains(@href,"/watch?")]').length ){	
+		return "multiple";
+	}
+	//user page
+	if ( ZU.xpath(doc, '//div[contains(@class, "feed-item-main")]//a[contains(@href, "/watch?v=")]').length ){
 		return "multiple";
 	}
 	// still used?
@@ -49,15 +53,13 @@ function doWeb(doc, url){
 		var items = new Object();
 		var isPlaylist = false;
 		// search results and community/user pages
-		var elmts = ZU.xpath(doc, '//div[@class="result-item-main-content"]//a[contains(@href, "/watch?v=")]')
+		var elmts = ZU.xpath(doc, '//ol[@id="search-results"]//a[contains(@href, "/watch?v=")]|//div[contains(@class, "feed-item-main")]//a[contains(@href, "/watch?v=")]')
 		if (!elmts.length) {
 			//playlists
-			elmts = ZU.xpath(doc, '//a[contains(@class,"video-tile") and contains(@href,"/watch?")][descendant::span[starts-with(@class,"title")]]');
-			if( !elmts ) {
+			elmts = ZU.xpath(doc, '//td[@class="pl-video-title"]/a[contains(@class,"sessionlink") and contains(@href,"/watch?")]');
+			if(elmts.length==0 ) {
 				// still used?
 				elmts = ZU.xpath(doc, '//div[@class="vltitle"]/div[@class="vlshortTitle"]/a[contains(@href, "/watch?v=")]');
-			} else {
-				isPlaylist = true;
 			}
 		}
 
@@ -66,11 +68,7 @@ function doWeb(doc, url){
 		var elmt, title, link;
 		for (var i=0, n=elmts.length; i<n; i++) {
 			elmt = elmts[i];
-			if( isPlaylist ) {
-				title = elmt.getElementsByClassName('title video-title')[0].textContent;
-			} else {
-				title = elmt.textContent;
-			}
+			title = elmt.textContent;
 			title = Zotero.Utilities.trimInternal(title);
 			link = elmt.href;
 			//Zotero.debug(link);
@@ -163,30 +161,13 @@ var testCases = [
 					}
 				],
 				"notes": [],
-				"tags": [
-					"Reference",
-					"Research",
-					"Mozilia",
-					"Zotero",
-					"Center",
-					"for",
-					"History",
-					"and",
-					"New",
-					"Media",
-					"George",
-					"Mason",
-					"University",
-					"Web",
-					"2.0",
-					"bibliography"
-				],
+				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
 				"title": "Zotero Intro",
 				"date": "2007-01-01",
 				"url": "http://www.youtube.com/watch?v=pq94aBrc0pY&feature=youtube_gdata_player",
-				"runningTime": "171 seconds",
+				"runningTime": "173 seconds",
 				"abstractNote": "Zotero is a free, easy-to-use research tool that helps you gather and organize resources (whether bibliography or the full text of articles), and then lets you to annotate, organize, and share the results of your research. It includes the best parts of older reference manager software (like EndNote)—the ability to store full reference information in author, title, and publication fields and to export that as formatted references—and the best parts of modern software such as del.icio.us or iTunes, like the ability to sort, tag, and search in advanced ways. Using its unique ability to sense when you are viewing a book, article, or other resource on the web, Zotero will—on many major research sites—find and automatically save the full reference information for you in the correct fields.",
 				"libraryCatalog": "YouTube",
 				"accessDate": "CURRENT_TIMESTAMP"
@@ -196,6 +177,11 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://www.youtube.com/playlist?list=PL793CABDF042A9514",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.youtube.com/user/Zoteron",
 		"items": "multiple"
 	}
 ]

@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-05-22 17:20:52"
+	"lastUpdated": "2014-03-31 15:18:16"
 }
 
 /*
@@ -33,8 +33,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 function detectWeb(doc, url) {
 	if(ZU.xpathText(doc, '//meta[@name="citation_journal_title"]/@content')) {
 		return 'journalArticle';
-	} else if(url.indexOf('searchresults?') != -1 &&
-		ZU.xpath(doc, '//table[@id="search_results"]\
+	} else if(url.indexOf('doSearch?') != -1 &&
+		ZU.xpath(doc, '//form[contains(@id, "Search")]\
 			//a[contains(@href, "abstract") or contains(@href, "fulltext")]') ) {
 		return 'multiple';
 	}
@@ -58,6 +58,10 @@ function scrape(doc, url) {
 			}
 		}
 
+		var abstractDiv = doc.getElementById('main_fulltext_content');
+		var abstract = ZU.xpathText(doc, '//div[@class="abstract"]/p')
+			item.abstractNote = abstract;
+
 		//fetch direct PDF link (ScienceDirect)
 		var pdfUrl;
 		for(var i=0, n=item.attachments.length; i<n; i++) {
@@ -70,6 +74,7 @@ function scrape(doc, url) {
 				i--;
 			}
 		}
+		
 		if(pdfUrl) {
 			ZU.doGet(pdfUrl, function(text) {
 				if(text.indexOf('onload="javascript:redirectToScienceURL();"') != -1) {
@@ -81,34 +86,112 @@ function scrape(doc, url) {
 					pdfUrl += (pdfUrl.indexOf('?') != -1 ? '&' : '?') +
 								'intermediate=true';
 				}
+				
 				item.attachments.push({
 					title: 'Full Text PDF',
 					url: pdfUrl,
 					mimeType: 'application/pdf'
 				});
-				item.complete();
+				
+				finalize(item, doc, url, pdfUrl);
 			});
 		} else {
-			item.complete();
+			finalize(item, doc, url, pdfUrl);
 		}
 	});
 
 	translator.translate();
 }
 
+//mimetype map for supplementary attachments
+//intentionally excluding potentially large files like videos and zip files
+var suppTypeMap = {
+	'pdf': 'application/pdf',
+	'doc': 'application/msword',
+	'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'xls': 'application/vnd.ms-excel',
+	'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+};
+
+function finalize(item, doc, url, pdfUrl) {
+	if(Z.getHiddenPref && Z.getHiddenPref('attachSupplementary')) {
+		try {
+			//check if there is supplementary data
+			var tabs = doc.getElementById('aotftabs');
+			var suppLink;
+			if(tabs) {
+				//enhanced view (AJAX driven), but let's see if we even have supp. data
+				suppLink = ZU.xpath(tabs, './/a[@href="#suppinfo"]')[0];
+				if(suppLink) {
+					//construct a link to the standard view of supp. data
+					suppLink = url.replace(/[^\/]+(?=\/[^\/]*$)/, 'supplemental')
+						.replace(/[?#].*/, '');
+				}
+			} else if(tabs = doc.getElementById('article_options')) {
+				//standard view
+				suppLink = ZU.xpathText(tabs, './/a[text()="Supplemental Data"]/@href');
+			}
+			if(suppLink) {
+				if(Z.getHiddenPref('supplementaryAsLink')) {
+					item.attachments.push({
+						title: 'Supplementary Data',
+						url: suppLink,
+						mimeType: 'text/html',
+						snapshot: false
+					});
+				} else {
+					ZU.processDocuments(suppLink, function(suppDoc) {
+						var suppEntries = ZU.xpath(suppDoc, '//div[@id="main_supp"]/dl/dt');
+						for(var i=0, n=suppEntries.length; i<n; i++) {
+							var link = suppEntries[i].getElementsByTagName('a')[0];
+							if(!link) return;
+							
+							link = link.href;
+							
+							var title = ZU.trimInternal(suppEntries[i].textContent)
+								.replace(/\s*\([^()]+kb\)$/, '');
+							var desc = suppEntries[i].nextSibling;
+							if(desc && desc.nodeName.toUpperCase() == 'DD'
+								&& (desc = ZU.trimInternal(desc.textContent))) {
+								if(title) title += ': ';
+								title += desc;
+							}
+							
+							var mimeType = suppTypeMap[link.substr(link.lastIndexOf('.')+1)];
+							
+							item.attachments.push({
+								title: title,
+								url: link,
+								mimeType: mimeType,
+								snapshot: !!mimeType
+							});
+						}
+					}, function() { item.complete(); });
+					return;
+				}
+			}
+			item.complete();
+		} catch(e) {
+			Z.debug("Error attaching supplementary data.");
+			Z.debug(e);
+			item.complete();
+		}
+	} else {
+		item.complete();
+	}
+}
+
 function doWeb(doc, url) {
 	if(detectWeb(doc, url) == 'multiple') {
-		var res = ZU.xpath(doc,'//table[@id="search_results"]\
-									//tr[contains(@class, "shade")]');
+		var res = ZU.xpath(doc,'//form[contains(@id, "Search")]\
+									//div[@class="title"]');
 		var url, items = new Object();
 		for(var i=0, n=res.length; i<n; i++) {
-			url = ZU.xpathText(res[i], './/a[contains(@href, "abstract")\
-									or contains(@href, "fulltext")][1]/@href');
+			url = ZU.xpathText(res[i], './a/@href');
 			if(url) {
-				items[url] = ZU.xpathText(res[i], './/strong');
+				items[url] = ZU.xpathText(res[i], './a');
 			}
 		}
-
 		Zotero.selectItems(items, function(selectedItems) {
 			if(!selectedItems) return true;
 
@@ -116,18 +199,13 @@ function doWeb(doc, url) {
 			for(var i in selectedItems) {
 				urls.push(i);
 			}
-			ZU.processDocuments(i, scrape);
+			ZU.processDocuments(urls, scrape);
 		});
 	} else {
 		scrape(doc, url);
 	}
 }/** BEGIN TEST CASES **/
 var testCases = [
-	{
-		"type": "web",
-		"url": "http://www.cell.com/searchresults?searchText=brain&submit_search=Search&searchBy=fulltext",
-		"items": "multiple"
-	},
 	{
 		"type": "web",
 		"url": "http://www.cell.com/abstract/S0092-8674(11)00581-2",
@@ -269,29 +347,32 @@ var testCases = [
 						"title": "Snapshot"
 					},
 					{
+						"title": "PubMed entry",
+						"mimeType": "text/html",
+						"snapshot": false
+					},
+					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
 				"title": "Kynurenine 3-Monooxygenase Inhibition in Blood Ameliorates Neurodegeneration",
-				"date": "June 10 2011",
+				"date": "10/06/2011",
 				"publicationTitle": "Cell",
 				"volume": "145",
 				"issue": "6",
 				"publisher": "Elsevier",
 				"DOI": "10.1016/j.cell.2011.05.020",
+				"language": "English",
 				"pages": "863-874",
 				"ISSN": "0092-8674",
-				"url": "http://www.cell.com/abstract/S0092-8674(11)00581-2",
+				"extra": "PMID: 21640374",
+				"url": "http://www.cell.com/article/S0092867411005812/abstract",
+				"libraryCatalog": "www.cell.com",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.cell.com"
+				"abstractNote": "Metabolites in the kynurenine pathway, generated by tryptophan degradation, are thought to play an important role in neurodegenerative disorders, including Alzheimer's and Huntington's diseases. In these disorders, glutamate receptor-mediated excitotoxicity and free radical formation have been correlated with decreased levels of the neuroprotective metabolite kynurenic acid. Here, we describe the synthesis and characterization of JM6, a small-molecule prodrug inhibitor of kynurenine 3-monooxygenase (KMO). Chronic oral administration of JM6 inhibits KMO in the blood, increasing kynurenic acid levels and reducing extracellular glutamate in the brain. In a transgenic mouse model of Alzheimer's disease, JM6 prevents spatial memory deficits, anxiety-related behavior, and synaptic loss. JM6 also extends life span, prevents synaptic loss, and decreases microglial activation in a mouse model of Huntington's disease. These findings support a critical link between tryptophan metabolism in the blood and neurodegeneration, and they provide a foundation for treatment of neurodegenerative diseases."
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://www.cell.com/trends/ecology-evolution/searchresults?searchText=brain&submit_search=Search&searchBy=fulltext",
-		"items": "multiple"
 	},
 	{
 		"type": "web",
@@ -324,24 +405,88 @@ var testCases = [
 						"title": "Snapshot"
 					},
 					{
+						"title": "PubMed entry",
+						"mimeType": "text/html",
+						"snapshot": false
+					},
+					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
 				"title": "Punishment and cooperation in nature",
-				"date": "May 01 2012",
+				"date": "01/05/2012",
 				"publicationTitle": "Trends in Ecology & Evolution",
 				"volume": "27",
 				"issue": "5",
-				"publisher": "Elsevier",
 				"DOI": "10.1016/j.tree.2011.12.004",
+				"language": "English",
 				"pages": "288-295",
 				"ISSN": "0169-5347",
-				"url": "http://www.cell.com/trends/ecology-evolution/abstract/S0169-5347(12)00002-X",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.cell.com"
+				"extra": "PMID: 22284810",
+				"url": "http://www.cell.com/article/S016953471200002X/abstract",
+				"libraryCatalog": "www.cell.com",
+				"abstractNote": "Humans use punishment to promote cooperation in laboratory experiments but evidence that punishment plays a similar role in non-human animals is comparatively rare. In this article, we examine why this may be the case by reviewing evidence from both laboratory experiments on humans and ecologically relevant studies on non-human animals. Generally, punishment appears to be most probable if players differ in strength or strategic options. Although these conditions are common in nature, punishment (unlike other forms of aggression) involves immediate payoff reductions to both punisher and target, with net benefits to punishers contingent on cheats behaving more cooperatively in future interactions. In many cases, aggression yielding immediate benefits may suffice to deter cheats and might explain the relative scarcity of punishment in nature."
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.cell.com/abstract/S0092-8674(05)00554-4",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Xialu",
+						"lastName": "Li",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "James L.",
+						"lastName": "Manley",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "PubMed entry",
+						"mimeType": "text/html",
+						"snapshot": false
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"title": "Inactivation of the SR Protein Splicing Factor ASF/SF2 Results in Genomic Instability",
+				"date": "12/08/2005",
+				"publicationTitle": "Cell",
+				"volume": "122",
+				"issue": "3",
+				"publisher": "Elsevier",
+				"DOI": "10.1016/j.cell.2005.06.008",
+				"language": "English",
+				"pages": "365-378",
+				"ISSN": "0092-8674",
+				"extra": "PMID: 16096057",
+				"url": "http://www.cell.com/article/S0092867405005544/abstract",
+				"libraryCatalog": "www.cell.com",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"abstractNote": "SR proteins constitute a family of pre-mRNA splicing factors now thought to play several roles in mRNA metabolism in metazoan cells. Here we provide evidence that a prototypical SR protein, ASF/SF2, is unexpectedly required for maintenance of genomic stability. We first show that in vivo depletion of ASF/SF2 results in a hypermutation phenotype likely due to DNA rearrangements, reflected in the rapid appearance of DNA double-strand breaks and high-molecular-weight DNA fragments. Analysis of DNA from ASF/SF2-depleted cells revealed that the nontemplate strand of a transcribed gene was single stranded due to formation of an RNA:DNA hybrid, R loop structure. Stable overexpression of RNase H suppressed the DNA-fragmentation and hypermutation phenotypes. Indicative of a direct role, ASF/SF2 prevented R loop formation in a reconstituted in vitro transcription reaction. Our results support a model by which recruitment of ASF/SF2 to nascent transcripts by RNA polymerase II prevents formation of mutagenic R loop structures."
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.cell.com/action/doSearch?searchType=quick&searchText=brain&occurrences=all&journalCode=&searchScope=fullSite",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

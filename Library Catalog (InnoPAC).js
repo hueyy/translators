@@ -9,15 +9,10 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-12 01:04:58"
+	"lastUpdated": "2013-12-09 20:21:58"
 }
 
 function detectWeb(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-
 
 //***********
 // URL MATCHING - translator should detect the following urls...
@@ -31,6 +26,7 @@ function detectWeb(doc, url) {
 // Persistent URL for item
 // http://bearcat.baylor.edu/record=b1540169~S7
 // http://innopac.cooley.edu/record=b507916~S0
+http://libcat.dartmouth.edu/record=b4054652~S1
 // Persistent URL for item, without suffix
 // http://luna.wellesley.edu/record=b2398784
 // Specific search parameters
@@ -39,7 +35,7 @@ function detectWeb(doc, url) {
 
 // Central Michigan University fix
 	var xpath = '//div[@class="bibRecordLink"]';
-	var elmt = doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+	var elmt = doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 	if(elmt) {
 		return "book";
 	}
@@ -54,8 +50,16 @@ function detectWeb(doc, url) {
 		}
 	}
 	// Next, look for the MARC button	
-	xpath = '//a[img[@src="/screens/marc_display.gif" or @src="/screens/ico_marc.gif" or @src="/screens/marcdisp.gif" or starts-with(@alt, "MARC ") or @src="/screens/regdisp.gif" or @alt="REGULAR RECORD DISPLAY"]] | //a[span/img[@src="/screens/marc_display.gif" or @src="/screens/ico_marc.gif" or @src="/screens/marcdisp.gif" or starts-with(@alt, "MARC ") or @src="/screens/regdisp.gif" or @alt="REGULAR RECORD DISPLAY"]]';
-	elmt = doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+	xpath = '//a[img[@src="/screens/marc_display.gif" or @src="/screens/ico_marc.gif" or\
+				@src="/screens/marcdisp.gif" or starts-with(@alt, "MARC ") or\
+				@src="/screens/regdisp.gif" or\
+				@alt="REGULAR RECORD DISPLAY"]] |\
+				//a[span/img[@src="/screens/marc_display.gif" or\
+				@src="/screens/ico_marc.gif" or @src="/screens/marcdisp.gif" or\
+				starts-with(@alt, "MARC ") or @src="/screens/regdisp.gif" or\
+				@alt="REGULAR RECORD DISPLAY"]] |\
+				//a[contains(@href, "/marc~")]';
+	elmt = doc.evaluate(xpath, doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 	if(elmt) {
 		return "book";
 	}
@@ -71,17 +75,13 @@ function detectWeb(doc, url) {
 }
 
 function scrape(marc, newDoc) {
-	var namespace = newDoc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-	  if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
+		
 	var xpath = '//pre/text()';
-	if (newDoc.evaluate(xpath, newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+	if (newDoc.evaluate(xpath, newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		var elmts = newDoc.evaluate(xpath, newDoc, null, XPathResult.ANY_TYPE, null);
 		var useNodeValue = true;
 	} else {
-		var elmts = newDoc.evaluate('//pre', newDoc, nsResolver, XPathResult.ANY_TYPE, null);
+		var elmts = newDoc.evaluate('//pre', newDoc, null, XPathResult.ANY_TYPE, null);
 		var useNodeValue = false;
 	}
 	var elmt;
@@ -159,10 +159,6 @@ function doWeb(doc, url) {
 	var translator = Zotero.loadTranslator("import");
 	translator.setTranslator("a6ee60df-1ddc-4aae-bb25-45e0537be973");
 	translator.getTranslatorObject(function(marc) {
-		var namespace = doc.documentElement.namespaceURI;
-		var nsResolver = namespace ? function(prefix) {
-			if (prefix == 'x') return namespace; else return null;
-		} : null;
 		
 		if (detectWeb(doc, url) == "book") {
 			var matchRegexp = new RegExp('^(.*)frameset(.+)$');
@@ -170,8 +166,21 @@ function doWeb(doc, url) {
 			if (m) {
 				newUri = uri.replace(/frameset/, "marc");
 			} else {
-				var xpath = '//a[img[@src="/screens/marc_display.gif" or @src="/screens/ico_marc.gif" or @src="/screens/marcdisp.gif" or starts-with(@alt, "MARC ") or @src="/screens/regdisp.gif" or @alt="REGULAR RECORD DISPLAY"]] | //a[span/img[@src="/screens/marc_display.gif" or @src="/screens/ico_marc.gif" or @src="/screens/marcdisp.gif" or starts-with(@alt, "MARC ") or @src="/screens/regdisp.gif" or @alt="REGULAR RECORD DISPLAY"]]';
-				newUri = doc.evaluate(xpath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().href.replace(/frameset/, "marc");
+				var xpath = '//a[\
+						.//img[\
+							@src="/screens/marc_display.gif" or\
+							@src="/screens/ico_marc.gif" or\
+							@src="/screens/marcdisp.gif" or\
+							starts-with(@alt, "MARC ") or\
+							@src="/screens/regdisp.gif" or\
+							@alt="REGULAR RECORD DISPLAY"\
+						]\
+					]';
+				newUri = ZU.xpath(doc, xpath);
+				if(!newUri.length) newUri = ZU.xpath(doc, '//a[contains(@href, "/marc~")]');
+				if(!newUri.length) throw new Error("MARC link not found");
+				
+				newUri = newUri[0].href.replace(/frameset/, "marc");
 			}
 			pageByPage(marc, [newUri]);
 		} else {	// Search results page
@@ -184,15 +193,16 @@ function doWeb(doc, url) {
 			var firstURL = false;
 			
 			var tableRows = doc.evaluate('//table//tr[@class="browseEntry" or @class="briefCitRow" or td/input[@type="checkbox"] or td[contains(@class,"briefCitRow") or contains(@class,"briefcitCell")]]',
-										 doc, nsResolver, XPathResult.ANY_TYPE, null);
+										 doc, null, XPathResult.ANY_TYPE, null);
 			// Go through table rows
 			var i = 0;
 			while(tableRow = tableRows.iterateNext()) {
 				// get link
-				var links = doc.evaluate('.//*[@class="briefcitTitle"]/a', tableRow, nsResolver, XPathResult.ANY_TYPE, null);
+				var links = doc.evaluate('.//*[@class="briefcitTitle"]//a', tableRow, null, XPathResult.ANY_TYPE, null);
 				var link = links.iterateNext();
 				if(!link) {
-					var links = doc.evaluate(".//a[@href]", tableRow, nsResolver, XPathResult.ANY_TYPE, null);
+			
+					var links = doc.evaluate(".//a[@href]", tableRow, null, XPathResult.ANY_TYPE, null);
 					link = links.iterateNext();
 				}
 				
@@ -209,69 +219,25 @@ function doWeb(doc, url) {
 					i++;
 				}
 			};
+
 			
-			var items = Zotero.selectItems(availableItems);
-			
-			if(!items) {
-				return true;
-			}
-			
-			var newUrls = new Array();
-			for(var itemURL in items) {
-				newUrls.push(itemURL.replace("frameset", "marc"));
-			}
-			pageByPage(marc, newUrls);
+			Zotero.selectItems(availableItems, function (items) {
+				if (!items) {
+					return true;
+				}
+				var newUrls = new Array();
+				for (var i in items) {
+					newUrls.push(i.replace("frameset", "marc"));
+				}
+				pageByPage(marc, newUrls);
+			});
 		}
 	});
-	
-	Zotero.wait();
 }
 
 
 /** BEGIN TEST CASES **/
 var testCases = [
-	{
-		"type": "web",
-		"url": "http://books.luther.edu/record=b2115431~S9",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "G. W.",
-						"lastName": "Kimura",
-						"creatorType": "contributor"
-					},
-					{
-						"lastName": "ebrary, Inc",
-						"fieldMode": true
-					}
-				],
-				"notes": [],
-				"tags": [
-					"Alaska",
-					"Alaska",
-					"Alaska",
-					"Alaska",
-					"Anniversaries, etc",
-					"Economic conditions",
-					"Electronic books",
-					"History",
-					"Social conditions"
-				],
-				"seeAlso": [],
-				"attachments": [],
-				"place": "Fairbanks",
-				"numPages": "285",
-				"callNumber": "F904 .A477 2009eb",
-				"url": "http://site.ebrary.com/lib/luthercollege/Doc?id=10397770",
-				"libraryCatalog": "books.luther.edu Library Catalog",
-				"title": "Alaska at 50 the past, present, and next fifty years of statehood",
-				"publisher": "University of Alaska Press",
-				"date": "2009"
-			}
-		]
-	},
 	{
 		"type": "web",
 		"url": "http://utmost.cl.utoledo.edu/search/?searchtype=X&SORT=D&searcharg=history+of+communication&searchscope=3",
@@ -291,6 +257,51 @@ var testCases = [
 		"type": "web",
 		"url": "http://clues.concordia.ca/search/?searchtype=X&SORT=D&searcharg=history+of+communication",
 		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://libcat.dartmouth.edu/record=b4054652~S1",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "John",
+						"lastName": "Gray",
+						"creatorType": "author"
+					}
+				],
+				"notes": [
+					{
+						"note": "The death of utopia -- Enlightenment and terror in the twentieth century -- Utopia enters the mainstream -- The Americanization of the apocalypse -- Armed missionaries --Post-apocalypse"
+					}
+				],
+				"tags": [
+					"Religion and politics",
+					"Utopias",
+					"Revolutions",
+					"Religious aspects",
+					"Conservatism",
+					"Religious aspects",
+					"World politics",
+					"20th century",
+					"World politics",
+					"21st century"
+				],
+				"seeAlso": [],
+				"attachments": [],
+				"ISBN": "9780374105983",
+				"title": "Black mass: apocalyptic religion and the death of utopia",
+				"edition": "1st American ed",
+				"place": "New York",
+				"publisher": "Farrar Straus and Giroux",
+				"date": "2007",
+				"numPages": "242",
+				"callNumber": "BL65.P7 G69 2007",
+				"libraryCatalog": "libcat.dartmouth.edu Library Catalog",
+				"shortTitle": "Black mass"
+			}
+		]
 	}
 ]
 /** END TEST CASES **/

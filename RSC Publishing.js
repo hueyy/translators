@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsb",
-	"lastUpdated": "2012-03-26 15:00:31"
+	"lastUpdated": "2014-04-30 15:56:32"
 }
 
 /*
@@ -42,16 +42,16 @@ function getResults(doc) {
 }
 
 function detectWeb(doc, url) {
-	if(url.match(/\/results[?\/]/i) || url.indexOf('/ebook/') != -1 &&
+	if(url.search(/\/results[?\/]/i) != -1 || url.indexOf('/ebook/') != -1  &&
 		getResults(doc).length) {
 		return 'multiple';
 	}
-
-	if(url.indexOf('/content/articlelanding/') != -1) {
+	//apparently URLs sometimes have upper case as in /Content/ArticleLanding/
+	if(url.search(/\/content\/articlelanding\//i) != -1 && ZU.xpathText(doc, '//meta[@name="citation_title"]/@content')) {
 		return 'journalArticle';
 	}
 
-	if(url.indexOf('/content/chapter/') != -1) {
+	if(url.search(/\/content\/chapter\//i) != -1) {
 		return 'bookSection';
 	}
 }
@@ -59,6 +59,13 @@ function detectWeb(doc, url) {
 function scrape(doc, type) {
 	var translator = Zotero.loadTranslator('web');
 	translator.setTranslator('951c027d-74ac-47d4-a107-9c3069ab7b48');
+	
+	// temporary hack: move meta tags to the head (reported to RSC 2014-04-30)
+	var meta = doc.body.getElementsByTagName('meta');
+	while(meta.length) {
+		doc.head.appendChild(meta[0]);
+	}
+	
 	translator.setDocument(doc);
 
 	translator.setHandler('itemDone', function(obj, item) {
@@ -71,10 +78,10 @@ function scrape(doc, type) {
 			if(title) item.title = ZU.trimInternal(title);
 
 			//add bookTitle
-			item.bookTitle = ZU.xpathText(doc, '//h2[@class="sub_title"]');
+			item.bookTitle = ZU.xpathText(doc, '//h1[@class="sub_title"]');
 		} else if(type == 'journalArticle') {
 			//journal title is abbreviated. We can fetch full title from the page
-			item.publicationTitle = ZU.xpathText(doc, '//h2[@class="sub_title"]');
+			item.publicationTitle = ZU.xpathText(doc, '//div[contains(@class, "hg_title")]//h1');
 		}
 
 		//keywords is frequently an empty string
@@ -104,8 +111,7 @@ function doWeb(doc, url) {
 				for(var i in selectedItems) {
 					urls.push(i);
 				}
-				ZU.processDocuments(urls,
-					function(doc) { doWeb(doc, doc.location.href)});
+				ZU.processDocuments(urls,doWeb);
 			});
 	} else {
 		scrape(doc, type);
@@ -157,26 +163,25 @@ var testCases = [
 						"title": "Snapshot"
 					}
 				],
-				"itemID": "http://pubs.rsc.org/en/content/articlelanding/2012/ee/c1ee02148f",
 				"title": "Superior radical polymer cathode material with a two-electron process redox reaction promoted by graphene",
 				"publisher": "The Royal Society of Chemistry",
 				"institution": "The Royal Society of Chemistry",
 				"company": "The Royal Society of Chemistry",
 				"label": "The Royal Society of Chemistry",
 				"distributor": "The Royal Society of Chemistry",
-				"date": "2012-01-01",
 				"DOI": "10.1039/C1EE02148F",
 				"language": "en",
+				"date": "2012-01-01",
 				"publicationTitle": "Energy & Environmental Science",
 				"journalAbbreviation": "Energy Environ. Sci.",
 				"volume": "5",
 				"issue": "1",
-				"abstractNote": "Poly(2,2,6,6-tetramethyl-1-piperidinyloxy-4-yl methacrylate) (PTMA) displays a two–electron process redox reaction, high capacity of up to 222 mA h g−1, good rate performance and long cycle life, which is promoted by graphene as cathode material for lithium rechargeable batteries.",
 				"pages": "5221-5225",
 				"ISSN": "1754-5706",
 				"url": "http://pubs.rsc.org/en/content/articlelanding/2012/ee/c1ee02148f",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "pubs.rsc.org"
+				"abstractNote": "Poly(2,2,6,6-tetramethyl-1-piperidinyloxy-4-yl methacrylate) (PTMA) displays a two–electron process redox reaction, high capacity of up to 222 mA h g−1, good rate performance and long cycle life, which is promoted by graphene as cathode material for lithium rechargeable batteries.",
+				"libraryCatalog": "pubs.rsc.org",
+				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
 	},
@@ -215,15 +220,13 @@ var testCases = [
 						"title": "Snapshot"
 					}
 				],
-				"itemID": "http://pubs.rsc.org/en/content/chapter/bk9781849730518-00330/978-1-84973-051-8",
 				"title": "Chapter 14 In Vivo Approaches to Predictive Toxicology Using Zebrafish",
-				"date": "2011/11/15",
-				"DOI": "10.1039/9781849733045-00330",
 				"language": "en",
+				"date": "2011/11/15",
+				"abstractNote": "A key to sustainability in modern paradigms of drug discovery and toxicology will be predictive structure–activity relationships based on vertebrate-model responses. The zebrafish embryo is the emerging vertebrate choice for rapid-throughput chemical screening, providing a quick and inexpensive way to test hypotheses and to generate strategies for complementary integrative research with rodent models, and humans. Numerous embryonic zebrafish assays and omics approaches appear to predict hazard in mammals. We review physiologic parameters of the zebrafish that are amenable to rapid-throughput screening. Toxicity investigations in the zebrafish have included endpoints in developmental, neuro, cardio, ocular, otic, gastrointestinal, hepato, regenerative and vascular toxicity. Small-scale screens have used zebrafish embryos to analyze heart rate and ERG function, and to screen drugs that affect these parameters. Novel tissue-specific and xenobiotic-responsive reporter lines are enabling rapid screening of new chemistries for cardio, hepato, and neuronal toxicity. In particular, zebrafish screens that combine gene expression profiling with comprehensive phenotype analyses are strengthening the predictivity of the toxicology data and fostering greater use of the model, especially as a means of frontloading hazard detection and reducing late-stage attrition in drug discovery. A pressing need remains for large-scale zebrafish studies that systematically evaluate the most promising zebrafish assays against the widest possible range of positive and negative reference compounds to distinguish the truly predictive approaches in zebrafish from those that are not.",
 				"url": "http://pubs.rsc.org/en/content/chapter/bk9781849730518-00330/978-1-84973-051-8",
-				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "pubs.rsc.org",
-				"bookTitle": "New Horizons in Predictive Toxicology: Current Status and Application"
+				"bookTitle": "New Horizons in Predictive Toxicology"
 			}
 		]
 	},

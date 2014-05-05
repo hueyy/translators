@@ -9,9 +9,9 @@
 	"priority":50,
 	"browserSupport":"gcs",
 	"configOptions":{"getCollections":"true", "dataMode":"rdf/xml"},
-	"displayOptions":{"exportNotes":true, "exportFileData":false},
+	"displayOptions":{"exportNotes":true},
 	"inRepository":false,
-	"lastUpdated":"2012-02-17 05:48:39"
+	"lastUpdated":"2013-08-19 21:29:44"
 }
 
 var n = {
@@ -404,7 +404,7 @@ Type.prototype._scoreNodeRelationship = function(node, definition, score) {
 				// +2 for each match, -1 for each nonmatch
 				var testScore = -definition.pairs.length;
 				for each(var pair in definition.pairs) {
-					if(Zotero.RDF.getStatementsMatching(statement[2], pair[0], pair[1])) score += 3;
+					if(Zotero.RDF.getStatementsMatching(statement[2], pair[0], pair[1])) testScore += 3;
 				}
 				
 				if(testScore > bestScore) {
@@ -487,7 +487,7 @@ Type.prototype.addNodeRelations = function(nodes) {
 			
 			// add relation to parent
 			for(var j = i-1; j>1; j--) {
-				if(nodes[j] != nodes[i]) {
+				if(Zotero.RDF.getResourceURI(nodes[j]) != Zotero.RDF.getResourceURI(nodes[i])) {
 					Zotero.RDF.addStatement(nodes[j], predicate, nodes[i], false);
 					break;
 				}
@@ -756,7 +756,7 @@ function detectImport() {
 	var rdfTypes = Zotero.RDF.getStatementsMatching(null, RDF_TYPE, null);
 	if(rdfTypes) {
 		for each(var rdfType in rdfTypes) {
-			if(rdfType[2].uri && rdfType[2].uri.substr(0, BIBO_NS_LENGTH) == n.bibo) return true;
+			if(typeof rdfType[2] === "object" && Z.RDF.getResourceURI(rdfType[2]).substr(0, BIBO_NS_LENGTH) == n.bibo) return true;
 		}
 	}
 	return false;
@@ -827,8 +827,10 @@ function doImport() {
 	var itemNodes = {};
 	for each(var rdfType in rdfTypes) {
 		[itemNode, predicateNode, objectNode] = rdfType;
-		if(!objectNode.uri || !collapsedTypes[objectNode.uri]) continue;
-		itemNodes[Zotero.RDF.getResourceURI(itemNode)] = itemNode;
+		if(typeof objectNode !== "object") continue;
+		var uri = Zotero.RDF.getResourceURI(itemNode);
+		if(!uri) continue;
+		itemNodes[uri] = itemNode;
 	}
 	
 	// Look through found items to see if their rdf:type matches a Zotero item type URI, and if so,
@@ -851,9 +853,11 @@ function doImport() {
 		var bestTypeScore = -9999;
 		var bestType, score, nodes, bestNodes;
 		for each(var rdfType in itemRDFTypes) {
-			if(!rdfType[2].uri) continue;
+			if(typeof rdfType[2] !== "object") continue;
+			var collapsedTypesForItem = collapsedTypes[Z.RDF.getResourceURI(rdfType[2])];
+			if(!collapsedTypesForItem) continue;
 			
-			for each(var type in collapsedTypes[rdfType[2].uri]) {
+			for each(var type in collapsedTypesForItem) {
 				[score, nodes] = type.getMatchScore(itemNode);
 				//Zotero.debug("Type "+type.zoteroType+" has score "+score);
 				

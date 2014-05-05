@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsb",
-	"lastUpdated": "2012-01-30 22:50:39"
+	"lastUpdated": "2014-02-23 23:34:49"
 }
 
 /*
@@ -36,12 +36,7 @@ function detectWeb(doc, url){
 	if (bibIdRe.test(url)){
 		return "book";
 	}
-	
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;	
-	
+
 var bibIdSearch = new RegExp("encore/search");
 	if (bibIdSearch.test(url)){
 		return "multiple";
@@ -58,11 +53,6 @@ function doWeb(doc, url) {
 	var translator = Zotero.loadTranslator("import");
 	translator.setTranslator("a6ee60df-1ddc-4aae-bb25-45e0537be973");
 	translator.getTranslatorObject(function(marc) {
-		var namespace = doc.documentElement.namespaceURI;
-		var nsResolver = namespace ? function(prefix) {
-			if (prefix == 'x') return namespace; else return null;
-		} : null;
-		
 		if (detectWeb(doc, url) == "book") {
 			newUri = uri.replace(/\?/, "?marcData=Y&");
 			pageByPage(marc, [newUri]);
@@ -72,33 +62,25 @@ function doWeb(doc, url) {
 			tagRegexp.compile('^https?://[^/]+/search\\??/[^/]+/[^/]+/[0-9]+\%2C[^/]+/frameset');
 			
 			var urls = new Array();
-			var availableItems = new Array();
+			var availableItems = {};
 			var firstURL = false;
 			
-			var tableRows = doc.evaluate('//td[@class="browseResultContent" or @class="itemTitleCell"] ',
-										 doc, nsResolver, XPathResult.ANY_TYPE, null);
+			var tableRows = doc.evaluate('//td[@class="browseResultContent" or @class="itemTitleCell"]|//div[contains(@class,"searchResult") and contains(@class, "Browse")] ',
+										 doc, null, XPathResult.ANY_TYPE, null);
 			// Go through table rows
 			var i = 0;
 			while(tableRow = tableRows.iterateNext()) {
 				// get link
-				var links = doc.evaluate('.//*[@class="dpBibTitle"]/a', tableRow, nsResolver, XPathResult.ANY_TYPE, null);
-				var link = links.iterateNext();
-		
-				
-				if(link) {
-					if(availableItems[link.href]) {
+				var links = ZU.xpath(tableRow, './/*[@class="dpBibTitle"]/span/a');
+				if (links.length==0) links = ZU.xpath(tableRow, './/*[@class="dpBibTitle"]/a');							
+				for (var i=0; i<links.length; i++) {
+					if(availableItems[links[i].href]) {
 						continue;
+					}							
+					if (links[i].textContent.match(/\w+/)){ 
+						availableItems[links[i].href] = links[i].textContent.trim();}
 					}
-					
-					// Go through links
-					while(link) {
-						if (link.textContent.match(/\w+/)) availableItems[link.href] = link.textContent;
-						link = links.iterateNext();
-					}
-					i++;
-				}
 			};
-			
 			Zotero.selectItems(availableItems, function (items) {
 				if(!items) {
 					return true;
@@ -112,25 +94,19 @@ function doWeb(doc, url) {
 			});
 		}
 	});
-	
-	Zotero.wait();
 }
 
 
 
 //functions:
 function scrape(marc, newDoc) {
-	var namespace = newDoc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-	  if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
+
 	var xpath = '//pre/text()';
-	if (newDoc.evaluate(xpath, newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+	if (newDoc.evaluate(xpath, newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		var elmts = newDoc.evaluate(xpath, newDoc, null, XPathResult.ANY_TYPE, null);
 		var useNodeValue = true;
 	} else {
-		var elmts = newDoc.evaluate('//pre', newDoc, nsResolver, XPathResult.ANY_TYPE, null);
+		var elmts = newDoc.evaluate('//pre', newDoc, null, XPathResult.ANY_TYPE, null);
 		var useNodeValue = false;
 	}
 
@@ -192,20 +168,7 @@ function scrape(marc, newDoc) {
 		var domain = newDoc.location.href.match(/https?:\/\/([^/]+)/);
 		newItem.repository = domain[1].replace(/encore\./, "")+" Library Catalog";
 		// there is too much stuff in the note field - or file this as an abstract?
-		newItem.notes = [];
-		
-		//editors get mapped as contributos - but so do many others who should be
-		// --> for books that don't have an author, turn contributors into editors.
-		if (newItem.itemType=="book"){
-		for (var i in newItem.creators) {
-			if (newItem.creators[i].creatorType=="author") var t ="author";
-		 if (!t){
-		 if (newItem.creators[i].creatorType=="contributor") {
-				newItem.creators[i].creatorType="editor";
-			}}
-		}
-		}
-		
+		newItem.notes = [];		
 		newItem.complete();
 	}
 }
@@ -220,82 +183,6 @@ function pageByPage(marc, urls) {
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://encore.tulsalibrary.org/iii/encore/record/C__Rb1951305__Sthelen__P0%2C8__Orightresult__X3?lang=eng&suite=cobalt",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "Scott Douglas",
-						"lastName": "Gerber",
-						"creatorType": "editor"
-					}
-				],
-				"notes": [],
-				"tags": [
-					"United States",
-					"Politics and government",
-					"1775-1783",
-					"United States",
-					"Politics and government",
-					"1783-1865",
-					"United States",
-					"Politics and government Philosophy"
-				],
-				"seeAlso": [],
-				"attachments": [],
-				"ISBN": "1568027052",
-				"title": "The Declaration of Independence: origins and impact",
-				"place": "Washington, D.C",
-				"publisher": "CQ Press",
-				"date": "2002",
-				"numPages": "347",
-				"series": "Landmark events in U.S. history series",
-				"callNumber": "E221 .D35 2002",
-				"libraryCatalog": "tulsalibrary.org Library Catalog",
-				"shortTitle": "The Declaration of Independence"
-			}
-		]
-	},
-	{
-		"type": "web",
-		"url": "http://encore.tulsalibrary.org/iii/encore/record/C__Rb1653320__Sthelen__P0%2C2__Orightresult__X4?lang=eng&suite=cobalt",
-		"items": [
-			{
-				"itemType": "book",
-				"creators": [
-					{
-						"firstName": "Sherry",
-						"lastName": "Shahan",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Mary",
-						"lastName": "Thelen",
-						"creatorType": "contributor"
-					}
-				],
-				"notes": [],
-				"tags": [
-					"Jazz",
-					"Musical instruments",
-					"Alphabet"
-				],
-				"seeAlso": [],
-				"attachments": [],
-				"ISBN": "0399234535",
-				"title": "The jazzy alphabet",
-				"place": "New York",
-				"publisher": "Philomel Books",
-				"date": "2002",
-				"numPages": "1",
-				"callNumber": "Sha",
-				"libraryCatalog": "tulsalibrary.org Library Catalog"
-			}
-		]
-	},
-	{
-		"type": "web",
 		"url": "http://encore.colorado.edu/iii/encore/search?formids=target&lang=eng&suite=def&reservedids=lang%2Csuite&submitmode=&submitname=&target=thelen&Search.x=0&Search.y=0",
 		"items": "multiple"
 	},
@@ -303,6 +190,44 @@ var testCases = [
 		"type": "web",
 		"url": "http://encore.coalliance.org/iii/encore/search/C|Sthelen|Orightresult|U1?lang=eng",
 		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://encore.colorado.edu/iii/encore/record/C__Rb5910060__Sthelen__P0%2C3__Orightresult__X4?lang=eng&suite=cobalt",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Marcel",
+						"lastName": "Thelen",
+						"creatorType": "editor"
+					},
+					{
+						"firstName": "F.",
+						"lastName": "Steurs",
+						"creatorType": "editor"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Language and languages",
+					"Terms and phrases"
+				],
+				"seeAlso": [],
+				"attachments": [],
+				"ISBN": "9789027223371",
+				"title": "Terminology in everyday life",
+				"place": "Amsterdam, The Netherlands : Philadelphia, Pa",
+				"publisher": "John Benjamins Pub. Co",
+				"date": "2010",
+				"numPages": "271",
+				"series": "Terminology and lexicography research and practice",
+				"seriesNumber": "v. 13",
+				"callNumber": "P305 .T4437 2010",
+				"libraryCatalog": "colorado.edu Library Catalog"
+			}
+		]
 	}
 ]
 /** END TEST CASES **/

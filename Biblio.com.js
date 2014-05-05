@@ -2,22 +2,22 @@
 	"translatorID": "9932d1a7-cc6d-4d83-8462-8f6658b13dc0",
 	"label": "Biblio.com",
 	"creator": "Adam Crymble, Michael Berkowitz, and Sebastian Karcher",
-	"target": "^https://www\\.biblio\\.com/",
+	"target": "^https?://www\\.biblio\\.com/",
 	"minVersion": "1.0.0b4.r5",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-23 04:26:44"
+	"lastUpdated": "2014-04-28 19:32:32"
 }
 
 function detectWeb(doc, url) {
 	if (doc.location.href.match("bookseller_search") || doc.location.href.match("bookstores") || doc.location.href.match("textbooks")) {
 		
-	} else if (doc.location.href.match("search")) {
+	} else if (doc.location.href.search(/\/search\.php/)!=-1) {
 		return "multiple";
-	} else if (doc.location.href.match("books")) {
+	} else if (doc.location.href.search(/\/book/)!=-1) {
 		return "book";
 	}
 }
@@ -40,11 +40,10 @@ function scrape(doc, url) {
 	
 	var newItem = new Zotero.Item("book");
 
-	var content = doc.evaluate('//ul[@class="bd-details-list"]/li', doc, null, XPathResult.ANY_TYPE,  null);
-	var xPathCount = doc.evaluate('count (//ul[@class="bd-details-list"]/li)', doc, null, XPathResult.ANY_TYPE,  null);
+	var content = doc.evaluate('//div[@id="description"]/ul/li', doc, null, XPathResult.ANY_TYPE,  null);
+	var xPathCount = doc.evaluate('count (//div[@id="description"]/ul/li)', doc, null, XPathResult.ANY_TYPE,  null);
 	
 	for (i=0; i<xPathCount.numberValue; i++) {	 	
-	 			
 	 		contents = content.iterateNext().textContent.split(": ");
 	 		if (contents.length>1){
 	 		fieldTitle = contents[0].replace(/\s*/g, '');
@@ -85,7 +84,7 @@ function doWeb(doc, url) {
 	if (detectWeb(doc, url) == "multiple") {
 		var items = new Object();
 		var articles = new Array();
-		var titles = doc.evaluate('//div[@class="search-result"]//h2/a', doc, null, XPathResult.ANY_TYPE, null);
+		var titles = doc.evaluate('//div[@class="search-result"]//a[@class="sr-title-text"]', doc, null, XPathResult.ANY_TYPE, null);
 		var next_title;
 		while (next_title = titles.iterateNext()) {
 			if (next_title.textContent.match(/\w/)) {
@@ -99,10 +98,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, scrape, function () {
-				Zotero.done();
-			});
-			Zotero.wait();	
+			Zotero.Utilities.processDocuments(articles, scrape);	
 		});
 	} else {
 		scrape(doc, url);
@@ -117,7 +113,7 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://www.biblio.com/books/29965287.html",
+		"url": "http://www.biblio.com/book/through-year-dickens-compiled-his-eldest/d/29965287",
 		"items": [
 			{
 				"itemType": "book",
@@ -137,7 +133,7 @@ var testCases = [
 				"date": "1909",
 				"edition": "First American",
 				"title": "Through The Year With Dickens. Compiled by his Eldest Daughter",
-				"url": "http://www.biblio.com/books/29965287.html",
+				"url": "http://www.biblio.com/book/through-year-dickens-compiled-his-eldest/d/29965287",
 				"libraryCatalog": "Biblio.com",
 				"accessDate": "CURRENT_TIMESTAMP"
 			}

@@ -5,11 +5,11 @@
 	"target": "https?://[^/]*.nih.gov/",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
-	"priority": 100,
+	"priority": 101,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsb",
-	"lastUpdated": "2012-06-25 22:24:30"
+	"browserSupport": "gcsbv",
+	"lastUpdated": "2013-11-19 08:23:18"
 }
 
 function detectWeb(doc, url) {
@@ -45,6 +45,7 @@ function lookupPMCIDs(ids, doc, pdfLink) {
 		}); //Strip colons from element names, attribute names and attribute values
 		text = text.replace(/<xref[^<\/]*<\/xref>/g, ""); //Strip xref cross reference from e.g. title
 		text = Zotero.Utilities.trim(text);
+		//Z.debug(text)
 		
 		var parser = new DOMParser();
 		var doc = parser.parseFromString(text, "text/xml");
@@ -146,7 +147,11 @@ function lookupPMCIDs(ids, doc, pdfLink) {
 				var pdfFileName = ZU.xpathText(article, 'selfuri/@xlinkhref');
 			} else if (pdfLink) {
 				var pdfFileName = pdfLink;
+			} else if (ZU.xpathText(article, 'articleid[@pubidtype="publisherid"]')){
+				//this should work on most multiples
+				var pdfFileName = ZU.xpathText(article, 'articleid[@pubidtype="publisherid"]') + ".pdf";
 			}
+			
 			if (pdfFileName) {
 				var pdfURL = "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC" + ids[i] + "/pdf/" + pdfFileName;
 				newItem.attachments.push({
@@ -182,9 +187,13 @@ function doWeb(doc, url) {
 	} catch(e) {}
 	if (pmcid) {
 		try {
-			var formatLinks = doc.evaluate('//td[@class="format-menu"]//a/@href|//div[@class="format-menu"]//a/@href', doc, nsResolver, XPathResult.ANY_TYPE, null);
-			while (formatLink = formatLinks.iterateNext().textContent) {
-				if(pdfLink = formatLink.match(/\/pdf\/([^\/]*\.pdf$)/)) {
+			var formatLinks = doc.evaluate('//td[@class="format-menu"]//a'
+				+ '|//div[@class="format-menu"]//a'
+				+ '|//aside[@id="jr-alt-p"]/div/a', doc, nsResolver, XPathResult.ANY_TYPE, null);
+			while (!pdfLink && (formatLink = formatLinks.iterateNext())) {
+				pdfLink = formatLink.href;
+				//Z.debug(pdfLink);
+				if(pdfLink && (pdfLink = pdfLink.match(/\/pdf\/([^\/]*\.pdf$)/))) {
 					pdfLink = pdfLink[1];
 				}
 			}

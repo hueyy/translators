@@ -2,20 +2,23 @@
 	"translatorID": "5dd22e9a-5124-4942-9b9e-6ee779f1023e",
 	"label": "Flickr",
 	"creator": "Sean Takats, Rintze Zelle, and Aurimas Vinckevicius",
-	"target": "^http://(?:www\\.)?flickr\\.com/",
+	"target": "^https?://(?:www\\.)?flickr\\.com/",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-05-31 02:47:06"
+	"lastUpdated": "2014-04-03 16:34:41"
 }
 
 function detectWeb(doc, url) {
 	if (ZU.xpath(doc,'//h1[@property="dc:title" and starts-with(@id, "title_div")]').length) {
 		return "artwork";
-	} else if (ZU.xpath(doc,'//span[contains(@class, "photo_container")]').length) {
+	} else if (ZU.xpathText(doc,'//meta[@name="og:type"]/@content') && ZU.xpathText(doc,'//meta[@name="og:type"]/@content').match(/photo$/)) {
+		return "artwork";
+	}
+	else if (ZU.xpath(doc,'//span[contains(@class, "photo_container")]|//div/span[@class="title"]').length) {
 		return "multiple";
 	}
 }
@@ -25,13 +28,14 @@ function doWeb(doc, url) {
 
 	// single result
 	if (detectWeb(doc, url) != "multiple") {
-		var elmt = ZU.xpathText(doc, '//meta[@property="og:image"]/@content')
+		var elmt = ZU.xpathText(doc, '//meta[@property="og:image"]/@content');
+		if (!elmt)  elmt = ZU.xpathText(doc, '//meta[@name="og:image"]/@content');
 		var photo_id = elmt.substr(elmt.lastIndexOf('/')+1).match(/^[0-9]+/);
 		if(!photo_id) return;
 		items[photo_id[0]] = "title";
 		fetchForIds(items);
 	} else { //multiple results
-		var photoRe = /\/photos\/[^\/]*\/([0-9]+)\//;
+		var photoRe = /\/photos\/[^\/]*\/([0-9]+)/;
 		//tested for:
 		//search: http://www.flickr.com/search/?q=test
 		//galleries: http://www.flickr.com/photos/lomokev/galleries/72157623433999749/
@@ -45,7 +49,10 @@ function doWeb(doc, url) {
 		//videos have a second <a/> element ("a[1]")
 		var elmts = ZU.xpath(doc, '//div[not(contains(@style, "display: none"))]\
 							/*/span[contains(@class, "photo_container")]/a[1]');
-
+		if (elmts.length==0){
+			elmts = ZU.xpath(doc, '//div[not(contains(@style, "display: none"))]\
+							/*/span[@class="title"]/a[1]');
+		}
 		for(var i=0, n=elmts.length; i<n; i++) {
 			var title = elmts[i].title;
 			//in photostreams, the <a/> element doesn't have a title attribute
@@ -74,10 +81,11 @@ function fetchForIds(ids) {
 		(function(uri, att) {
 			var newItem;
 			// We first fetch the items, then their attachments
-			ZU.processDocuments(uri, function (doc) {
-				newItem = parseResponse(doc);
+			ZU.doGet(uri, function (text) {
+				newItem = parseResponse(text);
 			}, function () {
-				ZU.processDocuments(att, function (doc) {
+				ZU.doGet(att, function (text) {
+					var doc = (new DOMParser()).parseFromString(text, 'application/xml');
 					var attachmentUri = ZU.xpathText(doc, '//size[last()]/@source');
 					newItem.attachments = [{
 						title: newItem.title,
@@ -91,7 +99,8 @@ function fetchForIds(ids) {
 	}
 }
 
-function parseResponse(doc) {
+function parseResponse(text) {
+	var doc = (new DOMParser()).parseFromString(text, 'application/xml');
 	var newItem = new Zotero.Item("artwork");
 
 	var title;

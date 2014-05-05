@@ -8,8 +8,8 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcs",
-	"lastUpdated": "2012-04-03 23:49:29"
+	"browserSupport": "gcsb",
+	"lastUpdated": "2013-12-10 17:55:11"
 }
 
 /*
@@ -35,7 +35,13 @@ http://source.ulg.ac.be/
 http://med.cite-sciences.fr/
 http://biblio.mulhouse.fr/
 http://mediatheque.sigdci76.fr/
-http://opac.biu-montpellier.fr/ 
+http://opac.biu-montpellier.fr/
+Japanese Diet Library:
+https://ndlopac.ndl.go.jp
+Germany:
+http://aleph-www.ub.fu-berlin.de
+http://opac.hu-berlin.de
+http://alephdai.ub.hu-berlin.de
 */
 
 function detectWeb(doc, url) {
@@ -55,7 +61,7 @@ function detectWeb(doc, url) {
 
 function doWeb(doc, url) {
 	var detailRe = new RegExp("^https?://[^/]+/F/[A-Z0-9\-]+\?.*(?:func=full-set-set|func=direct|func=myshelf-full|func=myself_full.*)");
-	var mab2Opac = new RegExp("^https?://[^/]+berlin|193\.30\.112\.134|duisburg-essen/F/[A-Z0-9\-]+\?.*");
+	var mab2Opac = new RegExp("^https?://(?!alephdai)[^/]+berlin|193\.30\.112\.134|duisburg-essen/F/[A-Z0-9\-]+\?.*");
 	var uri = doc.location.href;
 	var newUris = new Array();
 	
@@ -87,8 +93,7 @@ function doWeb(doc, url) {
 		translator.getTranslatorObject(function (marc) {
 			Zotero.Utilities.processDocuments([newuri], function(newDoc) {
 				scrape(newDoc, marc, url);
-			}, function() {Zotero.done();});
-			Zotero.wait();
+			});
 		});
 		
 	} else {
@@ -140,8 +145,7 @@ function doWeb(doc, url) {
 			translator.getTranslatorObject(function (marc) {
 				Zotero.Utilities.processDocuments(newUris, function(newDoc) {
 					scrape(newDoc, marc, url);
-				}, function() {Zotero.done();});
-				Zotero.wait();
+				});
 			});
 		});
 	}
@@ -149,49 +153,59 @@ function doWeb(doc, url) {
 
 function scrape(newDoc, marc, url) {
 		var uri = newDoc.location.href;
-		var namespace = newDoc.documentElement.namespaceURI;
-		var nsResolver = namespace ? function(prefix) {
-		  if (prefix == 'x') return namespace; else return null;
-		} : null;
+	
 		var nonstandard = false;
 		var th = false;
+		var ndl = false;
 		var xpath;
-		if (newDoc.evaluate('//*[tr[td/text()="LDR"]]/tr[td[2]]', newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+		if (newDoc.evaluate('//*[tr[td/text()="LDR"]]/tr[td[2]]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			xpath = '//*[tr[td/text()="LDR"]]/tr[td[2]]';
-		} else if (newDoc.evaluate('//*[tr[th/text()="LDR"]]/tr[td[1]]', newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+		}	else if (newDoc.evaluate('//tbody[tr/td[@scope="row"]/strong[contains(text(), "LDR")]]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
+			//UCSB Pegasus
+			xpath = '//tbody[tr/td[@scope="row"]/strong[contains(text(), "LDR")]]/tr';
+		} else if (newDoc.evaluate('//*[tr[th/text()="LDR"]]/tr[td[1]]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		  xpath = '//*[tr[th/text()="LDR"]]/tr[td[1]]';
 		  th = true;
-		} else if (newDoc.evaluate('//tr[2]//table[2]//tr', newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+		} else if (newDoc.evaluate('//tr[2]//table[2]//tr', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			xpath = '//tr[2]//table[2]//tr[td[2]]';
 			nonstandard = true;
-		} else if (newDoc.evaluate('//table//tr[td[2][@class="td1"]]', newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+		} else if (newDoc.evaluate('//table//tr[td[2][@class="td1"]]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			xpath = '//table//tr[td[2][@class="td1"]]';
-			nonstandard = true;
-		} else if (newDoc.evaluate('//tr/td[2]/table/tbody[tr/td[contains(text(), "LDR")]]', newDoc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
+			nonstandard = true
+		}	else if(newDoc.evaluate('//table/tbody/tr[td/span/b]', newDoc, null,  XPathResult.ANY_TYPE, null).iterateNext()) {
+			//for NDL library
+			xpath = '//table/tbody/tr[td/span/b]'
+			ndl = true;
+		} else if (newDoc.evaluate('//tr/td[2]/table/tbody[tr/td[contains(text(), "LDR")]]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			xpath = '//tr/td[2]/table/tbody[tr/td[contains(text(), "LDR")]]/tr';
 			nonstandard = true;
 		}
-		var elmts = newDoc.evaluate(xpath, newDoc, nsResolver, XPathResult.ANY_TYPE, null);
+ 	
+
+		var elmts = newDoc.evaluate(xpath, newDoc, null, XPathResult.ANY_TYPE, null);
 		var elmt;
 		var record = new marc.record();
 		while(elmt = elmts.iterateNext()) {
 			if (th) {
-		  var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./th', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent);
+		  var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./th', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent);
 	  } else {
-		  var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent);
+		  var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent);
 	  }
 	  // if (nonstandard) {
-	  //     var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent);
+	  //     var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent);
 	  // } else {
-	  //     var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./TD[1]/text()[1]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().nodeValue);
+	  //     var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./TD[1]/text()[1]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().nodeValue);
 	  // }
-	 // var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent);
+	 // var field = Zotero.Utilities.superCleanString(newDoc.evaluate('./td[1]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent);
 			if(field) {
+				Z.debug(field)
 				var value;
 				if (th) {
-					value = newDoc.evaluate('./TD[1]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent; //.split(/\n/)[1];
+					value = newDoc.evaluate('./TD[1]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent; //.split(/\n/)[1];
+				} else if (ndl){
+						value = newDoc.evaluate('./TD[3]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 				} else {
-				  value = newDoc.evaluate('./TD[2]', elmt, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent; //.split(/\n/)[1];
+				  value = newDoc.evaluate('./TD[2]', elmt, null, XPathResult.ANY_TYPE, null).iterateNext().textContent; //.split(/\n/)[1];
 				}
 				if (value.split(/\n/)[1]) value = Zotero.Utilities.trimInternal(value.split(/\n/)[1]);
 				Zotero.debug(field + " : " + value);

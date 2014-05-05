@@ -2,14 +2,14 @@
 	"translatorID": "d770e7d2-106c-4396-8c32-b35cdc46376c",
 	"label": "Project Gutenberg",
 	"creator": "Adam Crymble, Avram Lyon",
-	"target": "^http://www\\.gutenberg\\.org",
+	"target": "^https?://www\\.gutenberg\\.org",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-30 14:19:59"
+	"lastUpdated": "2014-04-03 18:55:01"
 }
 
 function detectWeb(doc, url) {
@@ -83,7 +83,7 @@ function scrape(doc, url) {
 		}
 		//field Title's with a space (nbsp?) are hard to match with strings - so let's do this here.
 		else if (fieldTitle.match(/LoC.?Class/)) {
-			newItem.notes = "LoC Class " + dataTags[fieldTitle];
+			newItem.notes.push("LoC Class " + dataTags[fieldTitle]);
 		} else if (fieldTitle.match(/Release.?Date/)) {
 			newItem.date = dataTags[fieldTitle];
 		} else if (fieldTitle.match(/Copyright.?Status/)) {
@@ -128,7 +128,7 @@ function doWeb(doc, url) {
 	if (detectWeb(doc, url) == "multiple") {
 		var items = new Object();
 		var links = doc.evaluate('//ul[@class="results"]/li[@class="booklink"]/a[@class="link"]', doc, null, XPathResult.ANY_TYPE, null);
-	    var link;
+		var link;
 		while (link = links.iterateNext()){
 			items[link.href] = ZU.xpathText(link, './span/span[@class="title"]')
 		}
@@ -139,9 +139,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				articles.push(i);
 			}
-			Zotero.Utilities.processDocuments(articles, scrape, function () {
-				Zotero.done();
-			});
+		Zotero.Utilities.processDocuments(articles, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -164,7 +162,9 @@ var testCases = [
 						"creatorType": "author"
 					}
 				],
-				"notes": "LoC Class F1401: Latin America local history: General",
+				"notes": [
+					"LoC Class F1401: Latin America local history: General"
+				],
 				"tags": [
 					"Indians, Treatment of -- Latin America",
 					"Spain -- Colonies -- America"

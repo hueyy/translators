@@ -8,14 +8,14 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsv",
-	"lastUpdated": "2012-06-30 23:54:08"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2014-02-14 00:21:11"
 }
 
 function detectWeb(doc, url) {
 	if (doc.evaluate('//body[contains(@class, "searchResults")]|//div[contains(@class, "search_result")]', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		return "multiple";
-	} else if (doc.evaluate('//h1[@id="article_headline"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
+	} else if (doc.evaluate('//h1[@class="headline"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 		return "magazineArticle";
 	}
 }
@@ -26,8 +26,8 @@ function doWeb(doc, url) {
 		if (ZU.xpathText(doc, '//h3[@class="story"]/a')){
 			var results = doc.evaluate('//h3[@class="story"]/a', doc, null, XPathResult.ANY_TYPE, null);
 		}
-		else if (ZU.xpathText(doc, '//div[@class="search_result"]/a')){
-				var results = doc.evaluate('//div[@class="search_result"]/a', doc, null, XPathResult.ANY_TYPE, null);
+		else if (ZU.xpathText(doc, '//div[@class="results"]//a[./h4]')){
+				var results = doc.evaluate('//div[@class="results"]//a[./h4]', doc, null, XPathResult.ANY_TYPE, null);
 		}
 		var result;
 		var items = new Object();
@@ -59,7 +59,7 @@ var metaTags = new Object();
 		}
 		Zotero.debug(metaTags);
 		var item = new Zotero.Item("magazineArticle");
-		item.title = ZU.xpathText(doc, '//h1[@id="article_headline"]');
+		item.title = ZU.xpathText(doc, '//h1[@class="headline"]');
 		if (metaTags['description']) item.abstractNote = metaTags['description'];
 		if (metaTags['keywords']) item.tags = metaTags['keywords'].split(/\s*,\s*/);
 		//some articles don't have author tags - prevent this from failing
@@ -101,7 +101,7 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [],
 				"title": "Ten Things Only Bad Managers Say",
-				"abstractNote": "We know the kinds of things good managers say: They say “Attaboy” or “Attagirl,” “Let me know if you run into any roadblocks, and I’ll try to get rid of them for you,” and “You’ve been killing yourself—why don’t you take off at noon on Friday?”",
+				"abstractNote": "Nope, it's not just you. These jerks are out there",
 				"publicationTitle": "BusinessWeek: management",
 				"url": "http://www.businessweek.com/management/ten-things-only-bad-managers-say-09232011.html?campaign_id=rss_topStories",
 				"date": "2011-09-23",
@@ -109,11 +109,6 @@ var testCases = [
 				"accessDate": "CURRENT_TIMESTAMP"
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://search.businessweek.com/Search?i=1&resultsperpage=20&searchterm=linux&sortby=date&u1=searchterm",
-		"items": "multiple"
 	},
 	{
 		"type": "web",

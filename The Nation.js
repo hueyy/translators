@@ -2,14 +2,14 @@
 	"translatorID": "0d6f8450-72e8-4d8f-bdc2-b7fa03e6f2c5",
 	"label": "The Nation",
 	"creator": "odie5533",
-	"target": "^http://www\\.thenation\\.com",
+	"target": "^https?://www\\.thenation\\.com",
 	"minVersion": "1.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-05 02:52:33"
+	"lastUpdated": "2014-04-04 09:56:16"
 }
 
 /*
@@ -40,7 +40,7 @@ XPATH_DATE = "//span[@class='article-date']";
 RE_DATE = /(.*)/;
 XPATH_AUTHORS = "//span[@property='dc:creator']";
 RE_AUTHORS = /(.*)/;
-RE_ARTICLE_URL = '^http://www\\.thenation\\.com/(?:article|blog|video)/(?!.*com\
+RE_ARTICLE_URL = '^https?://www\\.thenation\\.com/(?:article|blog|video)/(?!.*com\
 ment$)';
 RE_PRETTY_URL = /com\//;
 RE_PRETTY_URL_REPLACE = "com/print/";
@@ -71,7 +71,8 @@ function scrapeSingle(doc, url) {
 	var newItem = new Zotero.Item("magazineArticle");
 	if (PUB_TITLE) newItem.publicationTitle = PUB_TITLE;
 	if (PUB_ISSN) newItem.ISSN = PUB_ISSN;
-	newItem.url = url;
+	//clean up the clutter at the end of the URL
+	newItem.url = url.replace(/#.+/, "");
 	
 	newItem.title = xpath_string(doc, doc, XPATH_TITLE);
 	
@@ -109,7 +110,7 @@ function scrapeSingle(doc, url) {
 	// attach html
 	newItem.attachments.push({title:PUB_TITLE+" Snapshot", mimeType:"text/html",
 							  url:snapUrl, snapshot:true});
-	
+
 	return newItem;
 }
 

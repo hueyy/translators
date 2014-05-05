@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-25 22:28:07"
+	"lastUpdated": "2013-11-18 23:02:45"
 }
 
 /*
@@ -36,7 +36,11 @@
 
 function detectWeb(doc, url) {
 	if (url.match(/\/items\?query=/) && ZU.xpathText(doc, '//div[@id="searchResults"]//h2[@class="title"]/a')!=null ) return "multiple";
-	if (url.match(/\/items\/\d+/) && ZU.xpathText(doc, '//link/@type').indexOf("application/x-endnote-refer")!=-1) return "book";
+	if (url.match(/\/items\/\d+/)) {
+		var test = ZU.xpathText(doc, '//link/@type');
+		if(test && test.indexOf("application/x-endnote-refer")!=-1)
+			return "book";
+	}
 }
 	
 
@@ -91,17 +95,7 @@ function referURL(url){
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://prism.talis.com/cityoflondon/items?query=argentina",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://catalogue.library.manchester.ac.uk/items?query=bringing+the+state+back+in",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://prism.talis.com/cityoflondon/items/169754?query=mahoney&resultsUri=items%3Fquery%3Dmahoney",
+		"url": "http://capitadiscovery.co.uk/cityoflondon/items/169754?outdated=true&query=mahoney&resultsUri=items%3Fquery%3Dmahoney",
 		"items": [
 			{
 				"itemType": "book",
@@ -120,11 +114,11 @@ var testCases = [
 				"tags": [],
 				"seeAlso": [],
 				"attachments": [],
-				"title": "The compact wine guide; e. John Mahoney)",
+				"title": "The compact wine guide",
 				"place": "(London",
 				"publisher": "Wine and Spirit Publications",
 				"date": "1969",
-				"url": "http://prism.talis.com/cityoflondon/items/169754",
+				"url": "http://capitadiscovery.co.uk/cityoflondon/items/169754",
 				"language": "English",
 				"libraryCatalog": "Library Catalog (Talis Prism 2)",
 				"accessDate": "CURRENT_TIMESTAMP"
@@ -133,53 +127,52 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://catalogue.library.manchester.ac.uk/items/710564?query=bringing+the+state+back+in&resultsUri=items%3Fquery%3Dbringing%2Bthe%2Bstate%2Bback%2Bin",
+		"url": "http://capitadiscovery.co.uk/surrey-ac/items/199580?outdated=true&query=borges&resultsUri=items%3Fquery%3Dborges",
 		"items": [
 			{
 				"itemType": "book",
 				"creators": [
 					{
-						"firstName": "Peter",
-						"lastName": "Evans",
+						"firstName": "Jorge Luis",
+						"lastName": "Borges",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "Dietrich",
-						"lastName": "Rueschemeyer",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Theda",
-						"lastName": "Skocpol",
+						"firstName": "Anthony",
+						"lastName": "Kerrigan",
 						"creatorType": "author"
 					}
 				],
 				"notes": [
 					{
-						"note": "Includes index."
-					},
-					{
-						"note": "edited by Peter B. Evans, Dietrich Rueschemeyer, Theda Skocpol"
+						"note": "Jorge Luis Borges ; edited and with an introduction by Anthony Kerrigan"
 					}
 				],
 				"tags": [
-					"State, The.",
-					"State Sociological perspectives",
-					"Political sociology."
+					"Short stories in Spanish Argentinian writers 1910-1945 English texts"
 				],
 				"seeAlso": [],
 				"attachments": [],
-				"title": "Bringing the state back in",
-				"place": "Cambridge",
-				"publisher": "Cambridge University Press",
-				"date": "1985",
-				"ISBN": "0521307864",
-				"url": "http://catalogue.library.manchester.ac.uk/items/710564",
+				"title": "Fictions",
+				"place": "London",
+				"publisher": "Calder",
+				"date": "1965 1985",
+				"ISBN": "9780714540832",
+				"url": "http://capitadiscovery.co.uk/surrey-ac/items/199580",
 				"language": "English",
-				"libraryCatalog": "Library Catalog (Talis Prism 2)",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"libraryCatalog": "Library Catalog (Talis Prism 2)"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://capitadiscovery.co.uk/surrey-ac/items?query=borges",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://capitadiscovery.co.uk/cityoflondon/items?query=argentina",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

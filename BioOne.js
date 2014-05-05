@@ -2,14 +2,14 @@
 	"translatorID": "7cb0089b-9551-44b2-abca-eb03cbf586d9",
 	"label": "BioOne",
 	"creator": "Michael Berkowitz",
-	"target": "^http://[^/]*www\\.bioone\\.org[^/]*/",
+	"target": "^https?://[^/]*www\\.bioone\\.org[^/]*/s",
 	"minVersion": "1.0.0b4.r5",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-01-30 22:40:25"
+	"lastUpdated": "2014-04-03 16:38:14"
 }
 
 /*
@@ -40,18 +40,18 @@ function detectWeb(doc, url) {
 function doWeb(doc, url) {
   var namespace = doc.documentElement.namespaceURI;
   var nsResolver = namespace ? function(prefix) {
-    if (prefix == 'x') return namespace; else return null;
+	if (prefix == 'x') return namespace; else return null;
 		} : null;
   var arts = new Array();
   if (detectWeb(doc, url) == "multiple") {
-    var items = new Object();
-    var rows = ZU.xpath(doc, '//div[@class="searchEntry"]');
-    for (var i in rows) {
-     var title = ZU.xpathText(rows[i], './/h4[@class="searchTitle"]');
+	var items = new Object();
+	var rows = ZU.xpath(doc, '//div[@class="searchEntry"]');
+	for (var i in rows) {
+	 var title = ZU.xpathText(rows[i], './/h4[@class="searchTitle"]');
 			var id = ZU.xpath(rows[i], './/p[@class="searchEntryTools"]/a')[0].href;
 			items[id] = title;
 	}
-    	Zotero.selectItems(items, function(items){
+		Zotero.selectItems(items, function(items){
 			 if(!items) {
 			   return true;
 			 }
@@ -62,35 +62,30 @@ function doWeb(doc, url) {
 			   citationurls.push(itemurl.replace(/\?prev.+/, "").replace(/\/doi\/abs\//, "/action/showCitFormats?doi="));
 			 }
 			 getpages(citationurls);
-		       });
+			   });
 
   } else {
-    var citationurl = url.replace(/\/doi\/abs\/|\/doi\/full\//, "/action/showCitFormats?doi=");
-    //Z.debug(citationurl)
-    getpages(citationurl);
+	var citationurl = url.replace(/\?.+/, "").replace(/\/doi\/abs\/|\/doi\/full\//, "/action/showCitFormats?doi=");
+	//Z.debug(citationurl)
+	getpages(citationurl);
   }
-  Zotero.wait();
 }
 
 function getpages(citationurl) {
 	//we work entirely from the citations page
-  Zotero.Utilities.processDocuments(citationurl, function(doc) {
-				      scrape(doc);
-	}, function() { Zotero.done() });
+  Zotero.Utilities.processDocuments(citationurl, scrape);
 }
-
 
 function scrape (doc) {
   var newurl = doc.location.href;
-  //Z.debug(newurl);
   var pdfurl = newurl.replace(/\/action\/showCitFormats\?doi=/, "/doi/pdf/");
   var absurl = newurl.replace(/\/action\/showCitFormats\?doi=/, "/doi/abs/");
-  var doi = doc.evaluate('//form[@target="_self"]/input[@name="doi"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext().value;
-  var filename = doc.evaluate('//form[@target="_self"]/input[@name="downloadFileName"]', doc, null, XPathResult.ANY_TYPE, null).iterateNext().value;
-  //	Z.debug(filename);
+  var doi = ZU.xpathText(doc, '//form/input[@name="doi"]/@value')
+  var filename = ZU.xpathText(doc, '//form/input[@name="downloadFileName"]');
   var get = 'http://www.bioone.org/action/downloadCitation';
   var post = 'doi=' + doi + '&downloadFileName=' + filename + '&format=ris&direct=true&include=cit';
-  Zotero.Utilities.HTTP.doPost(get, post, function(text) {
+   Zotero.Utilities.HTTP.doPost(get, post, function(text) {
+  	//Z.debug(text)
 	var translator = Zotero.loadTranslator("import");
 	// Calling the RIS translator
 	translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
@@ -143,28 +138,26 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"url": "http://www.bioone.org/doi/pdf/10.4202/app.2010.0005",
 						"title": "BioOne PDF fulltext",
 						"mimeType": "application/pdf"
 					},
 					{
-						"url": "http://www.bioone.org/doi/abs/10.4202/app.2010.0005",
 						"title": "BioOne Snapshot",
 						"mimeType": "text/html"
 					}
 				],
 				"title": "Body Mass Estimation in Amphicyonid Carnivoran Mammals: A Multiple Regression Approach from the Skull and Skeleton",
-				"date": "2011",
+				"date": "June 1, 2011",
 				"DOI": "10.4202/app.2010.0005",
 				"publicationTitle": "Acta Palaeontologica Polonica",
+				"journalAbbreviation": "Acta Palaeontologica Polonica",
 				"pages": "225-246",
 				"volume": "56",
 				"issue": "2",
 				"publisher": "Institute of Paleobiology, Polish Academy of Sciences",
-				"ISBN": "0567-7920",
 				"ISSN": "0567-7920",
 				"url": "http://www.bioone.org/doi/abs/10.4202/app.2010.0005",
-				"accessDate": "2011/12/10",
+				"accessDate": "September 4, 2012",
 				"libraryCatalog": "BioOne",
 				"shortTitle": "Body Mass Estimation in Amphicyonid Carnivoran Mammals"
 			}
@@ -203,26 +196,24 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
-						"url": "http://www.bioone.org/doi/pdf/10.1896/020.011.0101",
 						"title": "BioOne PDF fulltext",
 						"mimeType": "application/pdf"
 					},
 					{
-						"url": "http://www.bioone.org/doi/abs/10.1896/020.011.0101",
 						"title": "BioOne Snapshot",
 						"mimeType": "text/html"
 					}
 				],
 				"title": "Albinismo Total em Preguiças-de-Garganta-Marrom Bradypus variegatus (Schinz, 1825) no Estado de Pernambuco, Brasil",
-				"date": "2010",
+				"date": "November 1, 2010",
 				"DOI": "10.1896/020.011.0101",
 				"publicationTitle": "Edentata",
+				"journalAbbreviation": "Edentata",
 				"pages": "1-3",
 				"publisher": "IUCN/SSC Anteater, Sloth and Armadillo Specialist Group",
-				"ISBN": "1413-4411",
 				"ISSN": "1413-4411",
 				"url": "http://www.bioone.org/doi/abs/10.1896/020.011.0101",
-				"accessDate": "2011/12/10",
+				"accessDate": "September 4, 2012",
 				"libraryCatalog": "BioOne"
 			}
 		]

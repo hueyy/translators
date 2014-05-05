@@ -1,15 +1,15 @@
 {
 	"translatorID": "e04e4bab-64c2-4b9a-b6c2-7fb186281969",
 	"label": "L'Annee Philologique",
-	"creator": "Sebsatian Karcher",
-	"target": "^https?://www\\.annee-philologique\\.com/index\\.php",
+	"creator": "Sebastian Karcher",
+	"target": "^https?://www\\.annee-philologique\\.com/(aph)?/?index\\.php",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "g",
-	"lastUpdated": "2012-06-25 12:12:43"
+	"browserSupport": "gcsib",
+	"lastUpdated": "2013-04-17 03:09:28"
 }
 
 /*
@@ -67,9 +67,7 @@ function doWeb(doc, url) {
 			for (var i in items) {
 				arts.push(i);
 			}
-			Zotero.Utilities.processDocuments(arts, scrape, function () {
-				Zotero.done();
-			});
+			Zotero.Utilities.processDocuments(arts, scrape);
 		});
 	} else {
 		scrape(doc, url);
@@ -80,10 +78,12 @@ function scrape(doc, url) {
 	var num = url.match(/&num=\d+/)[0].replace(/^&/, "");
 	var critere = encodeURIComponent(ZU.xpathText(doc, '//input[@id="critere"]/@value'));
 	var get = 'http://www.annee-philologique.com/index.php?do=export_ris&' + num;
+	Z.debug(get)
 	var post = num + '&js_actif=1&critere=' + critere + '&noticesformat=noticesformat3&mailExport=&inputnbselect=0&inputnbnotselect=4&inputumcourant=1';
-	//Z.debug(post);
+	Z.debug(post);
 	Zotero.Utilities.HTTP.doPost(get, post, function (text) {
 		//Z.debug(text)
+		text=text.trim()
 		var translator = Zotero.loadTranslator("import");
 		translator.setTranslator("32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7");
 		translator.setString(text);
@@ -95,10 +95,11 @@ function scrape(doc, url) {
 				if (!item.creators[i].firstName) {
 					var author;
 					//Assume the first word is the last Name - that's the best we can do here
-					var author = item.creators[i].lastName.match(/(\S+)(\s.+)/)
-					if (author[2]) {
-						item.creators[i].firstName = author[2]
-						item.creators[i].lastName = author[1]
+					var author = item.creators[i].lastName.match(/(\S+)\s+(.+)/)
+					if (author) {
+						item.creators[i].firstName = author[2];
+						item.creators[i].lastName = author[1];
+						delete item.creators[i].fieldMode;
 					}
 				}
 			}
@@ -114,3 +115,37 @@ function scrape(doc, url) {
 	});
 }
 //no permalinks --> no test
+/** BEGIN TEST CASES **/
+var testCases = [
+	{
+		"type": "web",
+		"url": "http://www.annee-philologique.com/aph/index.php?do=uneNotice&id=31-02979",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"lastName": "Shedd",
+						"creatorType": "author",
+						"firstName": " R. P."
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "L'Année Philologique Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Man in community. A study of St. Paul's application of Old Testament and early Jewish conceptions of human solidarity",
+				"date": "1958",
+				"publisher": "Epworth Pr.",
+				"place": "London",
+				"libraryCatalog": "L'Annee Philologique"
+			}
+		]
+	}
+]
+/** END TEST CASES **/

@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2012-02-24 11:20:24"
+	"lastUpdated": "2013-12-18 22:57:58"
 }
 
 function textToXML(text) {
@@ -35,41 +35,72 @@ function scrape(text) {
 		for(var property in item) {
 			newItem[property] = item[property];
 		}
+		if(!newItem.title) newItem.title = "[Untitled]";
 
 		newItem.complete();
 	}
 }
 
+function getListTitles(doc) {
+	return ZU.xpath(doc, '//table[@id="field-table"]//td[@class="title"]'
+		+ '[./a[not(contains(text(), "Unpublished Note"))]'
+			+ '/span[not(contains(@class,"sprite-treeitem-attachment"))]]');
+}
+
+var apiKey;
+
+function getLibraryURI(doc) {
+	var feed = ZU.xpath(doc, '//a[@type="application/atom+xml" and @rel="alternate"]')[0]
+	if(!feed) return;
+	var url = feed.href.match(/^.+?\/(?:users|groups)\/\w+/);
+	
+	if(!url) {
+		//personal library. see if we can find an API key
+		var key = ZU.xpathText(doc, '//script[contains(text(),"apiKey")]');
+		if(!key) return;
+		
+		key = key.match(/apiKey\s*:\s*(['"])(.+?)\1/);
+		if(!key) return;
+		apiKey = key[2];
+		
+		url = decodeURIComponent(feed.href)
+			.match(/https?:\/\/[^\/]+\/(?:users|groups)\/\w+/);
+		if(!url) return;
+	}
+	
+	return url[0] + '/items/';
+}
+
 function detectWeb(doc, url) {
+	//disable for libraries where we can't get a library URI or an apiKey
+	if(!getLibraryURI(doc)) return;
+	
 	//single item
 	if( url.match(/\/itemKey\/\w+/) ) {
 		return ZU.xpathText(doc, '//div[@id="item-details-div"]//td[preceding-sibling::th[text()="Item Type"]]/@class')
 				|| false;
 	}
 
-	// Skip private groups
-	//is this still how they are identified??
-	if (url.match(/\/groups\/[0-9]+\/items/)) {
-		return false;
-	}
-
 	// Library and collections
-	if ( ( url.match(/\/items\/?([?#].*)?$/) ||
-		url.indexOf('/collectionKey/') != -1 || url.match(/\/collection\/\w+/) )
-		&& doc.getElementById("field-table") ) {
+	if ( ( url.match(/\/items\/?([?#].*)?$/)
+		|| url.indexOf('/collectionKey/') != -1
+		|| url.match(/\/collection\/\w+/)
+		|| url.indexOf('/tag/') != -1 )	
+		&& getListTitles(doc).length ) {
 		return "multiple";
 	}
 }
 
 function doWeb(doc, url) {
-	var libraryURI = ZU.xpathText(doc, '//link[@type="application/atom+xml" and @rel="alternate"]/@href')
-					.match(/^.+?\/(?:users|groups)\/\w+/)[0]
-					+ '/items/';
-	var apiOpts = '?format=atom&content=json';
+	var libraryURI = getLibraryURI(doc);
+	if(Zotero.isBookmarklet) {
+		libraryURI = libraryURI.replace("https://api.zotero.org", "https://www.zotero.org/api");
+	}
+	var apiOpts = '?format=atom&content=json' + (apiKey ? '&key=' + apiKey : '' );
 	var itemRe = /\/itemKey\/(\w+)/;
 
 	if (detectWeb(doc, url) == "multiple") {
-		var elems = ZU.xpath(doc, '//table[@id="field-table"]//td[1][not(contains(./a, "Unpublished Note"))]');
+		var elems = getListTitles(doc);
 		var items = ZU.getItemArray(doc, elems);
 		
 		Zotero.selectItems(items, function(selectedItems) {
@@ -78,7 +109,6 @@ function doWeb(doc, url) {
 			var apiURIs = [], itemID;
 			for (var url in selectedItems) {
 				itemID = url.match(itemRe)[1];
-				//export using zotero rdf to preserve as much information as possible
 				apiURIs.push(libraryURI + itemID + apiOpts);
 			}
 
@@ -98,24 +128,25 @@ var testCases = [
 		"url": "https://www.zotero.org/groups/all_things_zotero/items/itemKey/HXTTNJGD",
 		"defer": true,
 		"items": [
-			 {
-         	"itemType": "journalArticle",
-         	"creators": [
-         		{
-         			"creatorType": "author",
-         			"firstName": "Mark",
-         			"lastName": "Desirto"
-         		}
-         	],
-         	"notes": [],
-         	"tags": [],
-         	"seeAlso": [],
-         	"attachments": [],
-         	"title": "Expert Searching, Zotero: A New Bread of Search Tool",
-         	"publicationTitle": "Medical Library Association Newsletter",
-         	"date": "April 2007",
-         	"callNumber": "0000"
-         }
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"creatorType": "author",
+						"firstName": "Mark",
+						"lastName": "Desirto"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"title": "Expert Searching, Zotero: A New Bread of Search Tool",
+				"publicationTitle": "Medical Library Association Newsletter",
+				"date": "April 2007",
+				"callNumber": "0000",
+				"extra": "Cited by 0000"
+			}
 		]
 	},
 	{
@@ -123,26 +154,26 @@ var testCases = [
 		"url": "https://www.zotero.org/marksample/items/collectionKey/5RN69IBP/itemKey/58VT7DAA",
 		"defer": true,
 		"items": [
-			 {
-         	"itemType": "book",
-         	"creators": [
-         		{
-         			"creatorType": "author",
-         			"firstName": "Mark",
-         			"lastName": "Osteen"
-         		}
-         	],
-         	"notes": [],
-         	"tags": [],
-         	"seeAlso": [],
-         	"attachments": [],
-         	"title": "American Magic and Dread: Don DeLillo’s Dialogue with Culture",
-         	"place": "Philadelphia",
-         	"publisher": "University of Pennsylvania Press",
-         	"date": "2000",
-         	"ISBN": "0812235517",
-         	"shortTitle": "American Magic"
-         }
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"creatorType": "author",
+						"firstName": "Mark",
+						"lastName": "Osteen"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"title": "American Magic and Dread: Don DeLillo’s Dialogue with Culture",
+				"place": "Philadelphia",
+				"publisher": "University of Pennsylvania Press",
+				"date": "2000",
+				"ISBN": "0812235517",
+				"shortTitle": "American Magic"
+			}
 		]
 	},
 	{
@@ -172,6 +203,12 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "https://www.zotero.org/marksample/items/collection/5RN69IBP",
+		"items": "multiple",
+		"defer": true
+	},
+	{
+		"type": "web",
+		"url": "https://www.zotero.org/groups/devtesting/items/tag/tag2",
 		"items": "multiple",
 		"defer": true
 	}

@@ -2,14 +2,14 @@
 	"translatorID": "6614a99-479a-4524-8e30-686e4d66663e",
 	"label": "Nature Publishing Group",
 	"creator": "Aurimas Vinckevicius",
-	"target": "https?://[^/]*nature\\.com(:[\\d]+)?(?=/)[^?]*(/(journal|archive|research|topten|search|full|abs)/|/current_issue.htm|/most.htm)",
+	"target": "^https?://(?:[^/]+\\.)?(?:nature\\.com|palgrave-journals\\.com)(?::[\\d]+)?(?=/)[^?]*(?:/(?:journal|archive|research|topten|search|full|abs)/|/current_issue\\.htm|/most\\.htm)",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 200,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-27 18:34:44"
+	"lastUpdated": "2014-01-11 14:00:00"
 }
 
 /**
@@ -29,6 +29,167 @@
 	License along with this program. If not, see
 	<http://www.gnu.org/licenses/>.
 */
+
+//mimetype map for supplementary attachments
+var suppTypeMap = {
+	'pdf': 'application/pdf',
+//	'zip': 'application/zip',
+	'doc': 'application/msword',
+	'xls': 'application/vnd.ms-excel',
+	'excel': 'application/vnd.ms-excel'
+};
+
+function attachSupplementary(doc, item, next) {
+	//nature's new website
+	var attachAsLink = Z.getHiddenPref("supplementaryAsLink");
+	var suppDiv = doc.getElementById("supplementary-information");
+	if(suppDiv) {
+		var fileClasses = ZU.xpath(suppDiv, './/div[contains(@class, "supp-info")]/h2');
+		for(var i=0, n=fileClasses.length; i<n; i++) {
+			var type = fileClasses[i].classList.item(0);
+			if(type) type = suppTypeMap[type];
+			
+			if(!fileClasses[i].nextElementSibling) continue;
+			var dls = fileClasses[i].nextElementSibling.getElementsByTagName('dl');
+			for(var j=0, m=dls.length; j<m; j++) {
+				var link = ZU.xpath(dls[j], './dt/a')[0];
+				if(!link) {
+					continue;
+				}
+	
+				var title = dls[j].getElementsByTagName('dd')[0];
+				if(title) {
+					title = title.textContent.replace(
+						/^[\s\r\n]*(?:Th(?:is|e) )?file (?:contains|shows)\s+(\S+)/i,
+						function(m, firstWord) {	//fix capitalization of first word
+							if(firstWord.toLowerCase() == firstWord) {	//lower case word
+								return firstWord.charAt(0).toUpperCase() + firstWord.substr(1);
+							}
+							return firstWord;
+						}
+					).trim();
+				}
+				
+				//add the heading from link
+				title = link.textContent.replace(/\s+\([^()]+\)\s*$/g, '').trim()	//strip off the file size info
+						+ ". " + (title || '');
+
+				//fallback if we fail miserably
+				if(!title) title = "Supplementary file";
+				
+				var attachment = {
+					title: title,
+					url: link.href
+				};
+				
+				if(type) attachment.mimeType = type;
+				if(attachAsLink || !type) {	//don't download unknown file types
+					attachment.snapshot = false;
+				}
+				
+				item.attachments.push(attachment);
+			}
+		}
+		return;
+	}
+	
+	//older websites, e.g. http://www.nature.com/onc/journal/v31/n6/full/onc2011282a.html
+	var suppLink = doc.getElementById('articlenav') || doc.getElementById('extranav');
+	if(suppLink) {
+		suppLink = ZU.xpath(suppLink, './ul/li//a[text()="Supplementary info"]')[0]; //unfortunately, this is the best we can do
+		if(!suppLink) return;
+		
+		if(attachAsLink) {	//we don't need to find links to individual files
+			item.attachments.push({
+				title: "Supplementary info",
+				url: suppLink.href,
+				mimeType: 'text/html',
+				snapshot: false
+			});
+		} else {
+			ZU.processDocuments(suppLink.href, function(newDoc) {
+				var content = newDoc.getElementById('content');
+				if(content) {
+					var links = ZU.xpath(content, './div[@class="container-supplementary" or @id="general"]//a');
+					for(var i=0, n=links.length; i<n; i++) {
+						var title = ZU.trimInternal(links[i].textContent);
+						var type = title.match(/\((\w+)\s+\d+[^)]+\)\s*$/);
+						if(type) type = suppTypeMap[type[1]];
+						if(!type) {
+							type = links[i].classList;
+							type = type.item(type.length-1);
+							if(type) type = suppTypeMap[type.replace(/^(?:i|all)-/, '')];
+						}
+						
+						//clean up title a bit
+						title = title.replace(/\s*\([^()]+\)$/, '')
+									.replace(/\s*-\s*download\b.*/i, '');
+						
+						item.attachments.push({
+							title: title,
+							url: links[i].href,
+							mimeType: type,
+							snapshot: !!type	//don't download unknown file types
+						});
+					}
+				}
+				next(doc, item);
+			});
+			return true;
+		}
+		return;
+	}
+	
+	//e.g. http://www.nature.com/ng/journal/v38/n11/full/ng1901.html
+	var suppLink = ZU.xpath(doc, '(//a[text()="Supplementary info"])[last()]')[0];
+	if(suppLink) {
+		if(attachAsLink) {	//we don't need to find links to individual files
+			item.attachments.push({
+				title: "Supplementary info",
+				url: suppLink.href,
+				mimeType: 'text/html',
+				snapshot: false
+			});
+		} else {
+			Z.debug(suppLink.href);
+			ZU.processDocuments(suppLink.href, function(newDoc) {
+				var links = ZU.xpath(newDoc, './/p[@class="articletext"]');
+				Z.debug("Found " + links.length + " links")
+				for(var i=0, n=links.length; i<n; i++) {
+					var link = links[i].getElementsByTagName('a')[0];
+					if(!link) continue;
+					
+					var title = ZU.trimInternal(link.textContent);
+					
+					var type = title.match(/\((\w+)\s+\d+[^)]+\)\s*$/);
+					if(type) type = suppTypeMap[type[1]];
+					
+					//clean up title a bit
+					title = title.replace(/\s*\([^()]+\)$/, '')
+								.replace(/\s*-\s*download\b.*/i, '');
+					
+					//maybe we can attach description to title
+					//can this be too long? I would probably make more sense to attach these as notes on the files
+					//how do we do that?
+					var desc = ZU.xpathText(links[i], './node()[last()][not(name())]');	//last text node
+					if(desc && (desc = ZU.trimInternal(desc))) {
+						title += '. ' + desc;
+					}
+					
+					item.attachments.push({
+						title: title,
+						url: links[i].href,
+						mimeType: type,
+						snapshot: !!type	//don't download unknown file types
+					});
+				}
+				next(doc, item);
+			});
+			return true;
+		}
+		return;
+	}
+}
 
 //unescape Highwire's special html characters
 function unescape(str) {
@@ -55,16 +216,21 @@ function fixCaps(str) {
 //get abstract
 function getAbstract(doc) {
 	var abstractLocations = [
-	//e.g. 'lead' http://www.nature.com/emboj/journal/v31/n1/full/emboj2011343a.html
-	//e.g. 'first_paragraph' http://www.nature.com/emboj/journal/vaop/ncurrent/full/emboj201239a.html
-	'//p[contains(@class,"lead") or contains(@class,"first_paragraph")]',
-	//e.g.
-	'//div[@id="abs"]/*[self::div[not(contains(@class, "keyw-abbr"))] or self::p]',
-	//e.g. 'first-paragraph' http://www.nature.com/nature/journal/v481/n7381/full/nature10669.html
-	//e.g. 'standfirst' http://www.nature.com/nature/journal/v481/n7381/full/481237a.html
-	'//div[@id="first-paragraph" or @class="standfirst"]/p',
-	//e.g. http://www.nature.com/nature/journal/v481/n7381/full/nature10728.html
-	'//div[contains(@id,"abstract")]/div[@class="content"]/p'];
+		//e.g. 'lead' http://www.nature.com/emboj/journal/v31/n1/full/emboj2011343a.html
+		//e.g. 'first_paragraph' http://www.nature.com/emboj/journal/vaop/ncurrent/full/emboj201239a.html
+		'//p[contains(@class,"lead") or contains(@class,"first_paragraph")]',
+		//e.g. http://www.nature.com/nprot/journal/v8/n11/full/nprot.2013.143.html
+		'//div[@id="abstract"]/div[@class="content"]/p',
+		//e.g.
+		'//div[@id="abs"]/*[self::div[not(contains(@class, "keyw-abbr"))] or self::p]',
+		//e.g. 'first-paragraph' http://www.nature.com/nature/journal/v481/n7381/full/nature10669.html
+		//e.g. 'standfirst' http://www.nature.com/nature/journal/v481/n7381/full/481237a.html
+		'//div[@id="first-paragraph" or @class="standfirst"]/p',
+		//e.g. http://www.nature.com/nature/journal/v481/n7381/full/nature10728.html
+		'//div[contains(@id,"abstract")]/div[contains(@class,"content")]/p',
+		//e.g. http://www.nature.com/ng/journal/v38/n8/abs/ng1845.html
+		'//span[@class="articletext" and ./preceding-sibling::*[1][name()="a" or name()="A"][@name="abstract"]]'
+	];
 
 	var paragraphs = [];
 
@@ -102,7 +268,7 @@ function getPdfUrl(url) {
 }
 
 //add using embedded metadata
-function scrapeEmbedMeta(doc, url) {
+function scrapeEM(doc, url, next) {
 	var translator = Zotero.loadTranslator("web");
 	//Embedded Metadata translator
 	translator.setTranslator("951c027d-74ac-47d4-a107-9c3069ab7b48");
@@ -151,78 +317,87 @@ function scrapeEmbedMeta(doc, url) {
 			item.abstractNote = abstract;
 		}
 
-		var pdf = getPdfUrl(url);
-		if (pdf) {
-			item.attachments = [{
-				url: pdf,
-				title: 'Full Text PDF',
-				mimeType: 'application/pdf'
-			}];
-		}
-
-		var keywords = getKeywords(doc);
-		if(keywords) item.tags = keywords;
-		else if(item.tags) {
-			keywords = [];
-			//sometimes keywords inside meta tags are not split properly
-			//they have both semicolon and comma. We will also split by comma
-			for(var i=0, n=item.tags.length; i<n; i++) {
-				keywords = keywords.concat(item.tags[i].split(/\s*,\s*/));
-			}
-			item.tags = keywords;
-		}
+		item.tags = getKeywords(doc) || [];
 
 		if (item.notes) item.notes = [];
 		
-		if(item.ISSN === "ERROR! NO ISSN") delete item.ISSN;
+		if(item.ISSN && ZU.cleanISSN) {	//introduced in 3.0.12
+			var issn = ZU.cleanISSN(item.ISSN);
+			if(!issn) delete item.ISSN;
+			else item.ISSN = issn;
+		} else if(item.ISSN === "ERROR! NO ISSN") {
+			delete item.ISSN;
+		}
 
-		item.complete();
+		next(item);
 	});
 
 	translator.translate();
 }
 
-function detectWeb(doc, url) {
-	if (url.match(/\/(full|abs)\/[^\/]+($|\?|#)/)) {
+function scrapeRIS(doc, url, next) {
+	var navBar = doc.getElementById('articlenav') || doc.getElementById('extranav');
+	var risURL
+	if(navBar) {
+		risURL = doc.evaluate('//li[@class="export"]/a', navBar, null, XPathResult.ANY_TYPE, null).iterateNext();
+		if(!risURL) risURL = doc.evaluate('//a[normalize-space(text())="Export citation" and not(@href="#")]', navBar, null, XPathResult.ANY_TYPE, null).iterateNext();
+	}
+	
+	if(!risURL) risURL = doc.evaluate('//a[normalize-space(text())="RIS" and not(@href="#")]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+	if(!risURL) risURL = doc.evaluate('//li[@class="download-citation"]/a', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
+	if(!risURL) risURL = doc.evaluate('//a[normalize-space(text())="Export citation" and not(@href="#")]', doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 
-		return 'journalArticle';
-
-	} else if (doc.title.toLowerCase().indexOf('table of contents') != -1 || //single issue ToC. e.g. http://www.nature.com/emboj/journal/v30/n1/index.html or http://www.nature.com/nature/journal/v481/n7381/index.html
-	doc.title.toLowerCase().indexOf('current issue') != -1 || url.indexOf('/research/') != -1 || url.indexOf('/topten/') != -1 || url.indexOf('/most.htm') != -1 || (url.indexOf('/vaop/') != -1 && url.indexOf('index.html') != -1) || //advanced online publication
-	url.indexOf('sp-q=') != -1) { //search query
-		return 'multiple';
-
-	} else if (url.indexOf('/archive/') != -1) {
-		if (url.indexOf('index.htm') != -1) return false; //list of issues
-		if (url.indexOf('subject.htm') != -1) return false; //list of subjects
-		if (url.indexOf('category.htm') != -1 && url.indexOf('code=') == -1) return false; //list of categories
-		return 'multiple'; //all else should be ok
+	if(risURL) {
+		risURL = risURL.href;
+		ZU.doGet(risURL, function(text) {
+			if(text.search(/^TY /m) != -1) {
+				var translator = Zotero.loadTranslator('import');
+				translator.setTranslator('32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7');
+				translator.setString(text);
+				translator.setHandler('itemDone', function(obj, newItem) {
+					newItem.notes = [];
+					next(newItem);
+				})
+				translator.setHandler('error', function() { next() });
+				translator.translate();
+			} else {
+				next();
+			}
+		});
+	} else {
+		Z.debug('Could not find RIS export');
+		next();
 	}
 }
 
-function doWeb(doc, url) {
-	if (detectWeb(doc, url) == 'multiple') {
-		var allHNodes = '*[self::h1 or self::h2 or self::h3 or self::h4 or self::h5]';
-		var nodex, titlex, linkx;
-		var nodes = [];
+function getMultipleNodes(doc, url) {
+	var allHNodes = '*[self::h1 or self::h2 or self::h3 or self::h4 or self::h5]';
+	var nodex, titlex, linkx;
+	var nodes = [];
 
-		if (url.indexOf('/search/') != -1 || url.indexOf('/most.htm') != -1) {
-			//search, "top" lists
-			nodex = '//ol[@class="results-list" or @id="content-list"]/li';
-			titlex = './' + allHNodes + '/node()[not(self::span)]';
-			linkx = './' + allHNodes + '/a';
+	if (url.indexOf('/search/') != -1 || url.indexOf('/most.htm') != -1) {
+		//search, "top" lists
+		nodex = '//ol[@class="results-list" or @id="content-list"]/li';
+		titlex = './' + allHNodes + '/node()[not(self::span)]';
+		linkx = './' + allHNodes + '/a';
 
-			nodes = Zotero.Utilities.xpath(doc, nodex);
-		} else {
+		nodes = Zotero.Utilities.xpath(doc, nodex);
+	} else {
 
-			//Maybe there's a nice way to figure out which journal uses what style, but for now we'll just try one until it matches
-			//these seem to be listed in order of frequency
-			var styles = [
+		//Maybe there's a nice way to figure out which journal uses what style, but for now we'll just try one until it matches
+		//these seem to be listed in order of frequency
+		var styles = [
+			//ToC
+			{
+				'nodex': '//tr[./td/span[@class="articletitle"]]',
+				'titlex': './td/span[@class="articletitle"]',
+				'linkx': './td/a[@class="contentslink" and substring(@href, string-length(@href)-3) != "pdf"][1]' //abstract or full text
+			},
 			//oncogene
 			{
 				'nodex': '//div[child::*[@class="atl"]]',
-				'titlex': './' + allHNodes + '/node()[not(self::span)]',
-				'linkx': './p[@class="links"]/a[contains(text(),"Full Text") or contains(text(),"Full text")]'
+				'titlex': './' + allHNodes + '[last()]/node()[not(self::span)]',	//ignore "subheading"
+				'linkx': './p[@class="links" or @class="articlelinks"]/a[contains(text(),"Full Text") or contains(text(),"Full text")]'
 			},
 			//embo journal
 			{
@@ -235,18 +410,260 @@ function doWeb(doc, url) {
 				'nodex': '//ul[contains(@class,"article-list") or contains(@class,"collapsed-list")]/li',
 				'titlex': './/' + allHNodes + '/a',
 				'linkx': './/' + allHNodes + '/a'
-			}];
+			},
+			//archive (e.g. http://www.nature.com/bonekey/archive/type.html)
+			{
+				'nodex': '//table[@class="archive"]/tbody/tr',
+				'titlex': './td/' + allHNodes + '[last()]/a',
+				'linkx': './td/' + allHNodes + '[last()]/a',
+			},
+			//some more ToC (e.g. http://www.nature.com/nrcardio/journal/v5/n1s/index.html)
+			{
+				'nodex': '//div[@class="container"]/div[./h4[@class="norm"] and ./p[@class="journal"]/a[@title]]',
+				'titlex': './h4[@class="norm"]',
+				'linkx': './p[@class="journal"]/a[@title][1]'
+			}
+		];
 
-			for (var i = 0; i < styles.length && nodes.length == 0; i++) {
-				nodex = styles[i].nodex;
-				titlex = styles[i].titlex;
-				linkx = styles[i].linkx;
+		for (var i = 0; i < styles.length && !nodes.length; i++) {
+			nodex = styles[i].nodex;
+			titlex = styles[i].titlex;
+			linkx = styles[i].linkx;
 
-				nodes = Zotero.Utilities.xpath(doc, nodex);
+			nodes = Zotero.Utilities.xpath(doc, nodex);
+		}
+	}
+	
+	if(nodes.length) Z.debug("multiples found using: " + nodex);
+	
+	return [nodes, titlex, linkx];
+}
+
+function isNature(url) {
+	return url.search(/^https?:\/\/(?:[^\/]+\.)?nature.com/) != -1;
+}
+
+function detectWeb(doc, url) {
+	if (url.search(/\/(full|abs)\/[^\/]+($|\?|#)|\/fp\/.+?[?&]lang=ja(?:&|$)/) != -1) {
+
+		return 'journalArticle';
+
+	} else if (doc.title.toLowerCase().indexOf('table of contents') != -1 //single issue ToC. e.g. http://www.nature.com/emboj/journal/v30/n1/index.html or http://www.nature.com/nature/journal/v481/n7381/index.html
+		|| doc.title.toLowerCase().indexOf('current issue') != -1
+		|| url.indexOf('/research/') != -1 || url.indexOf('/topten/') != -1
+		|| url.indexOf('/most.htm') != -1
+		|| (url.indexOf('/vaop/') != -1 && url.indexOf('index.html') != -1) //advanced online publication
+		|| url.indexOf('sp-q=') != -1 //search query
+		|| url.search(/journal\/v\d+\/n\d+\/index\.html/i) != -1) { //more ToC
+		return getMultipleNodes(doc, url)[0].length ? 'multiple' : null;
+
+	} else if (url.indexOf('/archive/') != -1) {
+		if (url.indexOf('index.htm') != -1) return false; //list of issues
+		if (url.indexOf('subject.htm') != -1) return false; //list of subjects
+		if (url.indexOf('category.htm') != -1 && url.indexOf('code=') == -1) return false; //list of categories
+		return getMultipleNodes(doc, url)[0].length ? 'multiple' : null; //all else should be ok
+	}
+}
+
+function supplementItem(item, supp, prefer) {
+	for(var i in supp) {
+		if(!supp.hasOwnProperty(i)
+			|| (item.hasOwnProperty(i) && prefer.indexOf(i) == -1)) {
+			continue;	//this also skips creators, tags, notes, and related
+		}
+
+		Z.debug('Supplementing item.' + i);
+		item[i] = supp[i];
+	}
+
+	return item;
+}
+
+function runScrapers(scrapers, done) {
+	
+	var items = [];
+	var args = Array.prototype.splice.call(arguments, 2); //remove scrapers and done handler
+
+	var run = function(item) {
+		items.push(item);
+		if(scrapers.length) {
+			(scrapers.shift()).apply(null, args);
+		}
+	};
+
+	args.push(run);
+	args.push(items);
+
+	scrapers.push(function() {
+		done(items);
+	});
+
+	(scrapers.shift()).apply(null, args);
+}
+
+function scrape(doc, url) {
+	runScrapers([scrapeEM, scrapeRIS], function(items) {
+		var item = items[0];
+		if(!item) {	//EM failed (unlikely)
+			item = items[1];
+		} else if(items[1]) {
+			var preferredRisFields = ['journalAbbreviation', 'date'];
+			//palgrave-macmillan journals
+			if(!isNature(url)) {
+				preferredRisFields.push('publisher'); //all others are going to be dropped since we only handle journalArticle
+				if(item.rights.indexOf('Nature Publishing Group') != -1) {
+					delete item.rights;
+				}
+			}
+			
+			item = supplementItem(item, items[1], preferredRisFields);
+			
+			if(items[1].tags.length) item.tags = items[1].tags;	//RIS doesn't seem to have tags, but we check just in case
+
+			//RIS can properly split first and last name
+			//but it does not (sometimes?) include accented letters
+			//We try to get best of both worlds by trying to re-split EM authors correctly
+			//hopefully the authors match up
+			for(var i=0, j=0, n=item.creators.length, m=items[1].creators.length; i<n && j<m; i++, j++) {
+				//check if last names match, then we don't need to worry
+				var risLName = ZU.removeDiacritics(items[1].creators[j].lastName.toUpperCase());
+				
+				var emLName = ZU.removeDiacritics(item.creators[i].lastName.toUpperCase());
+				if(emLName == risLName) {
+					continue;
+				}
+
+				var fullName = item.creators[i].firstName + ' ' + item.creators[i].lastName;
+				emLName = fullName.substring(fullName.length - risLName.length);
+				if(ZU.removeDiacritics(emLName.toUpperCase()) != risLName) {
+					//corporate authors are sometimes skipped in RIS
+					if(i+1<n) {
+						var nextEMLName = item.creators[i+1].firstName + ' '
+							+ item.creators[i+1].lastName;
+						nextEMLName = ZU.removeDiacritics(
+							nextEMLName.substring(nextEMLName.length - risLName.length)
+								.toUpperCase()
+						);
+						if(nextEMLName == risLName) { //this is corporate author and it was skipped in RIS
+							item.creators[i].lastName = item.creators[i].firstName
+								+ ' ' + item.creators[i].lastName;
+							delete item.creators[i].firstName;
+							item.creators[i].fieldMode = 1;
+							j--;
+							Z.debug('It appears that "' + item.creators[i].lastName
+								+ '" is a corporate author and was skipped in the RIS output.');
+							continue;
+						}
+					}
+					
+					//authors with same name are sometimes skipped in EM
+					if(j+1<m) {
+						var nextRisLName = ZU.removeDiacritics(items[1].creators[j+1].lastName.toUpperCase());
+						var resplitEmLName = ZU.removeDiacritics(fullName.substring(fullName.length - nextRisLName.length).toUpperCase());
+						if(resplitEmLName == nextRisLName) {
+							item.creators.splice(i, 0, items[1].creators[j]); //insert missing author
+							Z.debug('It appears that "' + item.creators[i].lastName
+								+ '" was missing from EM.');
+							continue;
+						}
+					}
+					
+					Z.debug(emLName + ' and ' + risLName + ' do not match');
+					continue; //we failed
+				}
+
+				if(items[1].creators[j].fieldMode !== 1) {
+					item.creators[i].firstName = fullName.substring(0, fullName.length - emLName.length).trim();
+				} else {
+					item.creators[i].fieldMode = 1;
+				}
+				item.creators[i].lastName = emLName;
+
+				Z.debug(fullName + ' was split into ' +
+					item.creators[i].lastName + ', ' + item.creators[i].firstName);
 			}
 		}
 
-		if (nodes.length == 0) return false; //nothing matched
+		if(!item) {
+			Z.debug('Could not retrieve metadata.');
+			return;	//both translators failed
+		}
+
+		if(item.journalAbbreviation == 'Nature') {
+			item.publicationTitle = 'Nature';	//old articles mess this up
+		}
+
+		item.attachments = [{
+			document: doc,
+			title: 'Snapshot'
+		}];
+
+		var pdf = getPdfUrl(url);
+		if (pdf) {
+			item.attachments.push({
+				url: pdf,
+				title: 'Full Text PDF',
+				mimeType: 'application/pdf'
+			});
+		}
+		
+		//attach some useful links, like...
+		//GEO, GenBank, etc.
+		try {	//this shouldn't really fail, but... just in case
+			var accessionDiv = doc.getElementById('accessions');
+			if(accessionDiv) {
+				var accessions = ZU.xpath(accessionDiv, './/div[@class="content"]//div[./h3]');
+				var repo, links;
+				for(var i=0, n=accessions.length; i<n; i++) {
+					repo = accessions[i].getElementsByTagName('h3')[0].textContent;
+					if(repo) repo += ' entry ';
+					links = ZU.xpath(accessions[i], './ul[1]//a');
+					if(links.length) {
+						for(var j=0, m=links.length; j<m; j++) {
+							item.attachments.push({
+								title: repo + '(' + links[j].textContent + ')',
+								url: links[j].href,
+								type: 'text/html',
+								snapshot: false
+							});
+						}
+					}
+				}
+			}
+		} catch(e) {
+			Z.debug("Error attaching useful links.");
+			Z.debug(e);
+		}
+		
+		//attach supplementary data
+		if(Z.getHiddenPref && Z.getHiddenPref("attachSupplementary")) {
+			try {	//don't fail if we can't attach supplementary data
+				var async = attachSupplementary(doc, item, function(doc, item) { item.complete() });
+			} catch(e) {
+				Z.debug("Error attaching supplementary information.")
+				Z.debug(e);
+				if(async) item.complete();
+			}
+			if(!async) {
+				item.complete();
+			}
+		} else {
+			item.complete();
+		}
+	}, doc, url);
+}
+
+function doWeb(doc, url) {
+	if (detectWeb(doc, url) == 'multiple') {
+		var nodes = getMultipleNodes(doc, url);
+		var titlex = nodes[1];
+		var linkx = nodes[2];
+		nodes = nodes[0];
+		
+		if (nodes.length == 0) {
+			Z.debug("no multiples");
+			//return false; //keep going so we can report this to zotero.org instead of "silently" failing
+		}
 		var items = new Object();
 		var title, url;
 		for (var i = 0; i < nodes.length; i++) {
@@ -260,19 +677,14 @@ function doWeb(doc, url) {
 		var urls = new Array();
 
 		Zotero.selectItems(items, function (selectedItems) {
-			if (selectedItems == null) return true;
+			if (!selectedItems) return true;
 			for (var item in selectedItems) {
 				urls.push(item);
 			}
-			Zotero.Utilities.processDocuments(urls, function (newDoc) {
-				doWeb(newDoc, newDoc.location.href)
-			}, function () {
-				Zotero.done();
-			});
-			Zotero.wait();
+			Zotero.Utilities.processDocuments(urls, scrape);
 		});
 	} else {
-		scrapeEmbedMeta(doc, url);
+		scrape(doc, url);
 	}
 }
 
@@ -610,6 +1022,8 @@ var ISO8879CharMap = {
   "b.piv":"\uD835\uDEE1", "fflig":"\uFB00", "filig":"\uFB01", "fllig":"\uFB02",
   "ffilig":"\uFB03", "ffllig":"\uFB04", "sbsol":"\uFE68"
 };
+//Some unofficial aliases
+ISO8879CharMap.prime = "\u2032";	//same as vprime
 
 /** BEGIN TEST CASES **/
 var testCases = [
@@ -678,167 +1092,36 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"gastric cancer",
-					"cancer stem cells",
 					"CD90",
 					"ERBB2",
+					"cancer stem cells",
+					"gastric cancer",
 					"trastuzumab (herceptin)"
 				],
 				"seeAlso": [],
 				"attachments": [
 					{
+						"title": "Snapshot"
+					},
+					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/onc/journal/v31/n6/full/onc2011282a.html",
 				"title": "Trastuzumab (herceptin) targets gastric cancer stem cells characterized by CD90 phenotype",
 				"publicationTitle": "Oncogene",
 				"rights": "© 2011 Nature Publishing Group",
 				"volume": "31",
 				"issue": "6",
-				"number": "6",
-				"patentNumber": "6",
 				"pages": "671-682",
-				"publisher": "Nature Publishing Group",
-				"institution": "Nature Publishing Group",
-				"company": "Nature Publishing Group",
-				"label": "Nature Publishing Group",
-				"distributor": "Nature Publishing Group",
-				"date": "2012",
-				"ISSN": "0950-9232",
+				"date": "February 9, 2012",
 				"language": "en",
 				"DOI": "10.1038/onc.2011.282",
-				"abstractNote": "Identification and characterization of cancer stem cells (CSCs) in gastric cancer are difficult owing to the lack of specific markers and consensus methods. In this study, we show that cells with the CD90 surface marker in gastric tumors could be enriched under non-adherent, serum-free and sphere-forming conditions. These CD90+ cells possess a higher ability to initiate tumor in vivo and could re-establish the cellular hierarchy of tumors from single-cell implantation, demonstrating their self-renewal properties. Interestingly, higher proportion of CD90+ cells correlates with higher in vivo tumorigenicity of gastric primary tumor models. In addition, it was found that ERBB2 was overexpressed in about 25% of the gastric primary tumor models, which correlates with the higher level of CD90 expression in these tumors. Trastuzumab (humanized anti-ERBB2 antibody) treatment of high-tumorigenic gastric primary tumor models could reduce the CD90+ population in tumor mass and suppress tumor growth when combined with traditional chemotherapy. Moreover, tumorigenicity of tumor cells could also be suppressed when trastuzumab treatment starts at the same time as cell implantation. Therefore, we have identified a CSC population in gastric primary tumors characterized by their CD90 phenotype. The finding that trastuzumab targets the CSC population in gastric tumors suggests that ERBB2 signaling has a role in maintaining CSC populations, thus contributing to carcinogenesis and tumor invasion. In conclusion, the results from this study provide new insights into the gastric tumorigenic process and offer potential implications for the development of anticancer drugs as well as therapeutic treatment of gastric cancers.",
 				"url": "http://www.nature.com/onc/journal/v31/n6/full/onc2011282a.html",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nature.com"
-			}
-		]
-	},
-	{
-		"type": "web",
-		"url": "http://www.nature.com/emboj/journal/vaop/ncurrent/index.html",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://www.nature.com/emboj/journal/v31/n7/full/emboj201217a.html",
-		"items": [
-			{
-				"itemType": "journalArticle",
-				"creators": [
-					{
-						"firstName": "Er-Chieh",
-						"lastName": "Cho",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Shunsheng",
-						"lastName": "Zheng",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Shonagh",
-						"lastName": "Munro",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Geng",
-						"lastName": "Liu",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Simon M.",
-						"lastName": "Carr",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Jutta",
-						"lastName": "Moehlenbrink",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Yi-Chien",
-						"lastName": "Lu",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Lindsay",
-						"lastName": "Stimson",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Omar",
-						"lastName": "Khan",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Rebecca",
-						"lastName": "Konietzny",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Joanna",
-						"lastName": "McGouran",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Amanda S.",
-						"lastName": "Coutts",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Benedikt",
-						"lastName": "Kessler",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "David J.",
-						"lastName": "Kerr",
-						"creatorType": "author"
-					},
-					{
-						"firstName": "Nicholas B. La",
-						"lastName": "Thangue",
-						"creatorType": "author"
-					}
-				],
-				"notes": [],
-				"tags": [
-					"arginine methylation",
-					"cancer",
-					"E2F-1",
-					"growth control"
-				],
-				"seeAlso": [],
-				"attachments": [
-					{
-						"title": "Full Text PDF",
-						"mimeType": "application/pdf"
-					}
-				],
-				"itemID": "http://www.nature.com/emboj/journal/v31/n7/full/emboj201217a.html",
-				"title": "Arginine methylation controls growth regulation by E2F-1",
-				"publicationTitle": "The EMBO Journal",
-				"rights": "© 2012 Nature Publishing Group",
-				"volume": "31",
-				"issue": "7",
-				"number": "7",
-				"patentNumber": "7",
-				"pages": "1785-1797",
-				"publisher": "Nature Publishing Group",
-				"institution": "Nature Publishing Group",
-				"company": "Nature Publishing Group",
-				"label": "Nature Publishing Group",
-				"distributor": "Nature Publishing Group",
-				"date": "04/04/2012",
-				"language": "en",
-				"DOI": "10.1038/emboj.2012.17",
-				"abstractNote": "E2F transcription factors are implicated in diverse cellular functions. The founding member, E2F-1, is endowed with contradictory activities, being able to promote cell-cycle progression and induce apoptosis. However, the mechanisms that underlie the opposing outcomes of E2F-1 activation remain largely unknown. We show here that E2F-1 is directly methylated by PRMT5 (protein arginine methyltransferase 5), and that arginine methylation is responsible for regulating its biochemical and functional properties, which impacts on E2F-1-dependent growth control. Thus, depleting PRMT5 causes increased E2F-1 protein levels, which coincides with decreased growth rate and associated apoptosis. Arginine methylation influences E2F-1 protein stability, and the enhanced transcription of a variety of downstream target genes reflects increased E2F-1 DNA-binding activity. Importantly, E2F-1 is methylated in tumour cells, and a reduced level of methylation is evident under DNA damage conditions that allow E2F-1 stabilization and give rise to apoptosis. Significantly, in a subgroup of colorectal cancer, high levels of PRMT5 frequently coincide with low levels of E2F-1 and reflect a poor clinical outcome. Our results establish that arginine methylation regulates the biological activity of E2F-1 activity, and raise the possibility that arginine methylation contributes to tumourigenesis by influencing the E2F pathway.",
-				"url": "http://www.nature.com/emboj/journal/v31/n7/full/emboj201217a.html",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nature.com"
+				"abstractNote": "Identification and characterization of cancer stem cells (CSCs) in gastric cancer are difficult owing to the lack of specific markers and consensus methods. In this study, we show that cells with the CD90 surface marker in gastric tumors could be enriched under non-adherent, serum-free and sphere-forming conditions. These CD90+ cells possess a higher ability to initiate tumor in vivo and could re-establish the cellular hierarchy of tumors from single-cell implantation, demonstrating their self-renewal properties. Interestingly, higher proportion of CD90+ cells correlates with higher in vivo tumorigenicity of gastric primary tumor models. In addition, it was found that ERBB2 was overexpressed in about 25% of the gastric primary tumor models, which correlates with the higher level of CD90 expression in these tumors. Trastuzumab (humanized anti-ERBB2 antibody) treatment of high-tumorigenic gastric primary tumor models could reduce the CD90+ population in tumor mass and suppress tumor growth when combined with traditional chemotherapy. Moreover, tumorigenicity of tumor cells could also be suppressed when trastuzumab treatment starts at the same time as cell implantation. Therefore, we have identified a CSC population in gastric primary tumors characterized by their CD90 phenotype. The finding that trastuzumab targets the CSC population in gastric tumors suggests that ERBB2 signaling has a role in maintaining CSC populations, thus contributing to carcinogenesis and tumor invasion. In conclusion, the results from this study provide new insights into the gastric tumorigenic process and offer potential implications for the development of anticancer drugs as well as therapeutic treatment of gastric cancers.",
+				"libraryCatalog": "www.nature.com",
+				"journalAbbreviation": "Oncogene",
+				"ISSN": "0950-9232"
 			}
 		]
 	},
@@ -887,16 +1170,19 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"Astronomy"
+					"Astronomy",
+					"Astrophysics"
 				],
 				"seeAlso": [],
 				"attachments": [
+					{
+						"title": "Snapshot"
+					},
 					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/nature/journal/v481/n7381/full/nature10669.html",
 				"title": "Gravitational detection of a low-mass dark satellite galaxy at cosmological distance",
 				"publicationTitle": "Nature",
 				"rights": "© 2012 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
@@ -907,15 +1193,16 @@ var testCases = [
 				"company": "Nature Publishing Group",
 				"label": "Nature Publishing Group",
 				"distributor": "Nature Publishing Group",
-				"date": "19 January 2012",
-				"ISSN": "0028-0836",
+				"date": "January 19, 2012",
 				"language": "en",
 				"issue": "7381",
 				"DOI": "10.1038/nature10669",
-				"abstractNote": "The mass function of dwarf satellite galaxies that are observed around Local Group galaxies differs substantially from simulations based on cold dark matter: the simulations predict many more dwarf galaxies than are seen. The Local Group, however, may be anomalous in this regard. A massive dark satellite in an early-type lens galaxy at a redshift of 0.222 was recently found using a method based on gravitational lensing, suggesting that the mass fraction contained in substructure could be higher than is predicted from simulations. The lack of very low-mass detections, however, prohibited any constraint on their mass function. Here we report the presence of a (1.9 ± 0.1) × 108nature10669-m1jpg19K2716 dark satellite galaxy in the Einstein ring system JVAS B1938+666 (ref. 11) at a redshift of 0.881, where nature10669-m2jpg20K2716 denotes the solar mass. This satellite galaxy has a mass similar to that of the Sagittarius galaxy, which is a satellite of the Milky Way. We determine the logarithmic slope of the mass function for substructure beyond the local Universe to be nature10669-m3jpg21K4620, with an average mass fraction of nature10669-m4jpg21K4820 per cent, by combining data on both of these recently discovered galaxies. Our results are consistent with the predictions from cold dark matter simulations at the 95 per cent confidence level, and therefore agree with the view that galaxies formed hierarchically in a Universe composed of cold dark matter.",
 				"url": "http://www.nature.com/nature/journal/v481/n7381/full/nature10669.html",
+				"abstractNote": "The mass function of dwarf satellite galaxies that are observed around Local Group galaxies differs substantially from simulations based on cold dark matter: the simulations predict many more dwarf galaxies than are seen. The Local Group, however, may be anomalous in this regard. A massive dark satellite in an early-type lens galaxy at a redshift of 0.222 was recently found using a method based on gravitational lensing, suggesting that the mass fraction contained in substructure could be higher than is predicted from simulations. The lack of very low-mass detections, however, prohibited any constraint on their mass function. Here we report the presence of a (1.9 ± 0.1) × 108nature10669-m1jpg19K2716 dark satellite galaxy in the Einstein ring system JVAS B1938+666 (ref. 11) at a redshift of 0.881, where nature10669-m2jpg20K2716 denotes the solar mass. This satellite galaxy has a mass similar to that of the Sagittarius galaxy, which is a satellite of the Milky Way. We determine the logarithmic slope of the mass function for substructure beyond the local Universe to be nature10669-m3jpg21K4620, with an average mass fraction of nature10669-m4jpg21K4820 per cent, by combining data on both of these recently discovered galaxies. Our results are consistent with the predictions from cold dark matter simulations at the 95 per cent confidence level, and therefore agree with the view that galaxies formed hierarchically in a Universe composed of cold dark matter.",
+				"libraryCatalog": "www.nature.com",
 				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nature.com"
+				"journalAbbreviation": "Nature",
+				"ISSN": "0028-0836"
 			}
 		]
 	},
@@ -928,37 +1215,34 @@ var testCases = [
 				"creators": [],
 				"notes": [],
 				"tags": [
+					"History",
 					"Policy",
-					"Politics",
-					"History"
+					"Politics"
 				],
 				"seeAlso": [],
 				"attachments": [
+					{
+						"title": "Snapshot"
+					},
 					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/nature/journal/v481/n7381/full/481237a.html",
-				"title": "Antarctic Treaty is cold comfort",
-				"publicationTitle": "Nature",
 				"rights": "© 2012 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
-				"volume": "481",
-				"pages": "237-237",
-				"publisher": "Nature Publishing Group",
-				"institution": "Nature Publishing Group",
-				"company": "Nature Publishing Group",
-				"label": "Nature Publishing Group",
-				"distributor": "Nature Publishing Group",
-				"date": "19 January 2012",
-				"ISSN": "0028-0836",
 				"language": "en",
 				"issue": "7381",
 				"DOI": "10.1038/481237a",
 				"abstractNote": "Researchers need to cement the bond between science and the South Pole if the region is to remain one of peace and collaboration.",
 				"url": "http://www.nature.com/nature/journal/v481/n7381/full/481237a.html",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nature.com"
+				"libraryCatalog": "www.nature.com",
+				"journalAbbreviation": "Nature",
+				"ISSN": "0028-0836",
+				"title": "Antarctic Treaty is cold comfort",
+				"publicationTitle": "Nature",
+				"volume": "481",
+				"pages": "237-237",
+				"date": "January 19, 2012"
 			}
 		]
 	},
@@ -992,36 +1276,33 @@ var testCases = [
 				],
 				"notes": [],
 				"tags": [
-					"Structural biology",
-					"Biochemistry"
+					"Biochemistry",
+					"Structural biology"
 				],
 				"seeAlso": [],
 				"attachments": [
+					{
+						"title": "Snapshot"
+					},
 					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/nature/journal/v481/n7381/full/nature10728.html",
-				"title": "Structure of HDAC3 bound to co-repressor and inositol tetraphosphate",
-				"publicationTitle": "Nature",
 				"rights": "© 2011 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
-				"volume": "481",
-				"pages": "335-340",
-				"publisher": "Nature Publishing Group",
-				"institution": "Nature Publishing Group",
-				"company": "Nature Publishing Group",
-				"label": "Nature Publishing Group",
-				"distributor": "Nature Publishing Group",
-				"date": "19 January 2012",
-				"ISSN": "0028-0836",
 				"language": "en",
 				"issue": "7381",
 				"DOI": "10.1038/nature10728",
 				"url": "http://www.nature.com/nature/journal/v481/n7381/full/nature10728.html",
-				"accessDate": "CURRENT_TIMESTAMP",
 				"libraryCatalog": "www.nature.com",
-				"abstractNote": "Histone deacetylase enzymes (HDACs) are emerging cancer drug targets. They regulate gene expression by removing acetyl groups from lysine residues in histone tails, resulting in chromatin condensation. The enzymatic activity of most class I HDACs requires recruitment into multi-subunit co-repressor complexes, which are in turn recruited to chromatin by repressive transcription factors. Here we report the structure of a complex between an HDAC and a co-repressor, namely, human HDAC3 with the deacetylase activation domain (DAD) from the human SMRT co-repressor (also known as NCOR2). The structure reveals two remarkable features. First, the SMRT-DAD undergoes a large structural rearrangement on forming the complex. Second, there is an essential inositol tetraphosphate molecule—d-myo-inositol-(1,4,5,6)-tetrakisphosphate (Ins(1,4,5,6)P4)—acting as an ‘intermolecular glue’ between the two proteins. Assembly of the complex is clearly dependent on the Ins(1,4,5,6)P4, which may act as a regulator—potentially explaining why inositol phosphates and their kinases have been found to act as transcriptional regulators. This mechanism for the activation of HDAC3 appears to be conserved in class I HDACs from yeast to humans, and opens the way to novel therapeutic opportunities."
+				"abstractNote": "Histone deacetylase enzymes (HDACs) are emerging cancer drug targets. They regulate gene expression by removing acetyl groups from lysine residues in histone tails, resulting in chromatin condensation. The enzymatic activity of most class I HDACs requires recruitment into multi-subunit co-repressor complexes, which are in turn recruited to chromatin by repressive transcription factors. Here we report the structure of a complex between an HDAC and a co-repressor, namely, human HDAC3 with the deacetylase activation domain (DAD) from the human SMRT co-repressor (also known as NCOR2). The structure reveals two remarkable features. First, the SMRT-DAD undergoes a large structural rearrangement on forming the complex. Second, there is an essential inositol tetraphosphate molecule—d-myo-inositol-(1,4,5,6)-tetrakisphosphate (Ins(1,4,5,6)P4)—acting as an ‘intermolecular glue’ between the two proteins. Assembly of the complex is clearly dependent on the Ins(1,4,5,6)P4, which may act as a regulator—potentially explaining why inositol phosphates and their kinases have been found to act as transcriptional regulators. This mechanism for the activation of HDAC3 appears to be conserved in class I HDACs from yeast to humans, and opens the way to novel therapeutic opportunities.",
+				"journalAbbreviation": "Nature",
+				"ISSN": "0028-0836",
+				"title": "Structure of HDAC3 bound to co-repressor and inositol tetraphosphate",
+				"publicationTitle": "Nature",
+				"volume": "481",
+				"pages": "335-340",
+				"date": "January 19, 2012"
 			}
 		]
 	},
@@ -1128,30 +1409,27 @@ var testCases = [
 				"seeAlso": [],
 				"attachments": [
 					{
+						"title": "Snapshot"
+					},
+					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/ng/journal/v38/n11/full/ng1901.html",
-				"title": "Genome-wide analysis of estrogen receptor binding sites",
-				"publicationTitle": "Nature Genetics",
 				"rights": "© 2006 Nature Publishing Group",
-				"volume": "38",
 				"issue": "11",
-				"number": "11",
-				"patentNumber": "11",
-				"pages": "1289-1297",
-				"publisher": "Nature Publishing Group",
-				"institution": "Nature Publishing Group",
-				"company": "Nature Publishing Group",
-				"label": "Nature Publishing Group",
-				"distributor": "Nature Publishing Group",
-				"date": "11/01/2006",
 				"language": "en",
 				"DOI": "10.1038/ng1901",
 				"url": "http://www.nature.com/ng/journal/v38/n11/full/ng1901.html",
-				"accessDate": "CURRENT_TIMESTAMP",
-				"libraryCatalog": "www.nature.com"
+				"libraryCatalog": "www.nature.com",
+				"abstractNote": "The estrogen receptor is the master transcriptional regulator of breast cancer phenotype and the archetype of a molecular therapeutic target. We mapped all estrogen receptor and RNA polymerase II binding sites on a genome-wide scale, identifying the authentic cis binding sites and target genes, in breast cancer cells. Combining this unique resource with gene expression data demonstrates distinct temporal mechanisms of estrogen-mediated gene regulation, particularly in the case of estrogen-suppressed genes. Furthermore, this resource has allowed the identification of cis-regulatory sites in previously unexplored regions of the genome and the cooperating transcription factors underlying estrogen signaling in breast cancer.",
+				"journalAbbreviation": "Nat Genet",
+				"ISSN": "1061-4036",
+				"title": "Genome-wide analysis of estrogen receptor binding sites",
+				"publicationTitle": "Nature Genetics",
+				"volume": "38",
+				"pages": "1289-1297",
+				"date": "November 2006"
 			}
 		]
 	},
@@ -1369,67 +1647,17 @@ var testCases = [
 					}
 				],
 				"notes": [],
-				"tags": [
-					"Nature",
-					"science",
-					"science news",
-					"biology",
-					"physics",
-					"genetics",
-					"astronomy",
-					"astrophysics",
-					"quantum physics",
-					"evolution",
-					"evolutionary biology",
-					"geophysics",
-					"climate change",
-					"earth science",
-					"materials science",
-					"interdisciplinary science",
-					"science policy",
-					"medicine",
-					"systems biology",
-					"genomics",
-					"transcriptomics",
-					"palaeobiology",
-					"ecology",
-					"molecular biology",
-					"cancer",
-					"immunology",
-					"pharmacology",
-					"development",
-					"developmental biology",
-					"structural biology",
-					"biochemistry",
-					"bioinformatics",
-					"computational biology",
-					"nanotechnology",
-					"proteomics",
-					"metabolomics",
-					"biotechnology",
-					"drug discovery",
-					"environmental science",
-					"life",
-					"marine biology",
-					"medical research",
-					"neuroscience",
-					"neurobiology",
-					"functional genomics",
-					"molecular interactions",
-					"RNA",
-					"DNA",
-					"cell cycle",
-					"signal transduction",
-					"cell signalling"
-				],
+				"tags": [],
 				"seeAlso": [],
 				"attachments": [
+					{
+						"title": "Snapshot"
+					},
 					{
 						"title": "Full Text PDF",
 						"mimeType": "application/pdf"
 					}
 				],
-				"itemID": "http://www.nature.com/nature/journal/v462/n7269/full/nature08497.html",
 				"title": "An oestrogen-receptor-α-bound human chromatin interactome",
 				"publicationTitle": "Nature",
 				"rights": "© 2009 Nature Publishing Group",
@@ -1443,14 +1671,630 @@ var testCases = [
 				"company": "Nature Publishing Group",
 				"label": "Nature Publishing Group",
 				"distributor": "Nature Publishing Group",
-				"date": "2009-11-05",
+				"date": "November 5, 2009",
 				"ISSN": "0028-0836",
 				"language": "en",
 				"DOI": "10.1038/nature08497",
-				"abstractNote": "Genomes are organized into high-level three-dimensional structures, and DNA elements separated by long genomic distances can in principle interact functionally. Many transcription factors bind to regulatory DNA elements distant from gene promoters. Although distal binding sites have been shown to regulate transcription by long-range chromatin interactions at a few loci, chromatin interactions and their impact on transcription regulation have not been investigated in a genome-wide manner. Here we describe the development of a new strategy, chromatin interaction analysis by paired-end tag sequencing (ChIA-PET) for the de novo detection of global chromatin interactions, with which we have comprehensively mapped the chromatin interaction network bound by oestrogen receptor α (ER-α) in the human genome. We found that most high-confidence remote ER-α-binding sites are anchored at gene promoters through long-range chromatin interactions, suggesting that ER-α functions by extensive chromatin looping to bring genes together for coordinated transcriptional regulation. We propose that chromatin interactions constitute a primary mechanism for regulating transcription in mammalian genomes.",
 				"url": "http://www.nature.com/nature/journal/v462/n7269/full/nature08497.html",
+				"abstractNote": "Genomes are organized into high-level three-dimensional structures, and DNA elements separated by long genomic distances can in principle interact functionally. Many transcription factors bind to regulatory DNA elements distant from gene promoters. Although distal binding sites have been shown to regulate transcription by long-range chromatin interactions at a few loci, chromatin interactions and their impact on transcription regulation have not been investigated in a genome-wide manner. Here we describe the development of a new strategy, chromatin interaction analysis by paired-end tag sequencing (ChIA-PET) for the de novo detection of global chromatin interactions, with which we have comprehensively mapped the chromatin interaction network bound by oestrogen receptor α (ER-α) in the human genome. We found that most high-confidence remote ER-α-binding sites are anchored at gene promoters through long-range chromatin interactions, suggesting that ER-α functions by extensive chromatin looping to bring genes together for coordinated transcriptional regulation. We propose that chromatin interactions constitute a primary mechanism for regulating transcription in mammalian genomes.",
+				"libraryCatalog": "www.nature.com",
 				"accessDate": "CURRENT_TIMESTAMP",
+				"journalAbbreviation": "Nature"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nsmb/journal/v15/n2/full/nsmb.1371.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Sunny D.",
+						"lastName": "Gilbert",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Robert P.",
+						"lastName": "Rambo",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Daria",
+						"lastName": "Van Tyne",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Robert T.",
+						"lastName": "Batey",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"title": "Structure of the SAM-II riboswitch bound to S-adenosylmethionine",
+				"publicationTitle": "Nature Structural & Molecular Biology",
+				"rights": "© 2008 Nature Publishing Group",
+				"volume": "15",
+				"issue": "2",
+				"pages": "177-182",
+				"date": "February 2008",
+				"language": "en",
+				"DOI": "10.1038/nsmb.1371",
+				"url": "http://www.nature.com/nsmb/journal/v15/n2/full/nsmb.1371.html",
+				"libraryCatalog": "www.nature.com",
+				"abstractNote": "In bacteria, numerous genes harbor regulatory elements in the 5′ untranslated regions of their mRNA, termed riboswitches, which control gene expression by binding small-molecule metabolites. These sequences influence the secondary and tertiary structure of the RNA in a ligand-dependent manner, thereby directing its transcription or translation. The crystal structure of an S-adenosylmethionine–responsive riboswitch found predominantly in proteobacteria, SAM-II, has been solved to reveal a second means by which RNA interacts with this important cellular metabolite. Notably, this is the first structure of a complete riboswitch containing all sequences associated with both the ligand binding aptamer domain and the regulatory expression platform. Chemical probing of this RNA in the absence and presence of ligand shows how the structure changes in response to S-adenosylmethionine to sequester the ribosomal binding site and affect translational gene regulation.",
+				"journalAbbreviation": "Nat Struct Mol Biol",
+				"ISSN": "1545-9993"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/ng/journal/v38/n11/index.html",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nbt/journal/v30/n3/index.html",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/bonekey/archive/type.html",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nature/journal/v481/n7381/fp/nature10669_ja.html?lang=ja",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "S.",
+						"lastName": "Vegetti",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "D. J.",
+						"lastName": "Lagattuta",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "J. P.",
+						"lastName": "McKean",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "M. W.",
+						"lastName": "Auger",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "C. D.",
+						"lastName": "Fassnacht",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "L. V. E.",
+						"lastName": "Koopmans",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					}
+				],
+				"title": "Gravitational detection of a low-mass dark satellite galaxy at cosmological distance",
+				"publicationTitle": "Nature",
+				"rights": "© 2012 Nature Publishing Group",
+				"volume": "481",
+				"issue": "7381",
+				"pages": "341-343",
+				"date": "2012-01-18",
+				"ISSN": "0028-0836",
+				"language": "en",
+				"DOI": "10.1038/nature10669",
+				"url": "http://www.nature.com/nature/journal/v481/n7381/fp/nature10669_ja.html?lang=ja",
+				"abstractNote": "The mass function of dwarf satellite galaxies that are observed around Local Group galaxies differs substantially from simulations based on cold dark matter: the simulations predict many more dwarf galaxies than are seen. The Local Group, however, may be anomalous in this regard.",
 				"libraryCatalog": "www.nature.com"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nature/journal/v495/n7440/full/nature11968.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Robert J.",
+						"lastName": "Schmitz",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Matthew D.",
+						"lastName": "Schultz",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Mark A.",
+						"lastName": "Urich",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Joseph R.",
+						"lastName": "Nery",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Mattia",
+						"lastName": "Pelizzola",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Ondrej",
+						"lastName": "Libiger",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Andrew",
+						"lastName": "Alix",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Richard B.",
+						"lastName": "McCosh",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Huaming",
+						"lastName": "Chen",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Nicholas J.",
+						"lastName": "Schork",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Joseph R.",
+						"lastName": "Ecker",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Epigenomics"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"title": "Patterns of population epigenomic diversity",
+				"publicationTitle": "Nature",
+				"rights": "© 2013 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
+				"volume": "495",
+				"pages": "193-198",
+				"publisher": "Nature Publishing Group",
+				"institution": "Nature Publishing Group",
+				"company": "Nature Publishing Group",
+				"label": "Nature Publishing Group",
+				"distributor": "Nature Publishing Group",
+				"date": "March 14, 2013",
+				"ISSN": "0028-0836",
+				"language": "en",
+				"issue": "7440",
+				"DOI": "10.1038/nature11968",
+				"url": "http://www.nature.com/nature/journal/v495/n7440/full/nature11968.html",
+				"libraryCatalog": "www.nature.com",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"abstractNote": "Natural epigenetic variation provides a source for the generation of phenotypic diversity, but to understand its contribution to such diversity, its interaction with genetic variation requires further investigation. Here we report population-wide DNA sequencing of genomes, transcriptomes and methylomes of wild Arabidopsis thaliana accessions. Single cytosine methylation polymorphisms are not linked to genotype. However, the rate of linkage disequilibrium decay amongst differentially methylated regions targeted by RNA-directed DNA methylation is similar to the rate for single nucleotide polymorphisms. Association analyses of these RNA-directed DNA methylation regions with genetic variants identified thousands of methylation quantitative trait loci, which revealed the population estimate of genetically dependent methylation variation. Analysis of invariably methylated transposons and genes across this population indicates that loci targeted by RNA-directed DNA methylation are epigenetically activated in pollen and seeds, which facilitates proper development of these structures.",
+				"journalAbbreviation": "Nature"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nature/journal/v495/n7440/full/nature11899.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Chikashi",
+						"lastName": "Toyoshima",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Shiho",
+						"lastName": "Iwasawa",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Haruo",
+						"lastName": "Ogawa",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Ayami",
+						"lastName": "Hirata",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Junko",
+						"lastName": "Tsueda",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Giuseppe",
+						"lastName": "Inesi",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"X-ray crystallography"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"title": "Crystal structures of the calcium pump and sarcolipin in the Mg2+-bound E1 state",
+				"publicationTitle": "Nature",
+				"rights": "© 2013 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
+				"volume": "495",
+				"pages": "260-264",
+				"publisher": "Nature Publishing Group",
+				"institution": "Nature Publishing Group",
+				"company": "Nature Publishing Group",
+				"label": "Nature Publishing Group",
+				"distributor": "Nature Publishing Group",
+				"date": "March 14, 2013",
+				"ISSN": "0028-0836",
+				"language": "en",
+				"issue": "7440",
+				"DOI": "10.1038/nature11899",
+				"url": "http://www.nature.com/nature/journal/v495/n7440/full/nature11899.html",
+				"abstractNote": "P-type ATPases are ATP-powered ion pumps that establish ion concentration gradients across biological membranes, and are distinct from other ATPases in that the reaction cycle includes an autophosphorylation step. The best studied is Ca2+-ATPase from muscle sarcoplasmic reticulum (SERCA1a), a Ca2+ pump that relaxes muscle cells after contraction, and crystal structures have been determined for most of the reaction intermediates. An important outstanding structure is that of the E1 intermediate, which has empty high-affinity Ca2+-binding sites ready to accept new cytosolic Ca2+. In the absence of Ca2+ and at pH 7 or higher, the ATPase is predominantly in E1, not in E2 (low affinity for Ca2+), and if millimolar Mg2+ is present, one Mg2+ is expected to occupy one of the Ca2+-binding sites with a millimolar dissociation constant. This Mg2+ accelerates the reaction cycle, not permitting phosphorylation without Ca2+ binding. Here we describe the crystal structure of native SERCA1a (from rabbit) in this E1·Mg2+ state at 3.0 Å resolution in addition to crystal structures of SERCA1a in E2 free from exogenous inhibitors, and address the structural basis of the activation signal for phosphoryl transfer. Unexpectedly, sarcolipin, a small regulatory membrane protein of Ca2+-ATPase, is bound, stabilizing the E1·Mg2+ state. Sarcolipin is a close homologue of phospholamban, which is a critical mediator of β-adrenergic signal in Ca2+ regulation in heart (for reviews, see, for example, refs 8–10), and seems to play an important role in muscle-based thermogenesis. We also determined the crystal structure of recombinant SERCA1a devoid of sarcolipin, and describe the structural basis of inhibition by sarcolipin/phospholamban. Thus, the crystal structures reported here fill a gap in the structural elucidation of the reaction cycle and provide a solid basis for understanding the physiological regulation of the calcium pump.",
+				"libraryCatalog": "www.nature.com",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"journalAbbreviation": "Nature"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.nature.com/nature/journal/v473/n7346/full/nature09944.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Manimozhiyan",
+						"lastName": "Arumugam",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Jeroen",
+						"lastName": "Raes",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Eric",
+						"lastName": "Pelletier",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Denis",
+						"lastName": "Le Paslier",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Takuji",
+						"lastName": "Yamada",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Daniel R.",
+						"lastName": "Mende",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Gabriel R.",
+						"lastName": "Fernandes",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Julien",
+						"lastName": "Tap",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Thomas",
+						"lastName": "Bruls",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Jean-Michel",
+						"lastName": "Batto",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Marcelo",
+						"lastName": "Bertalan",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Natalia",
+						"lastName": "Borruel",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Francesc",
+						"lastName": "Casellas",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Leyden",
+						"lastName": "Fernandez",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Laurent",
+						"lastName": "Gautier",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Torben",
+						"lastName": "Hansen",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Masahira",
+						"lastName": "Hattori",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Tetsuya",
+						"lastName": "Hayashi",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Michiel",
+						"lastName": "Kleerebezem",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Ken",
+						"lastName": "Kurokawa",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Marion",
+						"lastName": "Leclerc",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Florence",
+						"lastName": "Levenez",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Chaysavanh",
+						"lastName": "Manichanh",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "H. Bjørn",
+						"lastName": "Nielsen",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Trine",
+						"lastName": "Nielsen",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Nicolas",
+						"lastName": "Pons",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Julie",
+						"lastName": "Poulain",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Junjie",
+						"lastName": "Qin",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Thomas",
+						"lastName": "Sicheritz-Ponten",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Sebastian",
+						"lastName": "Tims",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "David",
+						"lastName": "Torrents",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Edgardo",
+						"lastName": "Ugarte",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Erwin G.",
+						"lastName": "Zoetendal",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Jun",
+						"lastName": "Wang",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Francisco",
+						"lastName": "Guarner",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Oluf",
+						"lastName": "Pedersen",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Willem M.",
+						"lastName": "de Vos",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Søren",
+						"lastName": "Brunak",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Joel",
+						"lastName": "Doré",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "MetaHIT Consortium (additional Members)",
+						"creatorType": "author",
+						"fieldMode": 1
+					},
+					{
+						"firstName": "Jean",
+						"lastName": "Weissenbach",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "S. Dusko",
+						"lastName": "Ehrlich",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Peer",
+						"lastName": "Bork",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"Genetics and genomics"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"rights": "© 2011 Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.",
+				"language": "en",
+				"issue": "7346",
+				"DOI": "10.1038/nature09944",
+				"url": "http://www.nature.com/nature/journal/v473/n7346/full/nature09944.html",
+				"libraryCatalog": "www.nature.com",
+				"abstractNote": "Our knowledge of species and functional composition of the human gut microbiome is rapidly increasing, but it is still based on very few cohorts and little is known about variation across the world. By combining 22 newly sequenced faecal metagenomes of individuals from four countries with previously published data sets, here we identify three robust clusters (referred to as enterotypes hereafter) that are not nation or continent specific. We also confirmed the enterotypes in two published, larger cohorts, indicating that intestinal microbiota variation is generally stratified, not continuous. This indicates further the existence of a limited number of well-balanced host–microbial symbiotic states that might respond differently to diet and drug intake. The enterotypes are mostly driven by species composition, but abundant molecular functions are not necessarily provided by abundant species, highlighting the importance of a functional analysis to understand microbial communities. Although individual host properties such as body mass index, age, or gender cannot explain the observed enterotypes, data-driven marker genes or functional modules can be identified for each of these host properties. For example, twelve genes significantly correlate with age and three functional modules with the body mass index, hinting at a diagnostic potential of microbial markers.",
+				"journalAbbreviation": "Nature",
+				"ISSN": "0028-0836",
+				"title": "Enterotypes of the human gut microbiome",
+				"publicationTitle": "Nature",
+				"volume": "473",
+				"pages": "174-180",
+				"date": "May 12, 2011"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.palgrave-journals.com/cpcs/journal/v12/n3/abs/cpcs20104a.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"creators": [
+					{
+						"firstName": "Mark",
+						"lastName": "Button",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Barry",
+						"lastName": "Loveday",
+						"creatorType": "author"
+					}
+				],
+				"notes": [],
+				"tags": [
+					"CDRP",
+					"CSP",
+					"crime",
+					"direct elections"
+				],
+				"seeAlso": [],
+				"attachments": [
+					{
+						"title": "Snapshot"
+					},
+					{
+						"title": "Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"language": "en",
+				"issue": "3",
+				"DOI": "10.1057/cpcs.2010.4",
+				"abstractNote": "In the latter half of 2008, proposals emerged from the Home Office for the creation of a completely new elected office in England and Wales, the Crime and Policing Representative. These were to be directly elected and would chair Crime and Disorder Reduction Partnerships (CDRPs) in England and Community Safety Partnerships (CSPs) in Wales, as well as automatically become members of the police authority. However, before the proposals were even debated in parliament they were dropped because of concerns extremist parties may win them. This article presents findings from interviews with a range of councillors, police officers and other officials working with or for CDRPs/CSPs in a representative mix of authorities. It shows that although extremist parties winning were a concern there were many more compelling reasons to reject this policy. The article ends with a brief discussion of alternative proposals that could be considered.",
+				"url": "http://www.palgrave-journals.com/cpcs/journal/v12/n3/abs/cpcs20104a.html",
+				"libraryCatalog": "www.palgrave-journals.com",
+				"journalAbbreviation": "Crime Prev Community Saf",
+				"ISSN": "1460-3780",
+				"shortTitle": "Direct elections and the local governance of crime in the United Kingdom",
+				"title": "Direct elections and the local governance of crime in the United Kingdom: A view from the ground",
+				"publicationTitle": "Crime Prevention & Community Safety",
+				"pages": "156-175",
+				"date": "July 2010",
+				"volume": "12"
 			}
 		]
 	}

@@ -3,19 +3,25 @@
 	"label": "IngentaConnect",
 	"creator": "Michael Berkowitz",
 	"target": "^https?://(www\\.)?ingentaconnect\\.com",
-	"minVersion": "1.0.0b3r1",
+	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-01-30 22:48:52"
+	"lastUpdated": "2014-04-28 21:03:15"
 }
 
 function detectWeb(doc, url) {
 	if (url.indexOf("article?") != -1 || url.indexOf("article;") != -1 || url.indexOf("/art") != -1) {
 		return "journalArticle";
-	} else if (url.indexOf("search?") !=-1 || url.indexOf("search;") != -1) {
+	} 
+	//permalinks
+	else if (url.indexOf("/content/") != -1  && ZU.xpathText(doc, '//div[contains(@class,"export-formats")]/ul/li/a[@title="EndNote Export"]')) {
+		return "journalArticle";
+	}
+	
+	else if (url.indexOf("search?") !=-1 || url.indexOf("search;") != -1) {
 		return "multiple";
 	}
 }
@@ -30,21 +36,29 @@ function doWeb(doc, url) {
 		while (next_link = links.iterateNext()) {
 			items[next_link.href] = next_link.textContent;
 		}
-		items = Zotero.selectItems(items);
-		for (var i in items) {
-			articles.push(i);
-		}
+		
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				articles.push(i);
+			}
+			Zotero.Utilities.processDocuments(articles, scrape);
+		});
 	} else {
-		articles = [url];
+		scrape(doc, url)
 	}
-	Zotero.Utilities.processDocuments(articles, function(newDoc) {
+}
+
+function scrape(newDoc, url){
 		var abs, pdf;
 		var risurl = newDoc.evaluate('//div[contains(@class,"export-formats")]/ul/li/a[@title="EndNote Export"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
 		if (newDoc.evaluate('//div[@id="abstract"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			abs = Zotero.Utilities.trimInternal(newDoc.evaluate('//div[@id="abstract"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent).substr(10);
 		}
-		if (newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
-			pdf = newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
+		if (newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"PDF download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
+			pdf = newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"PDF download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
 		}
 		if (newDoc.evaluate('//div[@id="info"]/p[1]/a', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			var keywords = newDoc.evaluate('//div[@id="info"]/p[1]/a', newDoc, null, XPathResult.ANY_TYPE, null);
@@ -69,6 +83,7 @@ function doWeb(doc, url) {
 				// Note that the RIS translator gives us a link to the record already
 				item.url = null;
 				if (keys) item.tags = keys;
+				if (item.date) item.date = item.date.replace(/\-01\-01T00:00:00\/*/, "")
 				if (item.DOI) {
 					if (item.DOI.match(/^doi:/)) {
 						item.DOI = item.DOI.substr(4);
@@ -78,60 +93,43 @@ function doWeb(doc, url) {
 			});
 			translator.translate();
 		});
-	}, function() {Zotero.done();});
 }
 /** BEGIN TEST CASES **/
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://www.ingentaconnect.com/search/article?option1=tka&value1=argentina&pageSize=10&index=6",
+		"url": "http://www.ingentaconnect.com/search;jsessionid=296g394n0j012.alice?form_name=quicksearch&ie=%E0%A5%B0&value1=argentina&option1=tka&x=0&y=0",
+		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.ingentaconnect.com/search/article?option1=tka&value1=labor+market&pageSize=10&index=10",
 		"items": [
 			{
 				"itemType": "journalArticle",
 				"creators": [
 					{
-						"lastName": "Calomiris",
-						"firstName": "Charles",
+						"lastName": "Brinton",
+						"firstName": "M.C.",
 						"creatorType": "author"
 					}
 				],
 				"notes": [],
-				"tags": [
-					"Devaluation",
-					"Redenomination",
-					"Pesification",
-					"Argentina",
-					"F30",
-					"E42",
-					"G3",
-					"G32",
-					"K2"
-				],
+				"tags": [],
 				"seeAlso": [],
-				"attachments": [
-					{
-						"url": "http://www.ingentaconnect.com/content/klu/10436/2007/00000003/00000001/00000064"
-					},
-					{
-						"url": "http://dx.doi.org/10.1007/s10436-006-0064-9  "
-					}
-				],
-				"title": "Devaluation with contract redenomination in Argentina",
-				"publicationTitle": "Annals of Finance",
-				"date": "2007",
-				"volume": "3",
-				"issue": "1",
-				"pages": "155-192",
-				"abstractNote": "This study offers the first empirical microeconomic analysis of the effectiveness of dollar debt and contract redenomination policies to mitigate adverse financial and relative price consequences from a large devaluation. An analysis of Argentina's policy of devaluation with redenomination in 2002, in contrast to Mexico's policy of devaluation without debt redenomination in 1994-1995, shows that devaluation benefited tradables firms, and that dollar debt redenomination in Argentina benefited high-dollar debtors, as shown in these firms' investment behavior, especially non-tradables firms whose revenues in dollar terms were adversely affected by devaluation. That investment behavior contrasts with the experience of Mexican firms in the aftermath of Mexico's large devaluation, in which non-tradables producers with high dollar debt displayed significant relative reductions in investment. Stock return reactions to Argentine debt redenomination indicate large, positive, unanticipated effects on high-dollar debtors from debt redenomination. Energy concession contract redenomination likewise increased investment by high energy users in Argentina, and that benefit was apparent also in positive stock returns of those firms.",
-				"DOI": "10.1007/s10436-006-0064-9",
-				"libraryCatalog": "IngentaConnect"
+				"attachments": [],
+				"title": "Social capital in the Japanese youth labor market: Labor market policy, schools, and norms",
+				"journalAbbreviation": "Policy Sciences",
+				"volume": "33",
+				"issue": "3-1",
+				"pages": "289-306",
+				"abstractNote": "This paper develops the concept of institutional social capital and discusses its importance in the labor market. Institutional social capital is constituted by the resources inherent in an organization (such as a school) and thereby available to members of that organization. This is contrasted with the social capital available to individuals through their own personal networks. In the labor market context, an example of institutional social capital is the ties that schools have with employers who recruit a proportion of their new employees as they prepare to graduate. The paper examines how these ties and the norms governing the important labor market screening role played by the high school developed in post-WWII Japan. I also discuss an important positive externality – social control over students – generated by schools’ institutional social capital. Finally, I examine current challenges to Japanese high schools’ institutional social capital.",
+				"date": "2000-12-01T00:00:00///",
+				"publicationTitle": "Policy Sciences",
+				"libraryCatalog": "IngentaConnect",
+				"shortTitle": "Social capital in the Japanese youth labor market"
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://www.ingentaconnect.com/search;jsessionid=296g394n0j012.alice?form_name=quicksearch&ie=%E0%A5%B0&value1=argentina&option1=tka&x=0&y=0",
-		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

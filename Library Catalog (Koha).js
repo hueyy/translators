@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-06-25 22:28:07"
+	"lastUpdated": "2012-12-13 18:14:13"
 }
 
 /*
@@ -43,10 +43,10 @@ function doWeb(doc, url) {
 	if (detectWeb(doc, url) == "multiple") {
 		var articles = [];
 		var items = {};
-		var titles = doc.evaluate('//span[@class="results_summary"]/span[@class="label"]/a|//span[@class="results_summary"]/preceding-sibling::a', doc, null, XPathResult.ANY_TYPE, null);
+		var titles = doc.evaluate('//span[@class="results_summary"]/span[@class="label"]/a[contains(@href, "opac-detail.pl")]|//span[@class="results_summary"]/preceding-sibling::a[contains(@href, "opac-detail.pl")]', doc, null, XPathResult.ANY_TYPE, null);
 		var title;
 		while (title = titles.iterateNext()) {
-			items[title.href] = title.textContent;
+			items[title.href] = title.textContent.trim();
 		}
 		Zotero.selectItems(items, function (items) {
 			if (!items) {
@@ -190,6 +190,133 @@ var testCases = [
 				"callNumber": "HQ 27 J485",
 				"libraryCatalog": "Library Catalog (Koha)",
 				"shortTitle": "Les jeunes et la sexualité"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://biblio.esd.ipl.pt/cgi-bin/koha/opac-detail.pl?biblionumber=2367",
+		"items": [
+			{
+				"itemType": "book",
+				"creators": [
+					{
+						"firstName": "Úxia",
+						"lastName": "Vaello",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Inês",
+						"lastName": "Oliveira",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Catarina",
+						"lastName": "Câmara",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Bruno",
+						"lastName": "Alexandre",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Maria",
+						"lastName": "Cerveira",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Célia",
+						"lastName": "Cardoso",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Ricardo",
+						"lastName": "Carmona",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Catarina",
+						"lastName": "Ascensão",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Ana Sofia",
+						"lastName": "Leite",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Claúdia",
+						"lastName": "Silva",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Diana",
+						"lastName": "Alves",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Eliana",
+						"lastName": "Campos",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Guida",
+						"lastName": "Maurício",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Lib",
+						"lastName": "Pitalúa",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Mariana",
+						"lastName": "Saraiva",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Francisco",
+						"lastName": "Pedro",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "João Carlos",
+						"lastName": "Andrade",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Miguel",
+						"lastName": "Oliveira",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Luísa",
+						"lastName": "Taveira",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Escola Superior de Dança",
+						"creatorType": "contributor",
+						"fieldMode": true
+					},
+					{
+						"lastName": "Escola Vocacional de Dança",
+						"creatorType": "contributor",
+						"fieldMode": true
+					}
+				],
+				"notes": [],
+				"tags": [],
+				"seeAlso": [],
+				"attachments": [],
+				"language": "por",
+				"title": "Dia Mundial da Dança: Dança Caldas 21h30",
+				"place": "Lisboa",
+				"publisher": "ESD",
+				"date": "2005",
+				"libraryCatalog": "Library Catalog (Koha)",
+				"shortTitle": "Dia Mundial da Dança"
 			}
 		]
 	}

@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "g",
-	"lastUpdated": "2011-12-12 19:24:10"
+	"lastUpdated": "2013-02-25 18:54:22"
 }
 
 function detectWeb(doc, url) {
@@ -29,19 +29,20 @@ function processURLs(urls, url) {
 		Zotero.done();
 		return;
 	}
-	//Z.debug(url)
 	var newUrl = urls.shift();
+
 	//if non-roman characters are shown, shift the charset to utf-8,
 	//else move it to iso8859 so that accented roman letters work
 	if (url.match(/dfltcharset\=UTF\-8/)) var charset="utf-8";
 	else var charset="iso-8859-1"
 	Zotero.Utilities.HTTP.doPost(newUrl,
 	'exportselect=record&exporttype=wc-endnote', function(text) {
+		Z.debug(text)
 		var lineRegexp = new RegExp();
 		lineRegexp.compile("^([\\w() ]+): *(.*)$");
 
 		var newItem = new Zotero.Item("book");
-		newItem.extra = "";
+		var notes = "";
 
 		var lines = text.split('\n');
 		for(var i=0;i<lines.length;i++) {
@@ -66,12 +67,12 @@ function processURLs(urls, url) {
 					}
 					newItem.title = Zotero.Utilities.capitalizeTitle(title);
 				} else if(match[1] == "Series") {
-					newItem.series = match[2];
+					newItem.series = ZU.trimInternal(match[2]);
 				} else if(match[1] == "Description") {
 				  var pageMatch = /([0-9]+) p\.?/;
 					var m = pageMatch.exec(match[2]);
 					if(m) {
-						newItem.pages = m[1];
+						newItem.numPages = m[1];
 					}
 				} else if(match[1] == 'Author(s)' || match[1] == "Corp Author(s)") {
 					var yearRegexp = /[0-9]{4}-([0-9]{4})?/;
@@ -120,8 +121,14 @@ function processURLs(urls, url) {
 					for(var j in tags) {
 						newItem.tags.push(Zotero.Utilities.trimInternal(tags[j]));
 					}
+				}
+				else if(match[1] == "Language") {
+					newItem.language = match[2];
+				}
+				else if(match[1] == "Abstract") {
+					newItem.abstractNote = match[2];
 				} else if(match[1] == "Accession No") {
-					newItem.accessionNumber = Zotero.Utilities.superCleanString(match[2]);
+					newItem.accessionNumber = ZU.trimInternal(match[2]);
 				} else if(match[1] == "Degree") {
 					newItem.itemType = "thesis";
 					newItem.thesisType = match[2];
@@ -134,7 +141,7 @@ function processURLs(urls, url) {
 				} else if(match[1] != "Availability" &&
 						  match[1] != "Find Items About" &&
 						  match[1] != "Document Type") {
-					newItem.extra += match[1]+": "+match[2]+"\n";
+					notes += match[1]+": "+match[2]+"\n";
 				}
 			} else {
 				if(lines[i] != "" && lines[i] != "SUBJECT(S)") {
@@ -143,12 +150,12 @@ function processURLs(urls, url) {
 			}
 		}
 
-		if(newItem.extra) {
-			newItem.extra = newItem.extra.substr(0, newItem.extra.length-1);
+		if(notes) {
+			newItem.notes.push(notes.substr(0, notes.length-1));
 		}
 
 		newItem.complete();
-		processURLs(urls);
+		processURLs(urls, url);
 	}, false, charset);
 }
 
@@ -186,28 +193,25 @@ function doWeb(doc, url) {
 		}
 
 		urls = [host+'/WebZ/DirectExport?numrecs=10:smartpage=directexport:entityexportnumrecs=10:entityexportresultset=' + resultset + ':entityexportrecno=' + number + ':sessionid=' + sessionid + ':entitypagenum=35:0'];
+		processURLs(urls, url);
 	} else {
 		var items = Zotero.Utilities.getItemArray(doc, doc, '/WebZ/FSFETCH\\?fetchtype=fullrecord', '^(See more details for locating this item|Detailed Record)$');
-		items = Zotero.selectItems(items);
-
-		if(!items) {
-			return true;
-		}
-
-		var urls = new Array();
-
-		for(var i in items) {
-			var nMatch = numberRegexp.exec(i);
-			var rMatch = resultsetRegexp.exec(i);
-			if(rMatch && nMatch) {
-				var number = nMatch[1];
-				var resultset = rMatch[1];
-				urls.push(host+'/WebZ/DirectExport?numrecs=10:smartpage=directexport:entityexportnumrecs=10:entityexportresultset=' + resultset + ':entityexportrecno=' + number + ':sessionid=' + sessionid + ':entitypagenum=35:0');
+		var urls = []
+		
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
 			}
-		}
-	}
-	//we need to pass on the original url to get at the charset
-	processURLs(urls, url);
-	Zotero.wait();
+			for (var i in items) {
+				var nMatch = numberRegexp.exec(i);
+				var rMatch = resultsetRegexp.exec(i);
+				if(rMatch && nMatch) {
+					var number = nMatch[1];
+					var resultset = rMatch[1];
+					urls.push(host+'/WebZ/DirectExport?numrecs=10:smartpage=directexport:entityexportnumrecs=10:entityexportresultset=' + resultset + ':entityexportrecno=' + number + ':sessionid=' + sessionid + ':entitypagenum=35:0');
+				}	
+			}
+			processURLs(urls, url);
+		});
+	}	
 }
-

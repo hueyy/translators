@@ -9,21 +9,10 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-03-01 03:11:08"
-}
-
-function associateMeta(newItem, metaTags, field, zoteroField) {
-	var field = metaTags[field];
-	if(field) {
-		newItem[zoteroField] = field.getAttribute("content");
-	}
+	"lastUpdated": "2014-02-27 23:05:02"
 }
 
 function scrape(doc) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
 	
 	var newItem = new Zotero.Item("journalArticle");
 	newItem.url = doc.location.href;
@@ -32,43 +21,39 @@ function scrape(doc) {
 	var bookTitle;
 	var month, year;
 	var metaTags = doc.getElementsByTagName("meta");
-
-	associateMeta(newItem, metaTags, "Journal", "publicationTitle");
-	associateMeta(newItem, metaTags, "Volume", "volume");
-	associateMeta(newItem, metaTags, "Issue", "issue");
-
+	
+	newItem.publicationTitle = ZU.xpathText(doc, '//meta[@name="Journal"]/@content');
+	newItem.volume = ZU.xpathText(doc, '//meta[@name="Volume"]/@content')
+	newItem.issue = ZU.xpathText(doc, '//meta[@name="Issue"]/@content')
 	// in the case of book reviews, the title field is blank
 	//but quotes are not escaped properly, so if an article title begins with quotes, then the title tag looks blank even though it is not.
 	//(though semantically it is)
 	//they use the meta tag 'FileType' to indicate Aritlce or Book Review. silly, but we can use it.
 	
-	if (metaTags['FileType'].getAttribute("content") == 'Book Review') {
+	if (ZU.xpathText(doc, '//meta[@name="File Type"]/@content') == 'Book Review') {
 		//for a book review, title of reviewed book is
 		titlePath = '/html/body/table[4]/tbody/tr[3]/td[1]/i';	
-		newItem.title = "Review of " + doc.evaluate(titlePath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent;
+		newItem.title = "Review of " + doc.evaluate(titlePath, doc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent;
 
 	} else {
 		//it would be nice to grab the title from the meta tags, but quotations are properly escaped and the tags are therefore malformed.
 		titlePath = '/html/body/table[4]/tbody/tr[2]/td[1]/h2';
-		title = doc.evaluate(titlePath, doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext();
+		title = doc.evaluate(titlePath, doc, null, XPathResult.ANY_TYPE, null).iterateNext();
 		if( title ) {
 			newItem.title = Zotero.Utilities.trimInternal(Zotero.Utilities.superCleanString(title.textContent));
 		}
 	}
 
-	var author = metaTags["Author"];
-	if(author) {
-		var authors = author.getAttribute("content").split(" and ");
+	var authors = ZU.xpath(doc, '//meta[@name="Author"]/@content')
 		for(j in authors) {
-			authors[j] = authors[j].replace("Reviewed by ", "");
+			authors[j] = authors[j].textContent.replace("Reviewed by ", "");
 			newItem.creators.push(Zotero.Utilities.cleanAuthor(authors[j], "author"));
 		}
-	}
 	
-	var month = metaTags["PublicationMonth"];
-	var year = metaTags["PublicationYear"];
-	if(month && year) {
-		newItem.date = month.getAttribute("content")+" "+year.getAttribute("content");
+	var month = ZU.xpathText(doc, '//meta[@name="PublicationMonth"]/@content')
+	var year = ZU.xpathText(doc, '//meta[@name="PublicationYear"]/@content')
+	if(month || year) {
+		newItem.date = month +" "+ year;
 	}
 	
 	newItem.attachments.push({document:doc, title:"World History Connected Snapshot"});
@@ -91,23 +76,19 @@ function doWeb(doc, url) {
 	
 	var searchLinks;
 	
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-
 	if(doc.title.indexOf("Contents") != -1 || doc.title.indexOf("Search results") != -1) {
 
 		if(doc.title.indexOf("Contents |") != -1) {
-		searchLinks = doc.evaluate('//tbody/tr[2]/td[1]/table//a', doc, nsResolver, XPathResult.ANY_TYPE, null);	
+		searchLinks = doc.evaluate('//tbody/tr[2]/td[1]/table//a', doc, null, XPathResult.ANY_TYPE, null);	
 		} 
 		else if ( doc.title.indexOf("| Search results") != -1) {
-		searchLinks = doc.evaluate('/html/body/dl/dt/strong/a[starts-with(text(),"World History Connected | Vol.")]', doc, nsResolver, XPathResult.ANY_TYPE, null);
+		searchLinks = doc.evaluate('/html/body/dl/dt/strong/a[starts-with(text(),"World History Connected | Vol.")]', doc, null, XPathResult.ANY_TYPE, null);
 		}
 		
 		var link;
 		var title;
 		var items = new Object();
+		var uris = new Array();
 		
 		while (elmt = searchLinks.iterateNext()) {
 			//Zotero.debug(elmt.href);
@@ -117,22 +98,15 @@ function doWeb(doc, url) {
 				items[link] = title;
 			}
 		}
-	
-		items = Zotero.selectItems(items);
-		
-		if(!items) {
-			return true;
-		}
-		
-		var uris = new Array();
-		for(var i in items) {
-			uris.push(i);
-		}
-		
-		Zotero.Utilities.processDocuments(uris, function(doc) { scrape(doc) },
-			function() { Zotero.done(); }, null);
-		
-		Zotero.wait();
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				uris.push(i);
+			}
+			Zotero.Utilities.processDocuments(uris, scrape);
+		});
 	} else {
 		scrape(doc);
 	}

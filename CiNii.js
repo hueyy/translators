@@ -9,7 +9,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-05-19 20:46:50"
+	"lastUpdated": "2014-05-04 13:12:41"
 }
 
 function detectWeb(doc, url) {
@@ -194,7 +194,7 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
+		"url": "http://ci.nii.ac.jp/naid/110008803112",
 		"items": [
 			{
 				"itemType": "journalArticle",
@@ -252,11 +252,11 @@ var testCases = [
 					}
 				],
 				"notes": [],
-				"tags": [],
+				"tags": [
+					"New"
+				],
 				"seeAlso": [],
 				"attachments": [],
-				"itemID": "http://ci.nii.ac.jp/naid/110008803112#article",
-				"title": "遺伝子配列に対するペアワイズアライメントのGPUによる高速化",
 				"multi": {
 					"main": {},
 					"_lsts": {
@@ -264,9 +264,6 @@ var testCases = [
 							"en"
 						],
 						"publicationTitle": [
-							"en"
-						],
-						"reporter": [
 							"en"
 						],
 						"publisher": [
@@ -280,25 +277,30 @@ var testCases = [
 						"publicationTitle": {
 							"en": "IPSJ SIG technical reports"
 						},
-						"reporter": {
-							"en": "IPSJ SIG technical reports"
-						},
 						"publisher": {
 							"en": "Information Processing Society of Japan (IPSJ)"
 						}
 					}
 				},
-				"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring",
-				"publicationTitle": "生産研究",
-				"ISSN": "0037105X",
-				"publisher": "東京大学",
-				"date": "2002-11",
-				"volume": "54",
-				"issue": "6",
-				"pages": "384-387",
-				"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
-				"libraryCatalog": "CiNii",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"itemID": "http://ci.nii.ac.jp/naid/110008803112#article",
+				"title": "遺伝子配列に対するペアワイズアライメントのGPUによる高速化",
+				"publicationTitle": "情報処理学会研究報告. BIO, バイオ情報学",
+				"volume": "2012",
+				"issue": "7",
+				"number": "7",
+				"patentNumber": "7",
+				"pages": "1-2",
+				"ISSN": "09196072",
+				"publisher": "一般社団法人情報処理学会",
+				"institution": "一般社団法人情報処理学会",
+				"company": "一般社団法人情報処理学会",
+				"label": "一般社団法人情報処理学会",
+				"distributor": "一般社団法人情報処理学会",
+				"date": "2012-03-21",
+				"language": "ja",
+				"extra": "本稿では,GPU(Graphics Processing Unit)における高速なSmith-Waterman(SW)アルゴリズムの実装を示す.提案実装は1組の遺伝子配列に対するアライメントを高速に処理する.そのために,Striped SWアルゴリズムをタイリング技術とともにCUDA(Compute Unified Device Architecture)上に実装している.",
+				"checkFields": "title",
+				"libraryCatalog": "CiNii"
 			}
 		]
 	}

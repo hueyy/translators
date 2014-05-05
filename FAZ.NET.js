@@ -2,14 +2,14 @@
 	"translatorID": "4f0d0c90-5da0-11df-a08a-0800200c9a66",
 	"label": "FAZ.NET",
 	"creator": "ibex, Sebastian Karcher",
-	"target": "^http://((www\\.)?faz\\.net/.)",
+	"target": "^https?://((www\\.)?faz\\.net/.)",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-19 16:56:17"
+	"lastUpdated": "2014-04-03 17:37:06"
 }
 
 /*
@@ -47,8 +47,9 @@ function detectWeb(doc, url) {
 function doWeb(doc, url) {
 	var arts = new Array();
 	if (detectWeb(doc, url) == "multiple") {
-		var items = new Object();
-		var titles = doc.evaluate('//a[@class="TeaserHeadLink"]', doc, null, XPathResult.ANY_TYPE, null);
+		var items = new Object;
+		//make sure we don't get media objects
+		var titles = doc.evaluate('//div[not(div[contains(@class, "MediaLink")])]/a[@class="TeaserHeadLink"]', doc, null, XPathResult.ANY_TYPE, null);
 		var title;
 		while (title = titles.iterateNext()) {
 			items[title.href] = title.textContent.trim();
@@ -60,10 +61,7 @@ function doWeb(doc, url) {
 			for (var itemurl in items) {
 				arts.push(itemurl);
 			}
-			ZU.processDocuments(arts, scrape, function () {
-				Zotero.done();
-			});
-			Zotero.wait();
+			ZU.processDocuments(arts, scrape);
 		});
 	} else {
 		scrape(doc);
@@ -73,27 +71,25 @@ function doWeb(doc, url) {
 function scrape(doc) {
 	var newArticle = new Zotero.Item('newspaperArticle');
 	newArticle.url = doc.location.href;
-	newArticle.title = ZU.trimInternal(ZU.xpathText(doc, '//div[@class = "FAZArtikelEinleitung"]/h1')).replace(/^,/, "");
+	newArticle.title = ZU.trimInternal(ZU.xpathText(doc, '//div[@class = "FAZArtikelEinleitung"]/h2')).replace(/^,/, "");
 	var date = ZU.xpathText(doc, '//span[@class="Datum"]');
-	newArticle.date = ZU.trimInternal(date.replace(/ .*$/, ""));
+	if (date) newArticle.date = ZU.trimInternal(date.replace(/,? .*$/, ""));
 	var teaser = ZU.xpathText(doc, '//div[@class="FAZArtikelEinleitung"]/p[@class = "Copy"]');
 	if (teaser != null) {
 		newArticle.abstractNote = Zotero.Utilities.trimInternal(teaser).replace(/^,\s*/, "");
 	}
 
 	//some authors are in /a, some aren't we need to distinguish to get this right
-	if (ZU.xpathText(doc, '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[@class="caps"]/a') != null) {
-		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[@class="caps"]/a';
+	if (ZU.xpathText(doc, '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[contains(@class, "caps")]/a') != null) {
+		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class = "Autor"]/span[contains(@class, "caps")]/a';
 	} else {
-		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class ="Autor"]/span[@class="caps"]';
+		var xpath = '//div[@class="FAZArtikelEinleitung"]/span[@class ="Autor"]/span[contains(@class, "caps")]';
 	};
-	var authors = ZU.xpathText(doc, xpath);
-	if (authors != null) {
-		authors = authors.replace(/,.+/, "").split(/ und /)
+	var authors = ZU.xpath(doc, xpath);
+	
 		for (i in authors) {
-			newArticle.creators.push(Zotero.Utilities.cleanAuthor(authors[i], "author"));
+			newArticle.creators.push(Zotero.Utilities.cleanAuthor(authors[i].textContent, "author"));
 		}
-	}
 
 	newArticle.publicationTitle = "FAZ.NET";
 
@@ -157,7 +153,6 @@ var testCases = [
 					{
 						"title": "FAZ.NET Article Snapshot",
 						"mimeType": "text/html",
-						"url": "http://www.faz.net/aktuell/wissen/mensch-gene/wissenschaftsphilosophie-krumme-wege-der-vernunft-1654864.html",
 						"snapshot": true
 					}
 				],

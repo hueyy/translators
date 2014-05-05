@@ -2,182 +2,87 @@
 	"translatorID": "ed28758b-9c39-4e1c-af89-ce1c9202b70f",
 	"label": "National Gallery of Art - U.S.A.",
 	"creator": "Adam Crymble",
-	"target": "^https?://www\\.nga\\.gov/cgi-bin",
+	"target": "^https?://www\\.nga\\.gov/content\\/ngaweb",
 	"minVersion": "1.0.0b4.r5",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-01-30 22:46:27"
+	"lastUpdated": "2013-06-08 13:57:52"
 }
 
+/* Multiple items examples (tests don't work)
+http://www.nga.gov/content/ngaweb/collection-search-result.html?artist=
+http://www.nga.gov/content/ngaweb/Collection/artist-info.1951.html
+*/
+
 function detectWeb(doc, url) {
-	var single = 0;
-	
-	if (doc.evaluate('//div[@class="content"]/img', doc, null, XPathResult.ANY_TYPE, null).iterateNext()){
-		var pageType = doc.evaluate('//div[@class="content"]/img', doc, null, XPathResult.ANY_TYPE, null).iterateNext().src;
-	}
-	
-	if (doc.location.href.match("tinfo") || doc.title.match("timage")) {
-		single = "1";
-	}
-	
-	
-	
-	if (doc.title.match("Image") && doc.location.href.match("fcgi")) {
+	if (url.indexOf("art-object-page")!=-1) {
 		return "artwork";
 	}
 	
-	if (pageType.match("search_test")) {
+	if (url.indexOf("artist-info")!=-1 || url.indexOf("search-result.html")!=-1) {
 		return "multiple";
-	} else if (doc.location.href.match("artistid")) {
-		return "multiple";
-	} else if (single == "1" && pageType.match("collections_test")) {
-		return "artwork";
 	} 	
 }
 
 //National Gallery USA translator. Code by Adam Crymble
 
 function scrape(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
 	var style = 0;
 	var title1;
 	var newItem = new Zotero.Item("artwork");
-	
-	//determines page layout type
-
-	//single entry with thumbnail
-	if (doc.evaluate('//div[@class="BodyText"]/table/tbody/tr/td[2]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
-
-		var content = doc.evaluate('//div[@class="BodyText"]/table/tbody/tr/td[2]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.split(/\n/);
-		style = 1;
-		
-	//single entry without thumbnail (2 variations)		
-	} else if  (doc.evaluate('//div[@class="BodyText"]/table/tbody/tr/td', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
-	
-		var content = doc.evaluate('//div[@class="BodyText"]/table/tbody/tr/td', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.split(/\n/);
-		
-		if (content[1].match("Rendered")) {
-			style = 3;
-		} else {
-			style = 1;
-		}
-
-	//single entry with large image.		
-	} else if (doc.evaluate('//tr[2]/td[1]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext()) {
-	
-		var content = doc.evaluate('//tr[2]/td[1]', doc, nsResolver, XPathResult.ANY_TYPE, null).iterateNext().textContent.split(/\n/);
-		style = 2;
+	var authors = ZU.xpath(doc, '//dl[@class="artist-details"]/dt[@class="artist"]/a');
+	for (var i in authors){
+		//there are occasional empty items
+		if (authors[i].textContent) newItem.creators.push(ZU.cleanAuthor(authors[i].textContent, "artist", true))
 	}
-
-	if (style == 1) {
-		
-		newItem.creators.push(Zotero.Utilities.cleanAuthor(content[1], "artist"));
+	newItem.title = ZU.xpathText(doc, '//dl[@class="artwork-details"]/dt[@class="title"]');
+	newItem.date = ZU.xpathText(doc, '//dl[@class="artwork-details"]/dt[@class="created"]');
+	newItem.medium = ZU.xpathText(doc, '//dl[@class="artwork-details"]/dd[@class="medium"]');
+	newItem.artworkSize = ZU.xpathText(doc, '//dl[@class="artwork-details"]/dd[@class="dimensions"]');
+	newItem.callNumber = ZU.xpathText(doc, '//dl[@class="artwork-details"]/dd[@class="accession"]');
+	newItem.attachments.push({document: doc, title: "US National Gallery Snapshot", mimeType: "text/html"});
 	
-	
-		var titleDate = content[3].split(", ");
-		title1 = titleDate[0];
-		
-		if (titleDate.length>2) {
-			for (var j = 1; j < titleDate.length-1; j++) {
-				title1 = (title1 + ", " + titleDate[j]);
-			}
-		}
-		newItem.title = title1;
-		
-		if (titleDate.length > 1) {
-			newItem.date = titleDate[titleDate.length-1];	
-		}
-		
-		newItem.extra = ("Aquisition: " + content[content.length-3]);
-		newItem.callNumber = content[content.length-2];
-		
-	} else if (style == 2) {
-		newItem.creators.push(Zotero.Utilities.cleanAuthor(content[0], "artist"));
-		
-		var date = content[1].split(", ");
-		
-		title1 = date[0];
-		
-		if (date.length>2) {
-			for (var j = 1; j < date.length-1; j++) {
-				title1 = (title1 + ", " + date[j]);
-			}
-		}
-		
-		newItem.title = title1;
-				
-		newItem.date = date[date.length-1];
-		
-		var acquisition = content[2].split(/\d/);
-		newItem.extra = ("Aquisition: " + acquisition[0]);
-		
-	} else if (style == 3) {
-		
-		var titleAuthor = content[1].split("Rendered by ");
-		
-		newItem.title = titleAuthor[0];
-		newItem.creators.push(Zotero.Utilities.cleanAuthor(titleAuthor[1], "artist"));
-		
-		newItem.callNumber = content[content.length-2];
-		
-	}
-	
-	newItem.url = doc.location.href;
 	newItem.complete();
 }
 
 function doWeb(doc, url) {
-	var namespace = doc.documentElement.namespaceURI;
-	var nsResolver = namespace ? function(prefix) {
-		if (prefix == 'x') return namespace; else return null;
-	} : null;
-	
 	var articles = new Array();
 	
 	if (detectWeb(doc, url) == "multiple") {
 		var items = new Object();
 		
-		if (doc.location.href.match("artistid")) {
-			var titles = doc.evaluate('//ul/li/b/a', doc, nsResolver, XPathResult.ANY_TYPE, null);
-			
-		} else {
-			var titles = doc.evaluate('//ul/li/a', doc, nsResolver, XPathResult.ANY_TYPE, null);
-		}
+		var titles = doc.evaluate('//dt[@class="title"]/a', doc, null, XPathResult.ANY_TYPE, null);
 		
 		var next_title;
 		while (next_title = titles.iterateNext()) {
-			if (next_title.textContent.match("image available")) {
-				next_title = titles.iterateNext();
-			}
 			items[next_title.href] = next_title.textContent;
 		}
-		items = Zotero.selectItems(items);
-		for (var i in items) {
-			articles.push(i);
-		}
+		Zotero.selectItems(items, function (items) {
+			if (!items) {
+				return true;
+			}
+			for (var i in items) {
+				articles.push(i);
+			}
+			Zotero.Utilities.processDocuments(articles, scrape);
+		});
 	} else {
-		articles = [url];
+		scrape(doc, url)
 	}
-	Zotero.Utilities.processDocuments(articles, scrape, function() {Zotero.done();});
-	Zotero.wait();
 }/** BEGIN TEST CASES **/
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://www.nga.gov/fcgi-bin/tinfo_f?object=1237",
+		"url": "http://www.nga.gov/content/ngaweb/Collection/art-object-page.1237.html",
 		"items": [
 			{
 				"itemType": "artwork",
 				"creators": [
 					{
-						"firstName": "Attributed to Johannes",
+						"firstName": "Johannes",
 						"lastName": "Vermeer",
 						"creatorType": "artist"
 					}
@@ -185,26 +90,20 @@ var testCases = [
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],
-				"attachments": [],
-				"title": "Dutch",
-				"date": "1632 - 1675",
-				"extra": "Aquisition: 1942.9.98",
-				"callNumber": "On View",
-				"url": "http://www.nga.gov/fcgi-bin/tinfo_f?object=1237",
+				"attachments": [
+					{
+						"title": "US National Gallery Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"title": "Girl with a Flute",
+				"date": "probably 1665/1675",
+				"artworkSize": "painted surface: 20 x 17.8 cm (7 7/8 x 7 in.)\n, framed: 39.7 x 37.5 x 5.1 cm (15 5/8 x 14 3/4 x 2 in.)",
+				"callNumber": "1942.9.98",
 				"libraryCatalog": "National Gallery of Art - U.S.A.",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"artworkMedium": "oil on panel"
 			}
 		]
-	},
-	{
-		"type": "web",
-		"url": "http://www.nga.gov/cgi-bin/tsearch?artistid=1951",
-		"items": "multiple"
-	},
-	{
-		"type": "web",
-		"url": "http://www.nga.gov/cgi-bin/tsearch?artist=&title=flower",
-		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

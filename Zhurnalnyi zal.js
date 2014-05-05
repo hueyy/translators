@@ -2,14 +2,14 @@
 	"translatorID": "0db1c2d0-eaae-4f3d-94ef-d4b3aa61de16",
 	"label": "Журнальный зал",
 	"creator": "Avram Lyon",
-	"target": "^http://magazines\\.russ\\.ru/[a-zA-Z -_]+/[0-9]+/[0-9]+/",
+	"target": "^https?://magazines\\.russ\\.ru/[a-zA-Z -_]+/[0-9]+/[0-9]+/",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsbv",
-	"lastUpdated": "2012-02-23 15:46:18"
+	"browserSupport": "gcsibv",
+	"lastUpdated": "2014-04-04 10:03:46"
 }
 
 /*
@@ -47,7 +47,7 @@ function detectWeb(doc, url) {
 }
 
 function doWeb(doc, url) {
-	item = new Zotero.Item("journalArticle");
+	var item = new Zotero.Item("journalArticle");
 
 	var publication = ZU.xpathText(doc, '//div[@class="opub"]/a');
 	if( publication ) {

@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2012-07-18 12:24:51"
+	"lastUpdated": "2013-02-07 23:22:18"
 }
 
 function detectWeb(doc, url) {
@@ -108,13 +108,15 @@ var testCases = [
 					}
 				],
 				"title": "The Luminosity Function and Stellar Evolution.",
-				"publicationTitle": "The Astrophysical Journal",
+				"journalAbbreviation": "The Astrophysical Journal",
 				"volume": "121",
 				"date": "January 1, 1955",
 				"pages": "161",
 				"url": "http://adsabs.harvard.edu/abs/1955ApJ...121..161S",
-				"abstractNote": "Abstract image available at: \nhttp://adsabs.harvard.edu/abs/1955ApJ...121..161S",
-				"DOI": "DOI: 10.1086/145971",
+				"abstractNote": "Abstract image available at: \r\nhttp://adsabs.harvard.edu/abs/1955ApJ...121..161S",
+				"DOI": "10.1086/145971",
+				"ISSN": "0004-637X",
+				"publicationTitle": "The Astrophysical Journal",
 				"libraryCatalog": "NASA ADS",
 				"accessDate": "CURRENT_TIMESTAMP"
 			}
