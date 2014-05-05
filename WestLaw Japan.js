@@ -1,5 +1,6 @@
 {
 	"translatorID": "982e0329-01e6-4486-a1ba-ed18582192fa",
+	"translatorType": 4,
 	"label": "WestLaw Japan",
 	"creator": "Frank Bennett",
 	"target": "https://(?:go\\.westlawjapan\\.com|go-westlawjapan-com\\..*)/wljp/app/doc",
@@ -7,9 +8,8 @@
 	"maxVersion": "",
 	"priority": 1,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "g",
-	"lastUpdated": "2011-07-03 06:40:40"
+	"lastUpdated": "2013-01-07 03:53:17"
 }
 
 /*global Zotero: true */
@@ -22,6 +22,26 @@ var bogusItemID = 1;
 var menuUrlTemplate = "%%SITE_URL%%/wljp/app/search/result?rs=WLJP.1.0&vr=1.0&srguid=%%SRGUID%%&page=0&currdocguid=%%CURRDOCGUID%%&articleguid=&display=Doc Display&xmlout=false&countByColl=true";
 
 var documentUrlTemplate = "%%SITE_URL%%/wljp/app/doc?rs=WLJP.1.0&vr=1.0&src=rl&srguid=%%SRGUID%%&docguid=%%DOCGUID%%&spos=1&epos=0&page=0";
+
+zenkakuNumMap = {
+    "０","0",
+    "１","1",
+    "２","2",
+    "３","3",
+    "４","4",
+    "５","5",
+    "６","6",
+    "７","7",
+    "８","8",
+    "９","9"
+}
+
+imperialEraMap = {
+    "明":"明治",
+    "大":"大正",
+    "昭":"昭和",
+    "平":"平成"
+}
 
 var getCookies = function(doc) {
 	var ret = {};
@@ -250,10 +270,31 @@ var pageCallback = function (doc) {
 	buildAttachment(item, doc, 'related-info-case-case-history', casename, "裁判経過");
 	buildAttachment(item, doc, 'related-info-case-full-text', casename, "本文");
 
+    // Split docket number into its elements
+    var dn = item.docketNumber;
+    if (dn) {
+        var m = dn.match(/(明治*|大正*|昭和*|平成*)([０１２３４５６７８９]+)（([^）]+)）([０１２３４５６７８９]+)/);
+        if (m) {
+            item.callNumber = m[3];
+            item.filingDate = "";
+            for (var i=0,ilen=m[2].length;i<ilen;i+=1) {
+                item.filingDate = item.filingDate + zenkakuNumMap[m[2][i]];
+            }
+            if (imperialEraMap[m[1]]) {
+                item.reign = imperialEraMap[m[1]];
+            } else {
+                item.reign = m[1];
+            }
+            item.docketNumber = "";
+            for (var i=0,ilen=m[4].length;i<ilen;i+=1) {
+                item.docketNumber = item.docketNumber + zenkakuNumMap[m[4][i]];
+            }
+        }
+    }
 
 	// Copy basic citation details across to reporter items
 	for (i = 0, ilen = 4; i < ilen; i += 1) {
-		var v = ["dateDecided", "court", "docketNumber", "shortTitle"][i];
+		var v = ["dateDecided", "court", "docketNumber", "shortTitle", "filingDate", "reign", "callNumber"][i];
 		for (j = 0, jlen = items.length; j < jlen; j += 1) {
 			items[j][v] = item[v];
 		}

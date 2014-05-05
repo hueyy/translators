@@ -1,5 +1,6 @@
 {
 	"translatorID": "5ae63913-669a-4792-9f45-e089a37de9ab",
+	"translatorType": 4,
 	"label": "BAILII",
 	"creator": "Bill McKinney",
 	"target": "^https?:\\/\\/www\\.bailii\\.org(?:\\/cgi\\-bin\\/markup\\.cgi\\?doc\\=)?\\/\\w+\\/cases\\/.+",
@@ -7,7 +8,6 @@
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "gcsibv",
 	"lastUpdated": "2014-04-03 16:36:35"
 }
@@ -423,12 +423,11 @@ function detectWeb(doc, url) {
 function processItem(citeinfo, container_title, count, isNeutralCite, doc) {
 	var item = new  Zotero.Item("case");
 	item.itemID = "" + count;
-	item.extra = "";
 	var info = citeinfo[container_title];
 	if (container_title && !isNeutralCite) {
 		item.reporter = container_title;
 		if (info.collection_number) {
-			item.extra += "{:collection-number:" + info.collection_number + "}";
+			item.yearAsVolume = info.collection_number;
 		}
 	}
 	if (isNeutralCite) {
@@ -436,10 +435,10 @@ function processItem(citeinfo, container_title, count, isNeutralCite, doc) {
 							  url:doc.location.href});
 	}
 	if (info.jurisdiction) {
-		item.extra += "{:jurisdiction:" + info.jurisdiction + "}";
+		item.jurisdiction = info.jurisdiction;
 	}
 	if (info.issue) {
-		item.extra += "{:issue:" + info.issue + "}";
+		item.issue = info.issue;
 	}
 	item.title = info.title;
 	item.volume = info.volume;
@@ -447,7 +446,7 @@ function processItem(citeinfo, container_title, count, isNeutralCite, doc) {
 	item.number = info.number;
 	item.date = info.date;
 	item.url = info.url;
-	item.creators = info.creators.slice();
+	item.court = info.court;
 	
 	return item;
 };
@@ -487,10 +486,7 @@ function scrape(doc) {
 	var jurisdiction = "gb";
 	var start = 0;
 
-	var author = {};
-	author.creatorType = "author";
-	author.lastName = ""
-	author.fieldMode = 1;
+	var court = "";
 
 	var tdTag = false;
 	var tableTags = doc.getElementsByTagName("table");
@@ -514,11 +510,11 @@ function scrape(doc) {
 			var aTag = aTags[aTags.length - 1];
 			var court_description = Zotero.Utilities.getTextContent(aTag);
 			if (dict[court_description]) {
-				author.lastName = dict[court_description].value;
+				court = dict[court_description].value;
 				jurisdiction = dict[court_description].jurisdiction;
 				start = dict[court_description].start;
 			} else {
-				author.lastName = court_description;
+				court = court_description;
 			}
 		}
 		
@@ -543,7 +539,7 @@ function scrape(doc) {
 
 		  citeinfo = {
 			container_title: {
-			  "author": court_description,
+			  "court": court_description,
 			  "title": casename,
 			  "date": date,
 			  "collection-number": collection_number,
@@ -564,10 +560,10 @@ function scrape(doc) {
 				if (reports[container_title]) {
 					container_title = reports[container_title];
 				}
-				if (container_title === "CSIH" && author.lastName) {
-					author.lastName += "|Inner House"
-				} else if (container_title === "CSOH" && author.lastName) {
-					author.lastName += "|Outer House"
+				if (container_title === "CSIH" && court) {
+					court += "|Inner House"
+				} else if (container_title === "CSOH" && court) {
+					court += "|Outer House"
 				}
 				var volume = m[2];
 				var issue = "";
@@ -603,8 +599,7 @@ function scrape(doc) {
 
 				citeinfo[container_title].title = title;
 				citeinfo[container_title].url = doc.location.href;
-				citeinfo[container_title].creators = [];
-				citeinfo[container_title].creators.push(author);
+				citeinfo[container_title].court = court;
 			}
 		}
 
@@ -692,7 +687,6 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "case",
-				"creators": [],
 				"notes": [],
 				"tags": [],
 				"seeAlso": [],

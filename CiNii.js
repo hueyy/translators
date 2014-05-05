@@ -145,8 +145,10 @@ function doWeb(doc, url) {
 	}
 
 	for (var i = 0, ilen = arts.length; i < ilen; i += 1) {
-
-		var rdftext = Zotero.Utilities.retrieveSource(arts[i]+'/rdf');
+        arts[i] = arts[i].replace(/\/$/,"").replace(/\/(en|ja)$/,"") + '/rdf';
+    }
+    
+    Zotero.Utilities.doGet(arts, function (rdftext) {
 		var rdftrans = Zotero.loadTranslator("import");
 		rdftrans.setTranslator("5e3ad958-ac79-463d-812b-a86a9235c28f");
 		rdftrans.setString(rdftext);
@@ -176,6 +178,9 @@ function doWeb(doc, url) {
 					item.creators[i].lastName = lastName;
 				}
 			}
+			if (item.language && item.language.toLowerCase() === "jpn") {
+				item.language = "ja";
+			}
 			// XXXX This is a hack to avoid garbage returns from CiNii RDF.
 			// We're only interested in descriptions of article IDs.
 			if (item.itemID.slice(0,25) === 'http://ci.nii.ac.jp/naid/') {
@@ -183,7 +188,7 @@ function doWeb(doc, url) {
 			}
 		});
 		rdftrans.translate();
-	}
+	}, function(){Zotero.done();});
 }
 /** BEGIN TEST CASES **/
 var testCases = [

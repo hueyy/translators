@@ -1,13 +1,14 @@
 {
-	"translatorID":"14763d25-8ba0-45df-8f52-b8d1108e7ac9",
-	"translatorType":3,
-	"label":"Bibliontology RDF",
-	"creator":"Simon Kornblith",
-	"target":"rdf",
-	"minVersion":"2.0",
-	"maxVersion":"",
-	"priority":50,
-	"browserSupport":"gcs",
+	"translatorID": "14763d25-8ba0-45df-8f52-b8d1108e7ac9",
+	"translatorType": 3,
+	"label": "Bibliontology RDF",
+	"creator": "Simon Kornblith",
+	"target": "rdf",
+	"minVersion": "2.0",
+	"maxVersion": "",
+	"priority": 50,
+	"inRepository": false,
+	"browserSupport": "gcs",
 	"configOptions":{"getCollections":"true", "dataMode":"rdf/xml"},
 	"displayOptions":{"exportNotes":true},
 	"inRepository":false,
@@ -28,6 +29,7 @@ var n = {
 	res:"http://purl.org/vocab/resourcelist/schema#",
 	sc:"http://umbel.org/umbel/sc/",
 	sioct:"http://rdfs.org/sioc/types#",
+	mlz:"http://citationstylist.org/rdfschema/temp/",
 	z:"http://www.zotero.org/namespaces/export#"
 };
 
@@ -57,9 +59,9 @@ var n = {
  
 //	ZOTERO TYPE				ITEM CLASS											SUBCONTAINER CLASS					CONTAINER CLASS
 var TYPES = {
-	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								null],
-	"attachment":			[[[n.rdf+"type", n.z+"Attachment"]], 				null, 								null],
-	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								null],
+	"artwork":				[[[n.rdf+"type", n.bibo+"Image"]], 					null, 								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Website"]]]],
+    "attachment":           [[[n.rdf+"type", n.z+"Attachment"]],                null, 								null],
+	"audioRecording":		[[[n.rdf+"type", n.bibo+"AudioDocument"]],			null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"CollectedDocument"]]]],
 	"bill":					[[[n.rdf+"type", n.bibo+"Bill"]],					null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],					
 	"blogPost":				[[[n.rdf+"type", n.sioct+"BlogPost"],
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"Weblog"],
@@ -80,16 +82,18 @@ var TYPES = {
 							  [n.rdf+"type", n.bibo+"Article"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.sioct+"MessageBoard"],
 							 																					 	[n.rdf+"type", n.bibo+"Website"]]]],
 	"film":					[[[n.rdf+"type", n.bibo+"Film"]],					null,								null],
-	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								null],
+	"gazette":				[[[n.rdf+"type", n.bibo+"Gazette"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
+	"hearing":				[[[n.rdf+"type", n.bibo+"Hearing"]],				null,								[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Proceedings"]]]],
 	"instantMessage":		[[[n.rdf+"type", n.sioct+"InstantMessage"],
 							  [n.rdf+"type", n.bibo+"PersonalCommunication"]], 	null,								null],
 	"interview":			[[[n.rdf+"type", n.bibo+"Interview"]],				null,								null],
 	"journalArticle":		[[[n.rdf+"type", n.bibo+"AcademicArticle"]], 		[true, n.dcterms+"isPartOf",
-																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Journal"]]]],
+																				 [[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Journal"]]]],
 	"letter":				[[[n.rdf+"type", n.bibo+"Letter"]],					null,								null],
 	"magazineArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Magazine"]]]],
 	"manuscript":			[[[n.rdf+"type", n.bibo+"Manuscript"]],				null,								null],
+	"classic":				[[[n.rdf+"type", n.bibo+"Classic"]],				null,								null],
 	"map":					[[[n.rdf+"type", n.bibo+"Map"]],					null,								null],
 	"newspaperArticle":		[[[n.rdf+"type", n.bibo+"Article"]], 				[true, n.dcterms+"isPartOf",
 																				[[n.rdf+"type", n.bibo+"Issue"]]], 	[true, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Newspaper"]]]],
@@ -97,13 +101,16 @@ var TYPES = {
 	"patent":				[[[n.rdf+"type", n.bibo+"Patent"]],					null,								null],
 	"podcast":				[[[n.rdf+"type", n.z+"Podcast"],
 							  [n.rdf+"type", n.bibo+"AudioDocument"]],			null,								null],
+	"periodical":			[[[n.rdf+"type", n.bibo+"Journal"]],				null,								null],
 	"presentation":			[[[n.rdf+"type", n.bibo+"Slideshow"]],				null,								null],
 	"radioBroadcast":		[[[n.rdf+"type", n.po+"AudioDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"Radio"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
+	"regulation":			[[[n.rdf+"type", n.bibo+"Regulation"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"report":				[[[n.rdf+"type", n.bibo+"Report"]],					null,								null],
 	"statute":				[[[n.rdf+"type", n.bibo+"Statute"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"thesis":				[[[n.rdf+"type", n.bibo+"Thesis"]],					null,								null],
+	"treaty":				[[[n.rdf+"type", n.bibo+"Treaty"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.bibo+"Code"]]]],
 	"tvBroadcast":			[[[n.rdf+"type", n.bibo+"AudioVisualDocument"],
 							  [n.rdf+"type", n.po+"Episode"],
 							  [n.po+"broadcast_on", n.po+"TV"]],				null,								[false, n.dcterms+"isPartOf", [[n.rdf+"type", n.po+"Programme"]]]],
@@ -178,7 +185,8 @@ var FIELDS = {
 	"rights":				[USERITEM,		n.dcterms+"rights"],
 	"series":				[CONTAINER_SERIES,	n.dcterms+"title"],
 	"volume":				[SUBCONTAINER,	n.bibo+"volume"],
-	"issue":				[SUBCONTAINER,	n.bibo+"issue"],
+	"yearAsVolume":			[SUBCONTAINER,	n.mlz+"yearAsVolume"],
+	"issue" :				[SUBCONTAINER,	n.bibo+"issue"],
 	"edition":				[SUBCONTAINER,	n.bibo+"edition"],
 	"place":				[CONTAINER,		[n.dcterms+"publisher", [[n.rdf+"type", n.foaf+"Organization"]], n.address+"localityName"]],
 	"country":				[CONTAINER,		[n.dcterms+"publisher", [[n.rdf+"type", n.foaf+"Organization"]], n.address+"countryName"]],
@@ -212,6 +220,22 @@ var FIELDS = {
 	"publicationTitle":		[CONTAINER,		n.dcterms+"title"],
 	"ISSN":					[CONTAINER,		n.bibo+"issn"],
 	"date":					[SUBCONTAINER,	n.dcterms+"date"],
+	"openingDate":			[ITEM,	n.mlz+"openingDate"],
+	"adoptionDate":			[ITEM,	n.mlz+"adoptonDate"],
+	"signingDate":			[ITEM,	n.mlz+"signingDate"],
+	"signingDate":			[ITEM,	n.mlz+"signingDate"],
+	"publicationDate":		[ITEM,	n.mlz+"publicationDate"],
+	"originalDate":			[ITEM,	n.mlz+"originalDate"],
+	"priorityDate":			[ITEM,	n.mlz+"priorityDate"],
+	"newsCaseDate":			[ITEM,	n.mlz+"newsCaseDate"],
+	"jurisdiction":			[ITEM,	n.mlz+"jurisdiction"],
+	"reign":				[ITEM,	n.mlz+"reign"],
+	"regnalYear":			[ITEM,	n.mlz+"regnalYear"],
+	"opus":					[ITEM,	n.mlz+"opus"],
+	"supplementName":		[ITEM,	n.mlz+"supplementName"],
+	"meetingNumber":		[ITEM,		n.mlz+"meetingNumber"],
+	"resolutionLabel":		[ITEM,		n.mlz+"resolutionLabel"],
+	"assemblyNumber":		[ITEM,		n.mlz+"assemblyNumber"],
 	"section":				[ITEM,			n.bibo+"section"],
 	"callNumber":			[SUBCONTAINER,	n.bibo+"lccn"],
 	"archiveLocation":		[ITEM,			n.dcterms+"source"],
@@ -220,8 +244,8 @@ var FIELDS = {
 	"journalAbbreviation":	[CONTAINER,		n.bibo+"shortTitle"],
 	"DOI":					[ITEM,			n.bibo+"doi"],
 	"accessDate":			[USERITEM,		n.z+"accessDate"],
-	"seriesTitle":			[ITEM_SERIES,	n.dcterms+"title"],
-	"seriesText":			[ITEM_SERIES,	n.dcterms+"description"],
+	"seriesTitle":			[CONTAINER_SERIES,	n.dcterms+"title"],
+	"seriesText":			[CONTAINER_SERIES,	n.dcterms+"description"],
 	"seriesNumber":			[CONTAINER_SERIES,		n.bibo+"number"],
 	"code":					[CONTAINER,		n.dcterms+"title"],
 	"session":				[ITEM,			[n.bibo+"presentedAt", [[n.rdf+"type", n.bibo+"Conference"]], n.dcterms+"title"]],
@@ -266,6 +290,9 @@ var FIELDS = {
 	"abstractNote":			[ITEM,			n.dcterms+"abstract"],
 	"type":					[ITEM,			n.dcterms+"type"],
 	"medium":				[ITEM,			n.dcterms+"medium"],
+	"mimeType":				[ITEM,			n.link+"type"],
+	"charset":				[ITEM,			n.link+"charset"],
+	"path":					[ITEM,			n.rdf+"resource"],
 	"title":				[ITEM,			n.dcterms+"title"],
 	"shortTitle":			[ITEM,			n.bibo+"shortTitle"],
 	"numPages":				[ITEM,			n.bibo+"numPages"],
@@ -273,6 +300,8 @@ var FIELDS = {
 	"issuingAuthority":		[ITEM,			[n.bibo+"issuer", [[n.rdf+"type", n.foaf+"Organization"]], n.foaf+"name"]],
 	"filingDate":			[ITEM,			n.dcterms+"dateSubmitted"]
 };
+
+// Zotero.RDF.addStatement(nodes[USERITEM], n.link+"link", "#item_"+attachment.itemID, false);
 
 var AUTHOR_LIST = 1;
 var EDITOR_LIST = 2;
@@ -311,6 +340,8 @@ var CREATORS = {
 var SAME_ITEM_RELATIONS = [n.dcterms+"isPartOf", n.dcterms+"isVersionOf", n.bibo+"affirmedBy",
 						   n.bibo+"presentedAt", n.bibo+"presents", n.bibo+"reproducedIn",
 						   n.bibo+"reviewOf", n.bibo+"translationOf", n.bibo+"transcriptOf"];
+
+var ATTACHMENT_FIELDS = ["title", "mimeType", "url", "charset", "path"];
 
 /** COMMON FUNCTIONS **/
 
@@ -581,13 +612,48 @@ LiteralProperty.prototype.mapToItem = function(newItem, nodes) {
 		var statements = getStatementsByDefinition(this.mapping[1], node);
 		if(!statements) return false;
 		
-		var content = [];
+		var main = [];
+		var keylist = [];
+		var variants = {};
 		for each(var stmt in statements) {
-			content.push(stmt[2].toString());
+			if (stmt[3]) {
+				if (!variants[stmt[3]]) {
+					keylist.push(stmt[3]);
+					variants[stmt[3]] = [];
+				}
+ 				variants[stmt[3]].push(stmt[2].toString());
+			} else {
+				main.push(stmt[2].toString());
+			}
 		}
-		newItem[this.field] = content.join(",");
+		main = main.join(",");
+		for (var lang in variants) {
+			variants[lang] = variants[lang].join(",");
+		}
+		newItem[this.field] = main;
+		newItem.multi._lsts[this.field] = keylist;
+		newItem.multi._keys[this.field] = variants;
 	}
 	return true;
+}
+
+/**
+ * Sets multilingual elements on an ordinary field
+ */
+LiteralProperty.prototype.setMulti = function(node, mapping, item) {
+	if (item.multi) {
+		if (item.multi.main[this.field]) {
+			Zotero.RDF.addStatement(node,
+			  mapping, item.uniqueFields[this.field], true, item.multi.main[this.field]);
+		}
+		if (item.multi._lsts && item.multi._lsts[this.field]) {
+			for (var i=0, ilen=item.multi._lsts[this.field].length; i<ilen; i += 1) {
+				var lang = item.multi._lsts[this.field][i];
+				Zotero.RDF.addStatement(node,
+					  mapping, item.multi._keys[this.field][lang], true, lang);
+			}
+		}
+	}
 }
 
 /**
@@ -601,11 +667,13 @@ LiteralProperty.prototype.mapFromItem = function(item, nodes) {
 		}
 	} else if(typeof this.mapping[1] == "string") {		// string case: simple predicate
 		Zotero.RDF.addStatement(nodes[this.mapping[0]],
-			this.mapping[1], item.uniqueFields[this.field], true);
+								this.mapping[1], item.uniqueFields[this.field], true);
+		this.setMulti(nodes[this.mapping[0]], this.mapping[1], item);
 	} else {										// array case: complex predicate
 		var blankNode = getBlankNode(nodes[this.mapping[0]],
 			this.mapping[1][0], this.mapping[1][1], true);
 		Zotero.RDF.addStatement(blankNode, this.mapping[1][2], item.uniqueFields[this.field], true);
+		this.setMulti(blankNode, this.mapping[1][2], item);
 	}
 }
 
@@ -622,21 +690,34 @@ CreatorProperty = function(field) {
  */
 CreatorProperty.prototype.mapToCreator = function(creatorNode, zoteroType) {
 	//Zotero.debug("mapping "+Zotero.RDF.getResourceURI(creatorNode)+" to a creator");
-	var lastNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"surname", null);
-	if(lastNameStmt) {		// look for a person with a last name
-		creator = {lastName:lastNameStmt[0][2].toString()};
-		var firstNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"givenname", null);
-		if(firstNameStmt) creator.firstName = firstNameStmt[0][2].toString();
-	} else {
-		var nameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"name", null);
-		if(nameStmt) {		// an organization
-			creator = {lastName:nameStmt[0][2].toString(), fieldMode:1};
-		} else {			// an unnamed entity; ignore it
-			//Zotero.debug("Dropping unnamed creator "+creatorNode.toString());
-			return false;
+	var creator = {};
+	creator.multi = {};
+	creator.multi._lst = [];
+	creator.multi._key = {};
+	var variants = {};
+	var keylist = [];
+	var nameMap = {
+		surname:"lastName",
+		givenname:"firstName",
+		name:"lastName"
+	}
+	for each(var part in ["surname", "givenname", "name"]) {
+		var nameStmts = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+part, null);
+		for each(var stmt in nameStmts) {
+			if (stmt[3]) {
+				if (!variants[stmt[3]]) {
+					keylist.push(stmt[3]);
+					variants[stmt[3]] = {};
+				}
+ 				variants[stmt[3]][nameMap[part]] = stmt[2].toString();
+			} else {
+				creator[nameMap[part]] = stmt[2].toString();
+			}
 		}
 	}
-	
+	creator.multi._lst = keylist;
+	creator.multi._key = variants;
+
 	// birthYear and shortName
 	var birthStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"birthday", null, true);
 	if(birthStmt) creator.birthYear = birthStmt[2].toString();
@@ -652,6 +733,7 @@ CreatorProperty.prototype.mapToCreator = function(creatorNode, zoteroType) {
 	} else {
 		creator.creatorType = this.field;
 	}
+	// XXX still needs cleanup, after default language is known.
 	return creator;
 }
 
@@ -691,15 +773,34 @@ CreatorProperty.prototype.mapFromCreator = function(item, creator, nodes) {
 			var mapping = [ITEM, AUTHOR_LIST, n.z+this.field];
 		}
 	}
+
+	var setCreator = function (mode, node, creator, lang) {
+		if(mode == 1) {
+			if(creator.lastName) Zotero.RDF.addStatement(node, n.foaf+"name", creator.lastName, true, lang);
+		} else {
+			if(creator.firstName) Zotero.RDF.addStatement(node, n.foaf+"givenname", creator.firstName, true, lang);
+			if(creator.lastName) Zotero.RDF.addStatement(node, n.foaf+"surname", creator.lastName, true, lang);
+		}
+	}
 	
 	var creatorNode = Zotero.RDF.newResource();
-	if(creator.fieldMode == 1) {
+	setCreator(creator.fieldMode, creatorNode, creator);
+	if (creator.fieldMode === 1) {
 		Zotero.RDF.addStatement(creatorNode, RDF_TYPE, n.foaf+"Organization");
-		if(creator.lastName) Zotero.RDF.addStatement(creatorNode, n.foaf+"name", creator.lastName, true);
 	} else {
 		Zotero.RDF.addStatement(creatorNode, RDF_TYPE, n.foaf+"Person");
-		if(creator.firstName) Zotero.RDF.addStatement(creatorNode, n.foaf+"givenname", creator.firstName, true);
-		if(creator.lastName) Zotero.RDF.addStatement(creatorNode, n.foaf+"surname", creator.lastName, true);
+	}
+
+	if (creator.multi) {
+		if (creator.multi.main) {
+			setCreator(creator.fieldMode, creatorNode, creator, creator.multi.main);
+		}
+		if (creator.multi._lst) {
+			for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+				var lang = creator.multi._lst[i];
+				setCreator(creator.fieldMode, creatorNode, creator.multi._key[lang], lang);
+			}
+		}
 	}
 	if(creator.birthYear) Zotero.RDF.addStatement(creatorNode, n.foaf+"birthday", creator.birthYear, true);
 	if(creator.shortName) Zotero.RDF.addStatement(creatorNode, n.foaf+"nick", creator.shortName, true);
@@ -777,6 +878,9 @@ function doImport() {
 	
 	// collapse Zotero-to-BIBO type mappings
 	for(var zoteroType in TYPES) {
+        if (zoteroType === "attachment") {
+            continue;
+        }
 		var type = new Type(zoteroType, TYPES[zoteroType]);
 		for each(var pair in TYPES[zoteroType][0]) {
 			if(!collapsedTypes[pair[1]]) {
@@ -848,12 +952,13 @@ function doImport() {
 		if(skip) continue;
 		
 		var itemRDFTypes = Zotero.RDF.getStatementsMatching(itemNode, RDF_TYPE, null);
-		
+
 		// score types by the number of triples they share with our types
 		var bestTypeScore = -9999;
 		var bestType, score, nodes, bestNodes;
 		for each(var rdfType in itemRDFTypes) {
 			if(typeof rdfType[2] !== "object") continue;
+			
 			var collapsedTypesForItem = collapsedTypes[Z.RDF.getResourceURI(rdfType[2])];
 			if(!collapsedTypesForItem) continue;
 			
@@ -862,6 +967,11 @@ function doImport() {
 				//Zotero.debug("Type "+type.zoteroType+" has score "+score);
 				
 				// check if this is the best we can do
+
+				// Aha, maybe. The highest-scoring node set between parent and child trumps.
+				// So the child (Journal) goes through, and the parent (Issue) is dropped.
+				// Better if we catenate?
+
 				if(score > bestTypeScore) {
 					bestTypeScore = score;
 					bestType = type;
@@ -869,20 +979,28 @@ function doImport() {
 				}
 			}
 		}
+
+		Zotero.debug("bestTypeScore: "+bestTypeScore);
 		
 		// skip if this doesn't fit any type very well
 		if(bestTypeScore < 1) {
-			//Zotero.debug("No good type mapping; best type was "+bestType.zoteroType+" with score "+bestTypeScore);
 			continue;
 		}
 		
-		//Zotero.debug("Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
+		if (bestType) {
+			Zotero.debug("Got item of type "+bestType.zoteroType+" with score "+bestTypeScore);
+		}
+
 		nodes = bestNodes;
 		bestType.getItemSeriesNodes(nodes);
 		
 		// create item
 		var zoteroType = bestType.zoteroType;
 		var newItem = new Zotero.Item(zoteroType);
+		newItem.multi = {};
+		newItem.multi.main = {};
+		newItem.multi._lsts = {};
+		newItem.multi._keys = {};
 		
 		// handle ordinary properties
 		var allCreators = {}
@@ -890,6 +1008,7 @@ function doImport() {
 			var propertiesHandled = {};
 			var properties = Zotero.RDF.getArcsOut(nodes[i]);
 			for each(var property in properties) {
+				// XXXXX Not getting volume etc. in properties for journalArticle type
 				// only handle each property once
 				if(propertiesHandled[property]) continue;
 				propertiesHandled[property] = true;
@@ -995,6 +1114,115 @@ function doImport() {
 			}
 		}
 		
+		// Fix multilingual fields if necessary
+		for (var field in newItem.multi._keys) {
+			if (newItem[field]) {
+				for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
+					var lang = newItem.multi._lsts[field][i];
+					if (newItem[field] === newItem.multi._keys[field][lang]) {
+						// If there is a field value, look for a match, then give up
+						newItem.multi.main[field] = lang;
+						newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
+						delete newItem.multi._keys[field][lang];
+						break;
+					}
+				}
+			} else {
+				var itemLanguage;
+				if (newItem.language) {
+					// If there is none, but there is an item language, look for a match there
+					var itemLanguage = newItem.language.split(/[; ]+/)[0];
+					var itemLanguageLst = itemLanguage.split("-");
+					for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
+						var lang = newItem.multi._lsts[field][i];
+						var langLst = lang.split("-");
+						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
+							newItem[field] = newItem.multi._keys[field][lang];
+							newItem.multi.main[field] = lang;
+							newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
+							delete newItem.multi._keys[field][lang];
+							break;
+						}
+					}
+				}
+				// If there is none and the above has failed, just take the first
+				if (!newItem[field]) {
+					var lang = newItem.multi._lsts[field][0];
+					newItem[field] = newItem.multi._keys[field][lang];
+					newItem.multi.main[field] = lang;
+					newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(1);
+					delete newItem.multi._keys[field][lang];
+				}
+			}
+		}
+
+		// Fix multilingual creators if necessary
+		for (var j=0,jlen=newItem.creators.length; j<jlen;j += 1) {
+			var creator = newItem.creators[j];
+			if (creator.lastName) {
+				for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+					var lang = creator.multi._lst[i];
+					if (creator.lastName === creator.multi._key[lang].lastName 
+						&& ((!creator.firstName && !creator.multi._key[lang].firstName)
+							|| creator.firstName === creator.firstName)) {
+
+						creator.multi.main = lang;
+						creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
+						delete creator.multi._key[lang];
+						break;
+					}
+				}
+			} else {
+				var itemLanguage;
+				if (creator.language) {
+					var itemLanguage = newItem.language.split(/[; ]+/)[0];
+					var itemLanguageLst = itemLanguage.split("-");
+					for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
+						var lang = creator.multi._lst[i];
+						var langLst = lang.split("-");
+						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
+							for (var key in creator.multi._key[lang]) {
+								creator[key] = creator.multi._key[lang][key];
+							}
+							creator.multi.main = lang;
+							creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
+							delete creator.multi._key[lang];
+							break;
+						}
+					}
+				}
+				if (!creator.lastName) {
+					var lang = creator.multi._lst[0];
+					for (var key in creator.multi._key[lang]) {
+						creator[key] = creator.multi._key[lang][key];
+					}
+					creator = creator.multi._key[lang];
+					creator.multi.main = lang;
+					creator.multi._lst = creator.multi._lst.slice(1);
+					delete creator.multi._key[lang];
+				}
+			}
+			// Add attachments
+			// The kindest thing than can be said about this is that it works.
+			var linkStmts = Zotero.RDF.getStatementsMatching(nodes[ITEM], n.link+"link", null);
+			for each(var linkStmt in linkStmts) {
+				var linkURI = Zotero.RDF.getResourceURI(linkStmt[2]);
+				var attachmentStmts = Zotero.RDF.getStatementsMatching(linkURI, n.rdf+"type", n.z+"Attachment");
+				if (attachmentStmts) {
+					var attachmentNode = attachmentStmts[0][0];
+					var attachment = {};
+					for each(var key in ATTACHMENT_FIELDS) {
+						var field = FIELDS[key];
+						var stmt = Zotero.RDF.getStatementsMatching(attachmentNode, field[1], null, true);
+						if (stmt) {
+							attachment[key] = stmt[0][2];
+						}
+					}
+					newItem.attachments.push(attachment);
+				}
+			}
+		}
+		// Push to an array of items instead, so attachments can be added.
 		newItem.complete();
 	}
 }
@@ -1015,7 +1243,8 @@ function doExport() {
 	}
 	var autoTags = {};
 	var userTags = {};
-	
+	var attachments = {};
+
 	// now that we've collected our items, start building the RDF
 	for each(var item in items) {
 		// set type on item node
@@ -1030,6 +1259,25 @@ function doExport() {
 			property.mapFromItem(item, nodes);
 		}
 		//Zotero.debug("fields added");
+		for each(var attachment in item.attachments) {
+            Zotero.debug("PPP hello attachment!");
+			var attachmentNode = "#item_"+attachment.itemID;
+			Zotero.RDF.addStatement(attachmentNode, RDF_TYPE, n.z+"Attachment", false);
+			// Only attached files export correctly at the moment.
+			if (attachment.defaultPath) {
+				Zotero.RDF.addStatement(attachmentNode, n.rdf+"resource", attachment.defaultPath, true);
+                if (attachment.saveFile) {
+			        attachment.saveFile(attachment.defaultPath, true);
+                }
+			}
+			if (attachment.title) {
+				Zotero.RDF.addStatement(attachmentNode, n.dcterms+"title", attachment.title, true);
+			}
+			if (attachment.mimeType) {
+				Zotero.RDF.addStatement(attachmentNode, n.link+"type", attachment.mimeType, true);
+			}
+			Zotero.RDF.addStatement(nodes[ITEM], n.link+"link", attachmentNode);
+		}
 		
 		// add creators
 		var creatorLists = [];
@@ -1039,7 +1287,7 @@ function doExport() {
 			property.mapFromCreator(item, creator, nodes);
 		}
 		//Zotero.debug("creators added");
-		
+
 		// add tags
 		for each(var tag in item.tags) {
 			var tagCollection = tag.type == 0 ? userTags : autoTags;
@@ -1059,5 +1307,6 @@ function doExport() {
 		
 		type.addNodeRelations(nodes);
 		//Zotero.debug("relations added");
+
 	}
 }

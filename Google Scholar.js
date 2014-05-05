@@ -1,5 +1,6 @@
 {
 	"translatorID": "57a00950-f0d1-4b41-b6ba-44ff0fc30289",
+	"translatorType": 4,
 	"label": "Google Scholar",
 	"creator": "Simon Kornblith, Frank Bennett, Aurimas Vinckevicius",
 	"target": "^https?://scholar\\.google\\.(?:com|cat|(?:com?\\.)?[a-z]{2})/(?:scholar(?:_case)?\\?|citations\\?)",
@@ -295,6 +296,12 @@ function scrapeArticleResults(doc, articles) {
 						}
 
 						//attach files linked on the right
+
+                        // my rev
+						//	'.//div[contains(@class,"gs_ri")]\
+						//	//a[./node()[starts-with(text(),"[")]]');
+
+
 						var pdf = ZU.xpath(article.result,
 							'(./div[contains(@class,"gs_fl")]\
 								//a[.//span[@class="gs_ctg2"]]\
@@ -581,7 +588,10 @@ function doWeb(doc, url) {
 		var items = new Object();
 		var resultDivs = new Object();
 		var bibtexUrl;
+
 		for(var i=0, n=results.length; i<n; i++) {
+			// my rev
+            //	'.//div[@class="gs_ri"]//a[contains(@href,"q=info:") or contains(@href,"q=related:")][1]/@href')
 			bibtexUrl = ZU.xpathText(results[i],
 					'.//div[@class="gs_fl"]/a[contains(@href,"q=info:")\
 						or contains(@href,"q=related:")][1]/@href');
@@ -679,7 +689,15 @@ var scrapeCase = function (doc, url) {
 		// citelet looks kind of like this
 		// Powell v. McCormack, 395 US 486 - Supreme Court 1969
 		var item = new Zotero.Item("case");
-		var factory = new ItemFactory(refFrag.textContent, [url]);
+
+        // zzz
+        var block = doc.getElementById("gs_opinion_wrapper");
+        var factory;
+        if (block) {
+		    factory = new ItemFactory(refFrag.textContent, [block]);
+        } else {
+		    factory = new ItemFactory(refFrag.textContent, [url]);
+        }
 		factory.repairCitelet();
 		factory.getDate();
 		factory.getCourt();
@@ -803,7 +821,7 @@ ItemFactory.prototype.getCourt = function () {
 	if (m) {
 		this.v.court = m[2].replace(/_/g, " ");
 		if (m[1]) {
-			this.v.extra = "{:jurisdiction: " + m[1] + "}";
+			this.v.jurisdiction = m[1];
 		}
 	}
 	return this.v.court;
@@ -861,8 +879,38 @@ ItemFactory.prototype.getAttachments = function (doctype) {
 	var i, ilen, attachments;
 	attachments = [];
 	for (i = 0, ilen = this.attachmentLinks.length; i < ilen; i += 1) {
-		attachments.push({title:"Google Scholar Linked " + doctype, type:"text/html",
+
+        // zzz
+
+        if ("string" === typeof this.attachmentLinks[i]) {
+            // URL (string)
+		    if (this.attachmentLinks[i].slice(0, 1) === "/") {
+			    this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
+		    }
+		    this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/g,"");
+		    attachments.push({title:"Google Scholar: " + doctype, type:"text/html",
 							  url:this.attachmentLinks[i]});
+        } else {
+            // doc (DOM)
+            var block = this.attachmentLinks[i];
+            var doc = block.ownerDocument;
+            var title = doc.getElementsByTagName("title")[0].textContent;
+            this.item.url = doc.documentURI;
+
+            // head (title and css)
+            var head = doc.createElement("head");
+            var titlenode = doc.createElement("title");
+            head.appendChild(titlenode)
+            titlenode.appendChild(doc.createTextNode(title));
+            
+            var style = doc.createElement("style");
+            head.appendChild(style)
+            style.setAttribute("type", "text/css")
+            var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
+            style.appendChild(doc.createTextNode(css));
+            var attachmentdoc = Zotero.Utilities.composeDoc(doc, head, block);
+            attachments.push({title:"Google Scholar: "+doctype, type:"text/html", document:attachmentdoc});
+        }
 	}
 	return attachments;
 };
@@ -925,6 +973,7 @@ ItemFactory.prototype.saveItem = function () {
 			this.item = new Zotero.Item("case");
 			this.saveItemCommonVars();
 			this.pushAttachments("Judgement");
+			this.item.jurisdiction = "us";
 			this.item.complete();
 		}
 	}

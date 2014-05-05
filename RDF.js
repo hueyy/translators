@@ -771,7 +771,7 @@ function importItem(newItem, node) {
 
 	// title
 	var result = getFirstResults(node, [n.dc+"title", n.dc1_0+"title", n.dcterms+"title",
-		n.eprints+"title", n.vcard2+"fn", n.og+"title"], false);
+		  n.eprints+"title", n.vcard2+"fn", n.og+"title"], false, true);
 	setMultiFields('title', result);
 	if(!newItem.itemType) {
 		if(!newItem.title) {	// require the title
@@ -805,7 +805,8 @@ function importItem(newItem, node) {
 	}
 
 	// publicationTitle -- first try PRISM, then DC
-	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.eprints+"book_title",	n.dc+"source", n.dcterms+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	var result = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.eprints+"book_title",	n.dc+"source", n.dcterms+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	setMultiFields('publicationTitle', result);
 
 	// rights
 	newItem.rights = getFirstResults(node, [n.prism+"copyright", n.prism2_0+"copyright", n.prism2_1+"copyright", n.dc+"rights", n.dc1_0+"rights", n.dcterms+"rights"], true);
@@ -1017,7 +1018,7 @@ function importItem(newItem, node) {
 
 	// XXX fixme
 	// type
-	var type = getFirstResults(node, [n.dc+"type"], true);
+	var type = getFirstResults(node, [n.dc+"type", n.dc1_0+"type", n.dcterms+"type"], true);
 	// these all mean the same thing
 	var typeProperties = ["reportType", "letterType", "manuscriptType",
 				"mapType", "thesisType", "websiteType",
