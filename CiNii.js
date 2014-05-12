@@ -12,6 +12,7 @@
 	"lastUpdated": "2014-05-05 15:58:26"
 }
 
+
 // Assume that all creators are individuals, and not
 // institutions.
 function fixAuthor(obj) {
