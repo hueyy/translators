@@ -1036,6 +1036,7 @@ function importItem(newItem, node) {
         if (!newItem.thesisType) {
             newItem.thesisType = thesisType;
         }
+	}
 	//presentation type from eprints
 	if (newItem.itemType == "presentation"){
         var presentationType = newItem.presentationType;
