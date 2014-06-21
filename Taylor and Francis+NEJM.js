@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2013-06-25 17:44:43"
+	"lastUpdated": "2014-06-01 22:52:27"
 }
 
 /*
@@ -148,11 +148,6 @@ function scrape(doc, url, dois) {
 
 /** BEGIN TEST CASES **/
 var testCases = [
-	{
-		"type": "web",
-		"url": "http://www.tandfonline.com/action/doSearch?type=simple&filter=multiple&stemming=yes&searchText=labor+market&x=0&y=0&publication=",
-		"items": "multiple"
-	},
 	{
 		"type": "web",
 		"url": "http://www.tandfonline.com/doi/abs/10.1080/17487870802543480",
@@ -396,13 +391,18 @@ var testCases = [
 				"pages": "491-512",
 				"date": "2003",
 				"DOI": "10.1080/0308106032000167373",
-				"url": "http://www.tandfonline.com/doi/abs/10.1080/0308106032000167373",
+				"url": "http://dx.doi.org/10.1080/0308106032000167373",
 				"abstractNote": "This article deals with a multicriteria evaluation of High-Speed Rail, Transrapid Maglev and Air Passenger Transport in Europe. Operational, socio-economic and environmental performance indicators of the specific high-speed transport systems are adopted as the evaluation criteria. By using the entropy method, weights are assigned to particular criteria in order to indicate their relative importance in decision-making. The TOPSIS method is applied to carry out the multicriteria evaluation and selection of the preferable alternative (high-speed system) under given circumstances.",
 				"title": "<no title>",
 				"ISSN": "0308-1060",
 				"libraryCatalog": "Taylor and Francis+NEJM"
 			}
 		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.tandfonline.com/action/doSearch?AllField=labor+market",
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

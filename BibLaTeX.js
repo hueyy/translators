@@ -15,7 +15,7 @@
 		"exportFileData": false,
 		"useJournalAbbreviation": false
 	},
-	"lastUpdated": "2014-05-15 01:53:29"
+	"lastUpdated": "2014-06-07 05:03:43"
 }
 
 
@@ -47,6 +47,59 @@ var fieldMap = {
 };
 //more conversions done below with special rules
 
+/**
+ * Identifiers from item.extra
+ * Copied from BibTeX
+ */
+// Exported in BibTeX and BibLaTeX
+var revExtraIds = {
+	LCCN: 'lccn',
+	MR: 'mrnumber',
+	Zbl: 'zmnumber',
+	PMCID: 'pmcid',
+	PMID: 'pmid'
+};
+
+// Imported by BibTeX. Exported by BibLaTeX only
+var revEprintIds = {
+	// eprinttype: Zotero label
+	
+	// From BibLaTeX manual
+	arXiv: 'arxiv', // Sorry, but no support for eprintclass yet
+	JSTOR: 'jstor',
+	//PMID: 'pubmed', // Not sure if we should do this instead
+	HDL: 'hdl',
+	GoogleBooksID: 'googlebooks'
+}
+
+function parseExtraFields(extra) {
+	var lines = extra.split(/[\r\n]+/);
+	var fields = [];
+	for(var i=0; i<lines.length; i++) {
+		var rec = { raw: lines[i] };
+		var line = lines[i].trim();
+		var splitAt = line.indexOf(':');
+		if(splitAt > 1) {
+			rec.field = line.substr(0,splitAt).trim();
+			rec.value = line.substr(splitAt + 1).trim();
+		}
+		fields.push(rec);
+	}
+	return fields;
+}
+
+function extraFieldsToString(extra) {
+	var str = '';
+	for(var i=0; i<extra.length; i++) {
+		if(!extra[i].raw) {
+			str += '\n' + extra[i].field + ': ' + extra[i].value;
+		} else {
+			str += '\n' + extra[i].raw;
+		}
+	}
+	
+	return str.substr(1);
+}
 
 //POTENTIAL ISSUES
 //accessDate:"accessDate", //only written on attached webpage snapshots by zotero
@@ -548,14 +601,24 @@ function encodeFilePathComponent(value) {
 
 				for (var i=0; i<item.creators.length; i++) {
 					var creator = item.creators[i];
-					var creatorString = creator.lastName;
+					var creatorString;
 
-					if (creator.firstName && creator.lastName) {
-						creatorString = creator.lastName + ", " + creator.firstName;
-						//below to preserve possible corporate creators (biblatex 1.4a manual 2.3.3)
-					} else if (creator.fieldMode == true) { // fieldMode true, assume corporate author
+					if (creator.firstName) {
+						var fname = creator.firstName.split(/\s*,!?\s*/);
+						fname.push(fname.shift()); // If we have a Jr. part(s), it should precede first name
+						creatorString = creator.lastName + ", " + fname.join(', ');
+					} else {
+						creatorString = creator.lastName;
+					}
+					
+					creatorString = creatorString.replace(/[|\<\>\~\^\\\{\}]/g, mapEscape)
+						.replace(/([\#\$\%\&\_])/g, "\\$1");
+																				
+					if (creator.fieldMode == true) { // fieldMode true, assume corporate author
 						creatorString = "{" + creatorString + "}";
 						noEscape = true;
+					} else {
+						creatorString = creatorString.replace(/ (and) /gi, ' {$1} ');
 					}
 
 					if (creator.creatorType == "author" || creator.creatorType == "interviewer" || creator.creatorType == "director" || creator.creatorType == "programmer" || creator.creatorType == "artist" || creator.creatorType == "podcaster" || creator.creatorType == "presenter") {
@@ -636,8 +699,32 @@ function encodeFilePathComponent(value) {
 				}
 			}
 
-			if (item.extra && !noteused) {
-				writeField("note", item.extra);
+			if(item.extra) {
+				// Export identifiers
+				var extraFields = parseExtraFields(item.extra);
+				// Dedicated fields
+				for(var i=0; i<extraFields.length; i++) {
+					var rec = extraFields[i];
+					if(!rec.field) continue;
+					
+					if(!revExtraIds[rec.field] && !revEprintIds[rec.field]) continue;
+					
+					var value = rec.value.trim();
+					if(!value) continue;
+					
+					var label;
+					if(label = revExtraIds[rec.field]) {
+						writeField(label, '{'+value+'}', true);
+					} else if (label = revEprintIds[rec.field]) {
+						writeField('eprinttype', label);
+						writeField('eprint', '{' + value + '}', true);
+					}
+					extraFields.splice(i, 1);
+					i--;
+				}
+				
+				var extra = extraFieldsToString(extraFields);
+				if(extra && !noteused) writeField("note", extra);
 			}
 
 			if (item.tags && item.tags.length) {

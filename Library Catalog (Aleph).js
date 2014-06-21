@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsb",
-	"lastUpdated": "2013-12-10 17:55:11"
+	"lastUpdated": "2014-06-01 20:40:45"
 }
 
 /*
@@ -61,7 +61,7 @@ function detectWeb(doc, url) {
 
 function doWeb(doc, url) {
 	var detailRe = new RegExp("^https?://[^/]+/F/[A-Z0-9\-]+\?.*(?:func=full-set-set|func=direct|func=myshelf-full|func=myself_full.*)");
-	var mab2Opac = new RegExp("^https?://(?!alephdai)[^/]+berlin|193\.30\.112\.134|duisburg-essen/F/[A-Z0-9\-]+\?.*");
+	var mab2Opac = new RegExp("^https?://(?!alephdai)[^/]+berlin|193\.30\.112\.134|duisburg-essen/F/[A-Z0-9\-]+\?.*|^https?://katalog\.ub\.uni-duesseldorf\.de/F/");
 	var uri = doc.location.href;
 	var newUris = new Array();
 	
