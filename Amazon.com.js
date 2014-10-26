@@ -9,11 +9,11 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2014-07-11 01:03:20"
+	"lastUpdated": "2014-10-19 06:05:44"
 }
 
 function detectWeb(doc, url) {
-	if(getSearchResults(doc, url)) {
+	if(getSearchResults(doc, true)) {
 		return (Zotero.isBookmarklet ? "server" : "multiple");
 	} else {
 		var xpath = '//input[contains(@name, "ASIN")]';
@@ -40,13 +40,16 @@ function detectWeb(doc, url) {
 	}
 }
 
-function getSearchResults(doc, url) {
+function getSearchResults(doc, checkOnly) {
 	//search results
 	var links = [],
-		container = doc.getElementById('atfResults')
-			|| doc.getElementById('mainResults'); //e.g. http://www.amazon.com/Mark-LeBar/e/B00BU8L2DK
-	if(container) {
-		links = ZU.xpath(container, './div[starts-with(@id,"result_")]//h3/a')
+		container = doc.getElementById('searchTemplate');
+	if (container) {
+		
+		links = container.getElementsByClassName('s-access-detail-page');
+		if (!links.length) {
+			links = ZU.xpath(container, './/div[contains(@class,"results")]/div[starts-with(@id,"result_")]//h3/a');
+		}
 	}
 	
 	if(!links.length) {
@@ -64,6 +67,7 @@ function getSearchResults(doc, url) {
 	for(var i=0; i<links.length; i++) {
 		var elmt = links[i];
 		if(asinRe.test(elmt.href)) {
+			if (checkOnly) return true;
 			availableItems[elmt.href] = elmt.textContent.trim();
 			found = true;
 		}
@@ -74,7 +78,7 @@ function getSearchResults(doc, url) {
 
 function doWeb(doc, url) {
 	if(detectWeb(doc, url) == 'multiple') {
-		Zotero.selectItems(getSearchResults(doc, url), function(items) {
+		Zotero.selectItems(getSearchResults(doc), function(items) {
 			if(!items) return true;
 			
 			var links = [];
@@ -99,7 +103,8 @@ var CREATOR = {
 	"Writer":"scriptwriter",
 	"Translator":"translator",
 	"Author":"author",
-	"Illustrator":"contributor"
+	"Illustrator":"contributor",
+	"Editor": "editor"
 };
 
 var DATE = [
@@ -110,7 +115,7 @@ var DATE = [
 //localization
 var i15dFields = {
 	'ISBN' : ['ISBN-13', 'ISBN-10', 'ISBN', '条形码'],
-	'Publisher': ['Publisher', 'Verlag', 'Editora', '出版社', 'Editeur',  'Éditeur', 'Editore', 'Editor'],
+	'Publisher': ['Publisher', 'Verlag', '出版社'],
 	'Hardcover': ['Hardcover', 'Gebundene Ausgabe', '精装', 'ハードカバー', 'Relié', 'Copertina rigida', 'Tapa dura'],
 	'Paperback' : ['Paperback', 'Taschenbuch', '平装', 'ペーパーバック', 'Broché', 'Copertina flessibile', 'Tapa blanda'],
 	'Print Length' : ['Print Length', 'Seitenzahl der Print-Ausgabe', '紙の本の長さ', "Nombre de pages de l'édition imprimée", "Longueur d'impression", 'Lunghezza stampa', 'Longitud de impresión', 'Número de páginas'],//TODO: Chinese label
@@ -126,7 +131,8 @@ var i15dFields = {
 	'Total Length' : ['Total Length', 'Gesamtlänge', 'Durée totale', 'Lunghezza totale', 'Duración total', '収録時間'],
 	'Translator' : ["Translator", "Übersetzer", "Traduttore", "Traductor", "翻訳"],
 	'Illustrator' : ["Illustrator", "Illustratore", "Ilustrador", "イラスト"],
-	'Writer' : ['Writers']
+	'Writer' : ['Writers'],
+	'Editor' : ['Editor', 'Editora', 'Editeur', 'Éditeur', 'Editore']
 };
 
 function getField(info, field) {
@@ -168,8 +174,7 @@ function scrape(doc, url) {
 	var isAsian = url.search(/^https?:\/\/[^\/]+\.(?:jp|cn)[:\/]/) != -1;
 	// Scrape HTML for items without ISBNs, because Amazon doesn't provide an easy way for
 	// open source projects like us to use their API
-	Z.debug("Scraping from Page")		
-	var department = ZU.xpathText(doc, '//li[contains(@class, "nav-category-button")]/a').trim();
+	Z.debug("Scraping from Page");
 	var item = new Zotero.Item(detectWeb(doc, url) || "book");
 
 	var title = doc.getElementById('btAsinTitle')
@@ -182,24 +187,32 @@ function scrape(doc, url) {
 		// though sometimes [Paperback] or [DVD] is mushed with the title...
 		.replace(/(?: [(\[].+[)\]])+$/, "");
 	
-	var baseNode = title.parentNode, bncl = baseNode.classList;
-	while(baseNode &&
+	var baseNode = title.parentElement, bncl;
+	while(baseNode && (bncl = baseNode.classList) && 
 		!(baseNode.id == 'booksTitle' || bncl.contains('buying')
-			|| bncl.contains('content') || bncl.contains('DigitalMusicInfoColumn'))
+			|| bncl.contains('content') || bncl.contains('DigitalMusicInfoColumn')
+			|| (baseNode.id == 'centerCol' && baseNode.firstElementChild.id.indexOf('title') == 0)
+		)
 	) {
-		baseNode = baseNode.parentNode;
-		bncl = baseNode.classList;
+		baseNode = baseNode.parentElement;
 	}
 	
 	if(baseNode) {
 		var authors = ZU.xpath(baseNode, './/span[@id="artistBlurb"]/a');
-		if(!authors.length) authors = baseNode.getElementsByClassName('contributorNameID');
+		//if(!authors.length) authors = baseNode.getElementsByClassName('contributorNameID');
+		if(!authors.length) authors = ZU.xpath(baseNode, '(.//*[@id="byline"]/span[contains(@class, "author")] | .//*[@id="byline"]/span[contains(@class, "author")]/span)/a[contains(@class, "a-link-normal")][1]');
 		if(!authors.length) authors = ZU.xpath(baseNode, './/span[@class="contributorNameTrigger"]/a[not(@href="#")]');
 		if(!authors.length) authors = ZU.xpath(baseNode, './/a[following-sibling::*[1][@class="byLinePipe"]]');
 		if(!authors.length) authors = ZU.xpath(baseNode, './/a[contains(@href, "field-author=")]');
 		for(var i=0; i<authors.length; i++) {
 			var role = ZU.xpathText(authors[i], '(.//following::text()[normalize-space(self::text())])[1]');
-			if(role) role = CREATOR[translateField(role.replace(/^.*\(\s*|\s*\).*$/g, ''))];
+			if(role) {
+				role = CREATOR[translateField(
+					role.replace(/^.*\(\s*|\s*\).*$/g, '')
+						.split(',')[0] // E.g. "Actor, Primary Contributor"
+						.trim()
+				)];
+			}
 			if(!role) role = 'author';
 			
 			var name = ZU.trimInternal(authors[i].textContent)
@@ -212,8 +225,13 @@ function scrape(doc, url) {
 					fieldMode: 1
 				});
 			} else {
-				if(isAsian && name.indexOf(' ') == -1) name = name.replace(/.$/, ' $&');
-				item.creators.push(ZU.cleanAuthor(name, role, false));
+				var invertName = isAsian && !(/[A-Za-z]/.test(name));
+				if (invertName) {
+					// Use last character as given name if there is no space
+					if (name.indexOf(' ') == -1) name = name.replace(/.$/, ' $&');
+					name = name.replace(/\s+/, ', '); // Surname comes first
+				}
+				item.creators.push(ZU.cleanAuthor(name, role, invertName));
 			}
 		}
 	}
@@ -252,6 +270,12 @@ function scrape(doc, url) {
 			if(key && value) info[key.trim()] = value.trim();
 		}
 	}
+	
+	item.ISBN = getField(info, 'ISBN');
+	if (item.ISBN) {
+		item.ISBN = ZU.cleanISBN(item.ISBN);
+	}
+	
 	// Date
 	for(var i=0; i<DATE.length; i++) {
 		item.date = info[DATE[i]];
@@ -265,15 +289,12 @@ function scrape(doc, url) {
 	}
 	
 	// Books
-	var publisher = getField(info, 'Publisher');
+	var publisher = getField(info, 'Publisher') || getField(info, 'Editor');
 	if(publisher) {
-		var m = /([^;(]+)(?:; *([^(]*))?( \([^)]*\))?/.exec(publisher);
-		item.publisher = m[1];
-		item.edition = m[2];
-	}
-	item.ISBN = getField(info, 'ISBN');
-	if (item.ISBN) {
-		item.ISBN = ZU.cleanISBN(item.ISBN);
+		var m = /([^;(]+)(?:;? *([^(]*))?(?:\(([^)]*)\))?/.exec(publisher);
+		item.publisher = m[1].trim();
+		if(m[2]) item.edition = m[2].trim();
+		if(m[3] && m[3].search(/\b\d{4}\b/) != -1) item.date = m[3].trim(); // Looks like a date
 	}
 	var pages = getField(info, 'Hardcover') || getField(info, 'Paperback') || getField(info, 'Print Length');
 	if(pages) item.numPages = parseInt(pages, 10);
@@ -281,16 +302,19 @@ function scrape(doc, url) {
 	//add publication place from ISBN translator, see at the end
 	
 	// Video
-	var clearedCreators = false;
-	for(var i in CREATOR) {
-		if(getField(info, i)) {
-			if(!clearedCreators) {
-				item.creators = [];
-				clearedCreators = true;
-			}
-			var creators = getField(info, i).split(/ *, */);
-			for(var j=0; j<creators.length; j++) {
-				item.creators.push(ZU.cleanAuthor(creators[j], CREATOR[i]));
+	if (item.itemType == 'videoRecording') {
+		// This seems to only be worth it for videos
+		var clearedCreators = false;
+		for(var i in CREATOR) {
+			if(getField(info, i)) {
+				if(!clearedCreators) {
+					item.creators = [];
+					clearedCreators = true;
+				}
+				var creators = getField(info, i).split(/ *, */);
+				for(var j=0; j<creators.length; j++) {
+					item.creators.push(ZU.cleanAuthor(creators[j], CREATOR[i]));
+				}
 			}
 		}
 	}
@@ -300,9 +324,10 @@ function scrape(doc, url) {
 	item.language = getField(info, 'Language');
 	// Music
 	item.label = getField(info, 'Label');
+	var department = ZU.xpathText(doc, '//li[contains(@class, "nav-category-button")]/a')
 	if(getField(info, 'Audio CD')) {
 		item.audioRecordingFormat = "Audio CD";
-	} else if(department == "Amazon MP3 Store") {
+	} else if(department && department.trim() == "Amazon MP3 Store") {
 		item.audioRecordingFormat = "MP3";
 	}
 	
@@ -320,6 +345,10 @@ function scrape(doc, url) {
 				if (lookupItem.place) {
 					//e.g. [Paris]
 					item.place = lookupItem.place.replace("[","").replace("]","");
+				}
+				
+				if (!item.date && lookupItem.date) {
+					item.date = lookupItem.date;
 				}
 			});
 			search.translate();
@@ -675,26 +704,27 @@ var testCases = [
 				"title": "汉语语音合成:原理和技术",
 				"creators": [
 					{
-						"firstName": "吕士",
-						"lastName": "楠",
+						"firstName": "楠",
+						"lastName": "吕士",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "初",
-						"lastName": "敏",
+						"firstName": "敏",
+						"lastName": "初",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "许洁",
-						"lastName": "萍",
+						"firstName": "萍",
+						"lastName": "许洁",
 						"creatorType": "author"
 					},
 					{
-						"firstName": "贺",
-						"lastName": "琳",
+						"firstName": "琳",
+						"lastName": "贺",
 						"creatorType": "author"
 					}
 				],
+				"date": "2012年1月1日",
 				"ISBN": "9787030329202",
 				"abstractNote": "《汉语语音合成:原理和技术》介绍语音合成的原理和针对汉语的各项合成技术，以及应用的范例。全书分基础篇和专题篇两大部分。基础篇介绍语音合成技术的发展历程和作为语音合成技术基础的声学语音学知识，尤其是作者获得的相关研究成果（填补了汉语语音学知识中的某些空白），并对各种合成器的工作原理和基本结构进行系统的阐述。专题篇结合近十年来国内外技术发展的热点和方向，讨论韵律分析与建模、数据驱动的语音合成方法、语音合成数据库的构建技术、文语转换系统的评估方法、语音合成技术的应用等。 《汉语语音合成:原理和技术》面向从事语言声学、语音通信技术，特别是语音合成的科学工作者、工程技术人员、大学教师、研究生和高年级的大学生，可作为他们研究、开发、进修的参考书。",
 				"edition": "第1版",
@@ -783,7 +813,7 @@ var testCases = [
 					}
 				],
 				"libraryCatalog": "Amazon.com",
-				"runningTime": "1:08:59",
+				"runningTime": "1:08:58",
 				"attachments": [
 					{
 						"title": "Amazon.com Link",
@@ -811,12 +841,11 @@ var testCases = [
 						"creatorType": "author"
 					}
 				],
-				"date": "August 2, 2012",
+				"date": "2012/8/2",
 				"ISBN": "9780099578079",
 				"language": "英語, 英語, 不明",
 				"libraryCatalog": "Amazon.com",
 				"numPages": 1328,
-				"place": "London",
 				"publisher": "Vintage",
 				"shortTitle": "1Q84",
 				"attachments": [
@@ -836,6 +865,119 @@ var testCases = [
 		"type": "web",
 		"url": "http://www.amazon.com/Mark-LeBar/e/B00BU8L2DK",
 		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.com/About-Nothing-Shakespeares-Globe-Theatre/dp/B00AJER4EM/ref=sr_1_1/175-9708720-8034706?ie=UTF8&qid=1409188213&sr=8-1&keywords=globe+shakespeare",
+		"items": [
+			{
+				"itemType": "videoRecording",
+				"title": "Much Ado About Nothing",
+				"creators": [
+					{
+						"firstName": "Charles",
+						"lastName": "Edwards",
+						"creatorType": "castMember"
+					},
+					{
+						"firstName": "Eve",
+						"lastName": "Best",
+						"creatorType": "castMember"
+					},
+					{
+						"firstName": "Shakespeare's Globe",
+						"lastName": "Theatre",
+						"creatorType": "director"
+					}
+				],
+				"date": "February 26, 2013",
+				"language": "English",
+				"libraryCatalog": "Amazon.com",
+				"runningTime": "166 minutes",
+				"studio": "Kultur",
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.com/First-Quarto-Hamlet-Cambridge-Shakespeare/dp/0521653908/",
+		"items": [
+			{
+				"itemType": "book",
+				"title": "The First Quarto of Hamlet",
+				"creators": [
+					{
+						"firstName": "William",
+						"lastName": "Shakespeare",
+						"creatorType": "author"
+					},
+					{
+						"firstName": "Kathleen O.",
+						"lastName": "Irace",
+						"creatorType": "editor"
+					}
+				],
+				"date": "April 13, 1999",
+				"ISBN": "9780521653909",
+				"abstractNote": "The first printed text of Shakespeare's Hamlet is about half the length of the more familiar second quarto and Folio versions. It reorders and combines key plot elements to present its own workable alternatives. This is the only modernized critical edition of the 1603 quarto in print. Kathleen Irace explains its possible origins, special features and surprisingly rich performance history, and while describing textual differences between it and other versions, offers alternatives that actors or directors might choose for specific productions.",
+				"language": "English",
+				"libraryCatalog": "Amazon.com",
+				"numPages": 144,
+				"place": "Cambridge",
+				"publisher": "Cambridge University Press",
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.amazon.co.jp/dp/4003314212",
+		"items": [
+			{
+				"itemType": "book",
+				"title": "日本イデオロギー論",
+				"creators": [
+					{
+						"firstName": "潤",
+						"lastName": "戸坂",
+						"creatorType": "author"
+					}
+				],
+				"date": "1977/9/16",
+				"ISBN": "9784003314210",
+				"libraryCatalog": "Amazon.com",
+				"publisher": "岩波書店",
+				"attachments": [
+					{
+						"title": "Amazon.com Link",
+						"snapshot": false,
+						"mimeType": "text/html"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
 	}
 ]
 /** END TEST CASES **/
