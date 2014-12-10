@@ -3,7 +3,7 @@
 	"translatorType": 4,
 	"label": "courts.go.jp",
 	"creator": "Frank Bennett",
-	"target": "http://(?:www.)*courts.go.jp/search",
+	"target": "http://(?:www.)*courts.go.jp/app/hanrei_jp",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
