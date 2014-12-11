@@ -644,7 +644,7 @@ function doWeb(doc, url) { return FW.doWeb(doc, url); }
 
 FW.Scraper({
     itemType: 'case',
-    detect: FW.Url().match(/\/detail2(?:\.action)*\?id=[0-9]+/),
+    detect: FW.Url().match(/\/detail[0-9](?:\.action)*\?id=[0-9]+/),
     docketNumber: FW.Xpath("//div[contains(.,'事件番号')]/following-sibling::div").text().trim(),
     abstractNote: FW.Xpath("//div[contains(.,'事件名')]/following-sibling::div").text().trim(),
     dateDecided: FW.Xpath("//div[contains(.,'裁判年月日')]/following-sibling::div").text().trim(),
