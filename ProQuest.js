@@ -2,14 +2,14 @@
 	"translatorID": "fce388a6-a847-4777-87fb-6595e710b7e7",
 	"label": "ProQuest",
 	"creator": "Avram Lyon",
-	"target": "^https?://search\\.proquest\\.com.*\\/(docview|pagepdf|results|publicationissue|browseterms|browsetitles|browseresults|myresearch\\/(figtables|documents))",
+	"target": "^https?://search\\.proquest\\.com/(.*/)?(docview|pagepdf|results|publicationissue|browseterms|browsetitles|browseresults|myresearch\\/(figtables|documents))",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2014-10-02 17:36:32"
+	"lastUpdated": "2014-11-18 10:31:47"
 }
 
 /*
@@ -118,6 +118,42 @@ function fetchEmbeddedPdf(url, item, callback) {
 	}, callback);
 }
 
+function getSearchResults(doc, checkOnly) {
+	var tabs = doc.getElementsByClassName('tabContent');
+	var root;
+	if (tabs.length) {
+		for (var i = 0; i < tabs.length; i++) {
+			if (tabs[i].offsetHeight) {
+				if (Zotero.isBookmarklet && tabs[i].id != 'allResults-content') return false;
+				root = tabs[i].getElementsByClassName('resultListContainer')[0];
+				break;
+			}
+		}
+	} else {
+		root = doc.getElementsByClassName('resultListContainer')[0];
+		if (root && !root.offsetHeight) return false; // Not sure if this can actually happen
+	}
+
+	if (!root) return false;
+
+	var results = doc.getElementsByClassName('resultItem');
+	//ZU.xpath(root, './/a[contains(@class,"previewTitle") or contains(@class,"resultTitle")]');
+	
+	var items = {}, found = false;
+	for(var i=0, n=results.length; i<n; i++) {
+		var title = results[i].getElementsByClassName('resultTitle')[0]
+			|| results[i].getElementsByClassName('previewTitle')[0];
+		if (!title || title.nodeName != 'A') continue;
+		
+		if (checkOnly) return true;
+		found = true;
+		
+		items[title.href] = title.textContent;
+	}
+		
+	return found ? items : false;
+}
+
 function detectWeb(doc, url) {
 	initLang(doc, url);
 
@@ -126,10 +162,8 @@ function detectWeb(doc, url) {
 	//Check for multiple first
 	if (url.indexOf('docview') == -1 &&
 		url.indexOf('pagepdf') == -1) {
-		var resultitem = ZU.xpath(doc, '//a[contains(@href, "/docview/")]');
-		if (resultitem.length) {
+		if (getSearchResults(doc, true))
 			return "multiple";
-		}
 	}
 
 	var types = getTextValue(doc, ["Source type", "Document type", "Record type"]);
@@ -168,27 +202,28 @@ function doWeb(doc, url, pdfUrl) {
 		scrape(doc, url, type, pdfUrl);
 	} else if(type == "multiple") {
 		// detect web returned multiple
-		var results = ZU.xpath(doc, '//a[contains(@class,"previewTitle") or\
-									contains(@class,"resultTitle")]');
-		// If the above didn't get us titles, try agin with a more liberal xPath
-		if (!results.length) {
-			results = ZU.xpath(doc, '//a[contains(@href, "/docview/")]');
-		}
-
-		var items = new Array();
-		for(var i=0, n=results.length; i<n; i++) {
-			items[results[i].href] = results[i].textContent;
-		}
-
-		Zotero.selectItems(items, function (items) {
+		Zotero.selectItems(getSearchResults(doc, false), function (items) {
 			if (!items) return true;
 
 			var articles = new Array();
-			for (var i in items) {
-				ZU.processDocuments(i,
-					//call doWeb so that we rerun detectWeb to get type and
-					//initialize translations
-					function(doc) { doWeb(doc, doc.location.href) });
+			for(var item in items) {
+				articles.push(item);
+			}
+			
+			if (articles[0].indexOf("ebraryresults") > -1) {
+				// if the first result is for ebrary, the rest are also ebrary
+				ZU.processDocuments(articles, function(doc) {
+					var translator = Zotero.loadTranslator("web");
+					translator.setTranslator("2abe2519-2f0a-48c0-ad3a-b87b9c059459");
+					translator.setDocument(doc);
+					translator.setHandler("itemDone", function(obj, item) {
+						item.complete();
+					});
+					translator.translate();
+				});
+			}
+			else {			
+				ZU.processDocuments(articles, doWeb);
 			}
 		});
 	//pdfUrl should be undefined unless we are calling doWeb from the following
