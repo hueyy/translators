@@ -695,13 +695,13 @@ var scrapeCase = function (doc, url) {
 		// citelet looks kind of like this
 		// Powell v. McCormack, 395 US 486 - Supreme Court 1969
 		var item = new Zotero.Item("case");
-        if (Zotero.setMultiField) {
+        if (Zotero.Utilities.setMultiField) {
             var block = doc.getElementById("gs_opinion_wrapper");
             var factory;
             if (block) {
-		        factory = new ItemFactory(refFrag.textContent, [block]);
+		        factory = new ItemFactory(doc, refFrag.textContent, [block]);
             } else {
-		        factory = new ItemFactory(refFrag.textContent, [url]);
+		        factory = new ItemFactory(doc, refFrag.textContent, [url]);
             }
         } else {
 		    var factory = new ItemFactory(doc, refFrag.textContent, [url]);
@@ -799,7 +799,16 @@ ItemFactory.prototype.getDate = function () {
 	var i, m;
 	// Citelet parsing, step (1)
 	if (!this.hyphenSplit) {
-		this.hyphenSplit = this.citelet.split(/\s+-\s+/);
+		if (this.citelet.match(/\s+-\s+/)) {
+			this.hyphenSplit = this.citelet.split(/\s+-\s+/);
+		} else {
+			m = this.citelet.match(/^(.*),\s+([^,]+Court,\s+[^,]+)$/);
+			if (m) {
+				this.hyphenSplit = [m[1], m[2]];
+			} else {
+				this.hyphenSplit = [this.citelet];
+			}
+		}
 		this.trailingInfo = this.hyphenSplit.slice(-1);
 	}
 	if (!this.v.date && this.v.date !== false) {
@@ -907,43 +916,43 @@ ItemFactory.prototype.getAttachments = function (doctype) {
 	attachments = [];
 	for (i = 0, ilen = this.attachmentLinks.length; i < ilen; i += 1) {
 		if (!this.attachmentLinks[i]) continue;
-        if (Zotero.setMultiField) {
-            if ("string" === typeof this.attachmentLinks[i]) {
-                // URL (string)
-		        if (this.attachmentLinks[i].slice(0, 1) === "/") {
-			        this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
-		        }
-		        this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/g,"");
-		        attachments.push({title:"Google Scholar: " + doctype, type:"text/html",
-							      url:this.attachmentLinks[i]});
-            } else {
-                // doc (DOM)
-                var block = this.attachmentLinks[i];
-                var doc = block.ownerDocument;
-                var title = doc.getElementsByTagName("title")[0].textContent;
-                this.item.url = doc.documentURI;
+		if (Zotero.Utilities.setMultiField) {
+			if ("string" === typeof this.attachmentLinks[i]) {
+				// URL (string)
+				if (this.attachmentLinks[i].slice(0, 1) === "/") {
+					this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
+				}
+				this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/g,"");
+				attachments.push({title:"Google Scholar: " + doctype, type:"text/html",
+								  url:this.attachmentLinks[i]});
+			} else {
+				// doc (DOM)
+				var block = this.attachmentLinks[i];
+				var doc = block.ownerDocument;
+				var title = doc.getElementsByTagName("title")[0].textContent;
+				this.item.url = doc.documentURI;
 
-                // head (title and css)
-                var head = doc.createElement("head");
-                var titlenode = doc.createElement("title");
-                head.appendChild(titlenode)
-                titlenode.appendChild(doc.createTextNode(title));
-                
-                var style = doc.createElement("style");
-                head.appendChild(style)
-                style.setAttribute("type", "text/css")
-                var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
-                style.appendChild(doc.createTextNode(css));
-                var attachmentdoc = Zotero.Utilities.composeDoc(doc, head, block);
-                attachments.push({title:"Google Scholar: "+doctype, type:"text/html", document:attachmentdoc});
-            }
-        } else {
-		    attachments.push({
-			    title:"Google Scholar Linked " + doctype,
-			    url:this.attachmentLinks[i],
-			    type:"text/html"
-		    });
-        }
+				// head (title and css)
+				var head = doc.createElement("head");
+				var titlenode = doc.createElement("title");
+				head.appendChild(titlenode)
+				titlenode.appendChild(doc.createTextNode(title));
+				
+				var style = doc.createElement("style");
+				head.appendChild(style)
+				style.setAttribute("type", "text/css")
+				var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
+				style.appendChild(doc.createTextNode(css));
+				var attachmentdoc = Zotero.Utilities.composeDoc(doc, head, block);
+				attachments.push({title:"Google Scholar: "+doctype, type:"text/html", document:attachmentdoc});
+			}
+		} else {
+			attachments.push({
+				title:"Google Scholar Linked " + doctype,
+				url:this.attachmentLinks[i],
+				type:"text/html"
+			});
+		}
 	}
 	return attachments;
 };
