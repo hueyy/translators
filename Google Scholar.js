@@ -301,12 +301,6 @@ function scrapeArticleResults(doc, articles) {
 						}
 
 						//attach files linked on the right
-
-                        // my rev
-						//	'.//div[contains(@class,"gs_ri")]\
-						//	//a[./node()[starts-with(text(),"[")]]');
-
-
 						var pdf = ZU.xpath(article.result,
 							'(./div[contains(@class,"gs_fl")]\
 								//a[.//span[@class="gs_ctg2"]]\
@@ -592,10 +586,7 @@ function doWeb(doc, url) {
 		var items = new Object();
 		var resultDivs = new Object();
 		var bibtexUrl;
-
 		for(var i=0, n=results.length; i<n; i++) {
-			// my rev
-            //	'.//div[@class="gs_ri"]//a[contains(@href,"q=info:") or contains(@href,"q=related:")][1]/@href')
 			bibtexUrl = ZU.xpathText(results[i],
 					'.//div[@class="gs_fl"]/a[contains(@href,"q=info:")\
 						or contains(@href,"q=related:")][1]/@href');
@@ -695,17 +686,13 @@ var scrapeCase = function (doc, url) {
 		// citelet looks kind of like this
 		// Powell v. McCormack, 395 US 486 - Supreme Court 1969
 		var item = new Zotero.Item("case");
-        if (Zotero.Utilities.setMultiField) {
-            var block = doc.getElementById("gs_opinion_wrapper");
-            var factory;
-            if (block) {
-		        factory = new ItemFactory(doc, refFrag.textContent, [block]);
-            } else {
-		        factory = new ItemFactory(doc, refFrag.textContent, [url]);
-            }
-        } else {
-		    var factory = new ItemFactory(doc, refFrag.textContent, [url]);
-        }
+		var attachmentPointer = url;
+		if (Zotero.Utilities.setMultiField) {
+			var block = doc.getElementById("gs_opinion_wrapper");
+			if (block) {
+				attachmentPointer = block;
+		}
+		var factory = new ItemFactory(doc, refFrag.textContent, [attachmentPointer]);
 		factory.repairCitelet();
 		factory.getDate();
 		factory.getCourt();
@@ -857,7 +844,11 @@ ItemFactory.prototype.getCourt = function () {
 	if (m) {
 		this.v.court = m[2].replace(/_/g, " ");
 		if (m[1]) {
-			this.v.jurisdiction = m[1];
+            if (!Zotero.Utilities.setMultiField) {
+			    this.v.jurisdiction = m[1];
+            } else {
+                this.v.extra = "{:jurisdiction: " + m[1] + "}";
+            }
 		}
 	}
 	return this.v.court;
@@ -1015,7 +1006,6 @@ ItemFactory.prototype.saveItem = function () {
 			this.item = new Zotero.Item("case");
 			this.saveItemCommonVars();
 			this.pushAttachments("Judgement");
-			this.item.jurisdiction = "us";
 			this.item.complete();
 		}
 	}
