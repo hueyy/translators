@@ -437,7 +437,7 @@ function mapProperty(parentElement, elementName, property, attributes, autoType)
 function doExport() {
 	Zotero.setCharacterSet("utf-8");
 	var parser = new DOMParser();
-	var doc = parser.parseFromString('<modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd" />', 
+	var doc = parser.parseFromString('<modsCollection xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd" />', 
               'application/xml');
 	
 	var item;
