@@ -10,7 +10,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2015-01-02 20:25:25"
+	"lastUpdated": "2015-01-06 12:25:05"
 }
 
 /*
@@ -687,10 +687,11 @@ var scrapeCase = function (doc, url) {
 		// Powell v. McCormack, 395 US 486 - Supreme Court 1969
 		var item = new Zotero.Item("case");
 		var attachmentPointer = url;
-		if (Zotero.Utilities.setMultiField) {
+		if (Zotero.isMLZ) {
 			var block = doc.getElementById("gs_opinion_wrapper");
 			if (block) {
 				attachmentPointer = block;
+			}
 		}
 		var factory = new ItemFactory(doc, refFrag.textContent, [attachmentPointer]);
 		factory.repairCitelet();
@@ -749,8 +750,8 @@ ItemFactory.prototype.repairCitelet = function () {
 ItemFactory.prototype.repairTitle = function () {
 	// All-caps words of four or more characters probably need fixing.
 	if (this.v.title.match(/(?:[^a-z]|^)[A-Z]{4,}(?:[^a-z]|$)/)) {
-		this.v.title = ZU.capitalizeTitle(this.v.title.toLowerCase())
-						.replace(/([^0-9a-z])V([^0-9a-z])/, "$1v$2");
+		this.v.title = ZU.capitalizeTitle(this.v.title.toLowerCase(), true)
+								.replace(/([^0-9a-z])V([^0-9a-z])/, "$1v$2");	
 	}
 };
 
@@ -840,18 +841,26 @@ ItemFactory.prototype.getCourt = function () {
 	var s, m;
 	// Citelet parsing, step (2)
 	s = this.hyphenSplit.pop().replace(/,\s*$/, "").replace(/\u2026\s*$/, "Court");
-	m = s.match(/(?:([a-zA-Z]+):\s*)*(.*)/);
+	var court = null;
+	var jurisdiction = null;
+	m = s.match(/(.* Court),\s+(.*)/);
 	if (m) {
-		this.v.court = m[2].replace(/_/g, " ");
-		if (m[1]) {
-            if (!Zotero.Utilities.setMultiField) {
-			    this.v.jurisdiction = m[1];
-            } else {
-                this.v.extra = "{:jurisdiction: " + m[1] + "}";
-            }
+		court = m[1];
+		jurisdiction = m[2];
+	}
+	if (!court) {
+		m = s.match(/(?:([a-zA-Z]+):\s*)*(.*)/);
+		if (m) {
+			court = m[2].replace(/_/g, " ");
+			jurisdiction = m[1];
 		}
 	}
-	return this.v.court;
+	if (court) {
+		this.v.court = court;
+	}
+	if (jurisdiction) {
+		this.v.extra = "{:jurisdiction: " + jurisdiction + "}";
+	}
 };
 
 
@@ -904,45 +913,39 @@ ItemFactory.prototype.getDocketNumber = function (doc) {
 
 ItemFactory.prototype.getAttachments = function (doctype) {
 	var i, ilen, attachments;
+	var attachmentTitle = "Google Scholar " + doctype;
 	attachments = [];
 	for (i = 0, ilen = this.attachmentLinks.length; i < ilen; i += 1) {
 		if (!this.attachmentLinks[i]) continue;
-		if (Zotero.Utilities.setMultiField) {
-			if ("string" === typeof this.attachmentLinks[i]) {
-				// URL (string)
-				if (this.attachmentLinks[i].slice(0, 1) === "/") {
-					this.attachmentLinks[i] = "http://scholar.google.com"+this.attachmentLinks[i];
-				}
-				this.attachmentLinks[i] = this.attachmentLinks[i].replace(/&q=[^&]*/g,"");
-				attachments.push({title:"Google Scholar: " + doctype, type:"text/html",
-								  url:this.attachmentLinks[i]});
-			} else {
-				// doc (DOM)
-				var block = this.attachmentLinks[i];
-				var doc = block.ownerDocument;
-				var title = doc.getElementsByTagName("title")[0].textContent;
-				this.item.url = doc.documentURI;
-
-				// head (title and css)
-				var head = doc.createElement("head");
-				var titlenode = doc.createElement("title");
-				head.appendChild(titlenode)
-				titlenode.appendChild(doc.createTextNode(title));
-				
-				var style = doc.createElement("style");
-				head.appendChild(style)
-				style.setAttribute("type", "text/css")
-				var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
-				style.appendChild(doc.createTextNode(css));
-				var attachmentdoc = Zotero.Utilities.composeDoc(doc, head, block);
-				attachments.push({title:"Google Scholar: "+doctype, type:"text/html", document:attachmentdoc});
-			}
-		} else {
+		if ("string" === typeof this.attachmentLinks[i]) {
 			attachments.push({
-				title:"Google Scholar Linked " + doctype,
+				title: attachmentTitle,
 				url:this.attachmentLinks[i],
 				type:"text/html"
 			});
+		} else {
+			// DOM fragment and parent doc
+			var block = this.attachmentLinks[i];
+			var doc = block.ownerDocument;
+
+			// String content (title, url, css)
+			var title = doc.getElementsByTagName("title")[0].textContent;
+			var url = doc.documentURI;
+			var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
+
+			// head element
+			var head = doc.createElement("head");
+			head.innerHTML = '<title>' + title + '</title>';
+			head.innerHTML += '<style type="text/css">' + css + '</style>'; 
+
+			var attachmentdoc = Zotero.Utilities.composeDoc(doc, head, block);
+			attachments.push({
+				title: attachmentTitle,
+				document:attachmentdoc
+			});
+
+			// URL for this item
+			this.item.url = url;
 		}
 	}
 	return attachments;
@@ -993,6 +996,9 @@ ItemFactory.prototype.saveItem = function () {
 				bogusItemID += 1;
 				completed_items.push(this.item);
 			}
+			if (completed_items.length === 0) {
+				throw new Error("Failed to parse \"" + this.citelet + "\"");
+			}
 			for (i = 0, ilen = completed_items.length; i < ilen; i += 1) {
 				for (j = 0, jlen = completed_items.length; j < jlen; j += 1) {
 					if (i === j) {
@@ -1008,6 +1014,8 @@ ItemFactory.prototype.saveItem = function () {
 			this.pushAttachments("Judgement");
 			this.item.complete();
 		}
+	} else {
+		throw new Error("Failed to find title in \"" + this.citelet + "\"");
 	}
 };
 
@@ -1019,14 +1027,6 @@ ItemFactory.prototype.saveItemCommonVars = function () {
 		}
 	}
 };
-
-/*
-  The following case FAILS as a test case.  Maybe because it doesn't have a dash in the case citation?
-    http://scholar.google.com/scholar_case?case=15539128432567109896
-  Is it an aberration in the data and thus a data problem that doesn't deserve a test case, 
-  or is it a valid test case?
-  Reported to Zotero Forums.  See https://forums.zotero.org/discussion/44849/zotero-wont-save-google-scholar-case-but-no-error-report-id-949790485/
-*/
 
 /*
   Test Case Descriptions:  (these have not been included in the test case JSON below as per 
@@ -1113,7 +1113,7 @@ var testCases = [
 				"reporterVolume": "5",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1139,7 +1139,7 @@ var testCases = [
 				"reporterVolume": "288",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1166,7 +1166,7 @@ var testCases = [
 				"reporterVolume": "2005",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1182,7 +1182,7 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "case",
-				"caseName": "click v. estate of click",
+				"caseName": "Click v. Estate of Click",
 				"creators": [],
 				"dateDecided": "June 13, 2007",
 				"court": "Court of Appeals, 4th Appellate Dist.",
@@ -1193,7 +1193,7 @@ var testCases = [
 				"reporterVolume": "2007",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1220,7 +1220,7 @@ var testCases = [
 				"reporterVolume": "72",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1246,7 +1246,7 @@ var testCases = [
 				"reporterVolume": "393",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
@@ -1272,7 +1272,31 @@ var testCases = [
 				"reporterVolume": "951",
 				"attachments": [
 					{
-						"title": "Google Scholar Linked Judgement",
+						"title": "Google Scholar Judgement",
+						"type": "text/html"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://scholar.google.com/scholar_case?case=10394955686617635825",
+		"items": [
+			{
+				"itemType": "case",
+				"caseName": "Kline v. Mortgage Electronic Security Systems",
+				"creators": [],
+				"dateDecided": "February 27, 2013",
+				"court": "Dist. Court",
+				"docketNumber": "Case No. 3:08cv408",
+				"extra": "{:jurisdiction: SD Ohio}",
+				"attachments": [
+					{
+						"title": "Google Scholar Judgement",
 						"type": "text/html"
 					}
 				],
