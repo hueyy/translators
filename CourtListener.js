@@ -71,9 +71,9 @@ function getMultiple(doc) {
 function acquireCase (doc, url) {
 	var mydoc = doc;
 	m = url.match(/[^0-9]+([0-9]+).*/);
-	var clCaseURL = clStub + "/api/rest/v2/document/" + m[1] + "/?format=json&fields=court,date_filed,citation__resource_uri";
+	var clNumber = m[1];
+	var clCaseURL = clStub + "/api/rest/v2/document/" + clNumber + "/?format=json&fields=court,date_filed,citation__resource_uri";
 	ZU.doGet(clCaseURL, function(text) {
-        Zotero.debug("XXX received: "+text);
 		var clCase = JSON.parse(text);
 		var clCourtURL = clStub + clCase.court + "?format=json";
 		ZU.doGet(clCourtURL, function (text) {
@@ -84,13 +84,13 @@ function acquireCase (doc, url) {
 				// Save as an unreported case only if there are no other records.
 				// After collecting the items, cross-relate everything.
 				var jLst = court_ids[clCourt.id][0].split(";");
-                var jurisdictionID = jLst[0];
-                var courtID = jLst[1];
+				var jurisdictionID = jLst[0];
+				var courtID = jLst[1];
 				var courtName = court_ids[clCourt.id][1];
 				var caseName = clCitation.case_name;
-                if (caseName) {
-				    caseName = caseName.replace(/[\s(]*$/, "");
-                }
+				if (caseName) {
+					caseName = caseName.replace(/[\s(]*$/, "");
+				}
 				var dateDecided = clCase.date_filed;
 				var docketNumber = clCitation.docket_number;
 				var items = [];
@@ -110,7 +110,9 @@ function acquireCase (doc, url) {
 							item.dateDecided = dateDecided;
 							item.reporter = reporter
 							item.firstPage = page;
-                            item.url = url;
+							item.url = url;
+							item.archive = 'CourtListener';
+							item.archiveLocation = clNumber;
 							item.extra = "{:jurisdiction: " + jurisdictionID + "}";
 							if (Zotero.isMLZ && dateDecided && volume) {
 								// If year equals year of decision,
@@ -139,7 +141,9 @@ function acquireCase (doc, url) {
 					item.court = courtID;
 					item.docketNumber = docketNumber;
 					item.dateDecided = dateDecided;
-                    item.url = url;
+					item.url = url;
+					item.archive = 'CourtListener';
+					item.archiveLocation = clNumber;
 					item.extra = "{:jurisdiction: " + jurisdictionID + "}";
 					items.push(item);
 				}
@@ -168,15 +172,15 @@ function acquireCase (doc, url) {
 						head.innerHTML += '<style type="text/css">' + css + '</style>'; 
 
 						var attachmentDoc = ZU.composeDoc(doc, head, block);
-                        // Remove all but the last div element (there are two divs in article)
-                        var article = attachmentDoc.getElementsByTagName("article")[0];
-                        var divCount = 0;
-                        while (article.childNodes[0].tagName !== "DIV" || !divCount) {
-                            if (article.childNodes[0].tagName === "DIV") { 
-                                divCount++;
-                            }
-                            article.removeChild(article.childNodes[0]);
-                        }
+						// Remove all but the last div element (there are two divs in article)
+						var article = attachmentDoc.getElementsByTagName("article")[0];
+						var divCount = 0;
+						while (article.childNodes[0].tagName !== "DIV" || !divCount) {
+							if (article.childNodes[0].tagName === "DIV") { 
+								divCount++;
+							}
+							article.removeChild(article.childNodes[0]);
+						}
 						items[0].attachments.push({
 							title:"CourtListener Judgment", 
 							document:attachmentDoc
