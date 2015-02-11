@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 1,
 	"browserSupport": "gcs",
-	"lastUpdated": "2014-03-11 13:44:24"
+	"lastUpdated": "2015-02-11 01:21:39"
 }
 
 
@@ -1156,7 +1156,16 @@ function importItem(newItem, node) {
 			importItem(attachment, relation, n.z+"Attachment");
 		}
 	}
-
+	
+	var pdfURL = getFirstResults(node, [n.eprints+"document_url"]);
+	if(pdfURL) {
+		newItem.attachments.push({
+			"title":"Full Text PDF",
+			"mimeType":"application/pdf",
+			"path":pdfURL[0]
+		});
+	}
+	
 	/** OTHER FIELDS **/
 	var arcs = Zotero.RDF.getArcsOut(node);
 	for each(var arc in arcs) {
