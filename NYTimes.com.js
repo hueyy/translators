@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2014-04-03 17:50:01"
+	"lastUpdated": "2014-06-11 21:54:15"
 }
 
 function detectWeb(doc, url) {
@@ -177,7 +177,7 @@ function scrape(doc, url) {
 		newItem.url = newItem.url.replace(/\?.+/, '');
 	}
 	//	get pdf for archive articles - make sure we don't go here if we're getting multiples or regular items
-	var pdfxpath = '//div[@class="articleAccess"]/p[@class="button"]/a[contains(@href, "/pdf")]/@href'
+	var pdfxpath = '//div[@id="articleAccess"]//span[@class="downloadPDF"]/a[contains(@href, "/pdf")]/@href'
 	if (!m && ZU.xpathText(doc, pdfxpath) != null) {
 		var pdflink = ZU.xpathText(doc, pdfxpath)
 		Zotero.Utilities.doGet(pdflink, function (text) {
@@ -249,13 +249,11 @@ var testCases = [
 				],
 				"publicationTitle": "The New York Times",
 				"ISSN": "0362-4331",
-				"url": "http://query.nytimes.com/gst/abstract.html?res=F30D15FD3F5813738DDDAC0894DB405B828DF1D3",
+				"url": "http://query.nytimes.com/gst/abstract.html?res=9C07E4DC143CE633A25756C0A9659C946396D6CF",
 				"date": "1912-03-05",
 				"title": "TWO MONEY INQUIRIES.; Hearings of Trust Charges and Aldrich Plan at the Same Time.",
 				"abstractNote": "WASHINGTON, March 4. -- The Money Trust inquiry and consideration of the proposed Aldrich monetary legislation will probably be handled side by side by the House Banking and Currency Committee. The present tentative plan is to divide the committee into two parts, one of which, acting as a sub-committee, will investigate as far as it can those allegations of the Henry Money Trust resolution which fall within the jurisdiction of the Banking and Currency Committee.",
-				"accessionNumber": "100523320",
-				"libraryCatalog": "NYTimes.com",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"libraryCatalog": "NYTimes.com"
 			}
 		]
 	},

@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 1,
 	"browserSupport": "gcs",
-	"lastUpdated": "2014-03-11 13:44:24"
+	"lastUpdated": "2015-02-25 13:12:47"
 }
 
 /*
@@ -412,6 +412,11 @@ function detectType(newItem, node, ret) {
 		&& ZU.itemTypeExists(type)
 	) {
 		t.zotero = type;
+		if(type == "encyclopediaArticle" || type == "dictionaryEntry") {
+			container = getNodeByType(isPartOf, n.bib+"Book");
+		} else if(type == "conferencePaper") {
+			container = getNodeByType(isPartOf, n.bib+"Journal");
+		}
 	}
 
 	// dc:type, dcterms:type
@@ -1092,8 +1097,8 @@ function importItem(newItem, node) {
 	// description/attachment note
 	if(newItem.itemType == "attachment") {
 		newItem.note = getFirstResults(node, [n.dc+"description", n.dc1_0+"description", n.dcterms+"description"], true);
-	} else {
-		newItem.extra = getFirstResults(node, [n.dc+"description"], true);
+	} else if (!newItem.abstractNote) {
+		newItem.abstractNote = getFirstResults(node, [n.dc+"description", n.dcterms+"description"], true);
 	}
 
 	/** NOTES **/
@@ -1154,7 +1159,16 @@ function importItem(newItem, node) {
 			importItem(attachment, relation, n.z+"Attachment");
 		}
 	}
-
+	
+	var pdfURL = getFirstResults(node, [n.eprints+"document_url"]);
+	if(pdfURL) {
+		newItem.attachments.push({
+			"title":"Full Text PDF",
+			"mimeType":"application/pdf",
+			"path":pdfURL[0]
+		});
+	}
+	
 	/** OTHER FIELDS **/
 	var arcs = Zotero.RDF.getArcsOut(node);
 	for each(var arc in arcs) {

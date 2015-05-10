@@ -2,14 +2,14 @@
 	"translatorID": "c54d1932-73ce-dfd4-a943-109380e06574",
 	"label": "Project MUSE",
 	"creator": "Simon Kornblith, Avram Lyon, Sean Takats",
-	"target": "^https?://[^/]*muse\\.jhu\\.edu[^/]*/(login\\?.+ur[il]=/)?(?:journals/[^/]+/(summary/)?[^/]+/[^/]+\\.html|search/results|results)",
+	"target": "^https?://[^/]*muse\\.jhu\\.edu[^/]*/(login\\?.+ur[il]=/)?(?:journals/[^/]+/(summary/)?[^/]+/[^/]+\\.html|search/results|results|books/\\d+)",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2014-02-27 23:52:00"
+	"lastUpdated": "2015-04-12 16:54:33"
 }
 
 function detectWeb(doc, url) {
@@ -98,9 +98,10 @@ function scrapeOne(doc) {
 		var getPDF = doc.evaluate('//a[text() = "PDF Version" or text() = "[Access article in PDF]" or text() = "Download PDF"]', doc,
 								  null, XPathResult.ANY_TYPE, null).iterateNext();		
 		var DOI = doc.evaluate('//meta[@name="citation_doi"]/@content', doc,
-								  null, XPathResult.ANY_TYPE, null).iterateNext();		
-		var abstract = doc.evaluate('//div[@class="abstract"]', doc,
 								  null, XPathResult.ANY_TYPE, null).iterateNext();
+		//test for two different abstract formats						  
+		var abstract = ZU.xpathText(doc, '//abstract/p[1]');
+		if (!abstract) abstract = ZU.xpathText(doc, '//div[@class="abstract"][1]/p[1]');
 		var authorNodes = ZU.xpath(doc, '//meta[@name="citation_author"]/@content');
 
 		if(url.indexOf('?') != -1) {
@@ -163,7 +164,7 @@ function scrapeOne(doc) {
 					item.DOI = DOI.textContent.replace(/^DOI: /,"");
 				}
 				if(abstract) {
-					item.abstractNote = abstract.textContent.replace(/\n/g, " ").replace(/\s\s+/g, " ");
+					item.abstractNote = abstract.replace(/\n/g, " ").replace(/\s\s+/g, " ");
 				}
 				item.complete();
 			});
@@ -179,6 +180,7 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "journalArticle",
+				"title": "Terror, Trauma and the 'Young Marx' Explanation of Jacobin Politics",
 				"creators": [
 					{
 						"firstName": "Patrice L. R.",
@@ -186,8 +188,16 @@ var testCases = [
 						"creatorType": "author"
 					}
 				],
-				"tags": [],
-				"seeAlso": [],
+				"date": "2006",
+				"ISSN": "1477-464X",
+				"abstractNote": "Past & Present 191.1 (2006) 121-164",
+				"extra": "<p>Number 191, May 2006</p>",
+				"issue": "1",
+				"libraryCatalog": "Project MUSE",
+				"pages": "121-164",
+				"publicationTitle": "Past & Present",
+				"url": "https://muse.jhu.edu/journals/past_and_present/v191/191.1higonnet.html",
+				"volume": "191",
 				"attachments": [
 					{
 						"title": "Project MUSE Snapshot"
@@ -197,17 +207,8 @@ var testCases = [
 						"mimeType": "application/pdf"
 					}
 				],
-				"title": "Terror, Trauma and the 'Young Marx' Explanation of Jacobin Politics",
-				"publicationTitle": "Past & Present",
-				"volume": "191",
-				"issue": "1",
-				"pages": "121-164",
-				"ISSN": "1477-464X",
-				"url": "http://muse.jhu.edu/journals/past_and_present/v191/191.1higonnet.html",
-				"date": "2006",
-				"extra": "<p>Number 191, May 2006</p>",
-				"abstractNote": "In lieu of an abstract, here is a brief excerpt of the content: Past & Present 191.1 (2006) 121-164 Patrice Higonnet Harvard University Tocqueville in the 1850s wrote of France in the 1780s that never had tolerance been more accepted, authority been more mild, or benevolence been so widely practised. Nonetheless, he went on, 'from the bosom of such mild mores would spring the most inhuman of revolutions'. And even for those of us who deeply admire the French Revolution's message of civic equality, the Terror of the Year II (1793–4) seems not just ominous and horrendous, but also out of place. Auschwitz, Dresden and Hiroshima — after the Great War of 1914–18 and the Great Depression of the 1930s: we can see why these wartime tragedies happened, given the awful events that preceded them. But what of the Terror after the Enlightenment — after Voltaire, Boucher, and Madame de Pompadour? Isser Woloch has rightly described the 'sequence' from 1789 to 1793, from liberalism to terror, as an eternally fascinating 'enigma'. Why the French Revolution occurred is something of a mystery. And why it failed so dramatically is also deeply perplexing. Historians have pored over the cause and nature of the Terror of the Year II ever since it occurred. And yet the many valuable (though often conflicting) explanations which have been offered to account for it have somehow fallen short. Many of them are too narrow or too vague. They are seldom wrong in any simple sense, but they need to be reconceived. I propose that there is an extant and even ancient frame, the 'young Marx explanation', which, if rejuvenated by reference to the theory of collective trauma, can enable us to renew these accounts, first by identifying new ground for research, but principally by making it possible to integrate the seemingly irreconcilable points of view about why the unanimity of 1789 gave way by 1792–4 to a divisive and self-destructive intolerance. I A first step is to review explanations, past and present, that range from culture and ideology (Rousseauian Jacobinism was bound to end as it did) to circumstance (where the circumstances might be social, political or institutional). For many reasons, it is important to have these various answers in mind — however biased or incomplete they may have been: first, because explanations of Revolutionary terrorism are suggestive in their own right since they indirectly chronicle two centuries of historiographic effort; second, because their very number speaks to the importance of the Terror as a historical event, and of course any understanding of the French Revolution must subsume an understanding of the Terror; and third, because the variety and incompatibility of extant accounts underscore the interest of any explanation that aims to reconcile opposing points of view. As regards larger ideological explanations, a good place to begin is with François Furet, since his is the dominant mode of explanation today. This brilliant historian was unambiguous: for him, the 'revolutionary government' 'was written in the logic of Montagnard policy'. The Terror, taken as government policy by the Convention, does not originate in September 1793 at all, but in the past (both recent and distant): The circumstances surrounding this celebrated vote indicate that before becoming a set of repressive institutions used by the Republic to liquidate its adversaries and establish its domination on a basis of fear, the Terror was a demand based on political conviction or beliefs, a characteristic feature of the mentality of revolutionary activism. From this perspective, the Terror is the illegitimate child of the Enlightenment — begotten, perhaps, on the Enlightenment by Jean-Jacques Rousseau. The year 1793 is embedded in 1789. Furet's first and most talented disciple, Keith Baker, gives us a new (and, it must be said, extreme) version of this same ideological causal perspective. What, he asks, was the implication of the path chosen by the National Assembly in September 1789 over the issue of the king's suspensive veto? At stake here, he argues in a historical version of 'path determinacy', was the setting aside of a discourse of the social, grounded on the notion of the differential distribution of reason, functions, and interests in modern civil society, in favor of a discourse of the political...",
-				"libraryCatalog": "Project MUSE"
+				"tags": [],
+				"seeAlso": []
 			}
 		]
 	},
@@ -227,6 +228,7 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "book",
+				"title": "Writing the Forest in Early Modern England: A Sylvan Pastoral Nation",
 				"creators": [
 					{
 						"lastName": "Theis",
@@ -234,22 +236,21 @@ var testCases = [
 						"creatorType": "author"
 					}
 				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
+				"date": "2009",
+				"ISBN": "9780820705057",
+				"abstractNote": "In Writing the Forest in Early Modern England: A Sylvan Pastoral Nation, Jeffrey S. Theis focuses on pastoral literature in early modern England as an emerging form of nature writing. In particular, Theis analyzes what happens when pastoral writing is set in forests — what he terms “sylvan pastoral.” During the sixteenth and seventeenth centuries, forests and woodlands played an instrumental role in the formation of individual and national identities in England. Although environmentalism as we know it did not yet exist, persistent fears of timber shortages led to a larger anxiety about the status of forests. Perhaps more important, forests were dynamic and contested sites of largely undeveloped spaces where the poor would migrate in a time of rising population when land became scarce. And in addition to being a place where the poor would go, the forest also was a playground for monarchs and aristocrats where they indulged in the symbolically rich sport of hunting. Conventional pastoral literature, then, transforms when writers use it to represent and define forests and the multiple ways in which English society saw these places. In exploring these themes, authors expose national concerns regarding deforestation and forest law and present views relating to land ownership, nationhood, and the individual’s relationship to nature. Of particular interest are the ways in which cultures turn confusing spaces into known places and how this process is shaped by nature, history, gender, and class. Theis examines the playing out of these issues in familiar works by Shakespeare, such as A Midsummer Night’s Dream, The Merry Wives of Windsor, and As You Like It, Andrew Marvell’s “Upon Appleton House,” John Milton’s Mask and Paradise Lost, as well as in lesser known prose works of the English Revolution, such as James Howell’s Dendrologia>/i> and John Evelyn’s Sylva. As a unique ecocritical study of forests in early modern English literature, Writing the Forest makes an important contribution to the growing field of the history of environmentalism, and will be of interest to those working in literary and cultural history as well as philosophers concerned with nature and space theory. show less, In Writing the Forest in Early Modern England: A Sylvan Pastoral Nation, Jeffrey S. Theis focuses on pastoral literature in early modern England as an emerging form of nature writing. In particular, Theis analyzes what happens when pastoral writing is set in forests — what he terms “sylvan pastoral.” During the sixteenth and seventeenth centuries, forests and woodlands played an instrumental role in the formation of individual and national identities in England. Although environmentalism as we know it did not yet exist, persistent fears of timber shortages led to a larger anxiety about the status of forests. Perhaps more important . . . show more",
+				"libraryCatalog": "Project MUSE",
+				"place": "Pittsburgh",
+				"publisher": "Duquesne University Press",
+				"shortTitle": "Writing the Forest in Early Modern England",
 				"attachments": [
 					{
 						"title": "Project MUSE Snapshot"
 					}
 				],
-				"title": "Writing the Forest in Early Modern England: A Sylvan Pastoral Nation",
-				"publisher": "Duquesne University Press",
-				"place": "Pittsburgh, PA",
-				"ISBN": "9780820705057",
-				"date": "2009",
-				"abstractNote": "In Writing the Forest in Early Modern England: A Sylvan Pastoral Nation, Jeffrey S. Theis focuses on pastoral literature in early modern England as an emerging form of nature writing. In particular, Theis analyzes what happens when pastoral writing is set in forests — what he terms “sylvan pastoral.”\nDuring the sixteenth and seventeenth centuries, forests and woodlands played an instrumental role in the formation of individual and national identities in England. Although environmentalism as we know it did not yet exist, persistent fears of timber shortages led to a larger anxiety about the status of forests. Perhaps more important, forests were dynamic and contested sites of largely undeveloped spaces where the poor would migrate in a time of rising population when land became scarce. And in addition to being a place where the poor would go, the forest also was a playground for monarchs and aristocrats where they indulged in the symbolically rich sport of hunting.\nConventional pastoral literature, then, transforms when writers use it to represent and define forests and the multiple ways in which English society saw these places. In exploring these themes, authors expose national concerns regarding deforestation and forest law and present views relating to land ownership, nationhood, and the individual’s relationship to nature. Of particular interest are the ways in which cultures turn confusing spaces into known places and how this process is shaped by nature, history, gender, and class.\nTheis examines the playing out of these issues in familiar works by Shakespeare, such as A Midsummer Night’s Dream, The Merry Wives of Windsor, and As You Like It, Andrew Marvell’s “Upon Appleton House,” John Milton’s Mask and Paradise Lost, as well as in lesser known prose works of the English Revolution, such as James Howell’s Dendrologia>/i> and John Evelyn’s Sylva.\nAs a unique ecocritical study of forests in early modern English literature, Writing the Forest makes an important contribution to the growing field of the history of environmentalism, and will be of interest to those working in literary and cultural history as well as philosophers concerned with nature and space theory.\n       show less, In Writing the Forest in Early Modern England: A Sylvan Pastoral Nation, Jeffrey S. Theis focuses on pastoral literature in early modern England as an emerging form of nature writing. In particular, Theis analyzes what happens when pastoral writing is set in forests — what he terms “sylvan pastoral.” During the sixteenth and seventeenth centuries, forests and woodlands played an instrumental role in the formation of individual and national identities in England. Although environmentalism as we know it did not yet exist, persistent fears of timber shortages led to a larger anxiety about the status of forests. Perhaps more important . . .  show more",
-				"libraryCatalog": "Project MUSE",
-				"shortTitle": "Writing the Forest in Early Modern England"
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
 			}
 		]
 	},
@@ -259,6 +260,7 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "journalArticle",
+				"title": "The Pill at Fifty: Scientific Commemoration and the Politics of American Memory",
 				"creators": [
 					{
 						"firstName": "Heather",
@@ -266,26 +268,65 @@ var testCases = [
 						"creatorType": "author"
 					}
 				],
-				"tags": [],
-				"seeAlso": [],
+				"date": "2013",
+				"DOI": "10.1353/tech.2013.0137",
+				"ISSN": "1097-3729",
+				"abstractNote": "This article uses coverage of the fiftieth anniversary of the Pill as an example of what Richard Hirsh describes as the “real world” role of historians of technology. It explores how the presentation of historical topics on the world wide web has complicated how the history of technology is conveyed to the public. The article shows that that the Pill is especially suited to demonstrating the public role of historians of technology because, as the most popular form of reversible birth control, it has touched the lives of millions of Americans. Thus, an exploration of how the Pill’s fiftieth anniversary was covered illustrates how historians can use their expertise to provide a nuanced interpretation of a controversial topic in the history of technology.",
+				"extra": "<p>Volume 54, Number 4, October 2013</p>",
+				"issue": "4",
+				"libraryCatalog": "Project MUSE",
+				"pages": "735-745",
+				"publicationTitle": "Technology and Culture",
+				"shortTitle": "The Pill at Fifty",
+				"url": "https://muse.jhu.edu/journals/technology_and_culture/v054/54.4.prescott.html",
+				"volume": "54",
 				"attachments": [
 					{
 						"title": "Project MUSE Snapshot"
 					}
 				],
-				"title": "The Pill at Fifty: Scientific Commemoration and the Politics of American Memory",
-				"publicationTitle": "Technology and Culture",
-				"volume": "54",
-				"issue": "4",
-				"pages": "735-745",
-				"ISSN": "1097-3729",
-				"url": "http://muse.jhu.edu/journals/technology_and_culture/v054/54.4.prescott.html",
-				"date": "2013",
-				"extra": "<p>Volume 54, Number 4, October 2013</p>",
-				"DOI": "10.1353/tech.2013.0137",
-				"abstractNote": "Abstract Abstract:This article uses coverage of the fiftieth anniversary of the Pill as an example of what Richard Hirsh describes as the “real world” role of historians of technology. It explores how the presentation of historical topics on the world wide web has complicated how the history of technology is conveyed to the public. The article shows that that the Pill is especially suited to demonstrating the public role of historians of technology because, as the most popular form of reversible birth control, it has touched the lives of millions of Americans. Thus, an exploration of how the Pill’s fiftieth anniversary was covered illustrates how historians can use their expertise to provide a nuanced interpretation of a controversial topic in the history of technology.",
+				"tags": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://muse.jhu.edu/journals/latin_american_research_review/v049/49.2.manzetti.html",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"title": "Accountability and Corruption in Argentina During the Kirchners’ Era",
+				"creators": [
+					{
+						"firstName": "Luigi",
+						"lastName": "Manzetti",
+						"creatorType": "author"
+					}
+				],
+				"date": "2014",
+				"ISSN": "1542-4278",
+				"abstractNote": "This article highlights an important paradox: in Argentina between 2003 and 2013 the center-left Peronist government’s approach to governance mirrors that of the center-right Peronist administration of the 1990s. While the latter centralized authority to pursue neoliberal reforms, the former have centralized authority in the name of expanding government intervention in the economy. In both cases, corruption has tended to go unchecked due to insufficient government accountability. Therefore, although economic policies and political rhetoric have changed dramatically, government corruption remains a constant of the Argentine political system due to the executive branch’s ability to emasculate constitutional checks and balances.",
+				"accessDate": "CURRENT_TIMESTAMP",
+				"extra": "<p>Volume 49, Number 2, 2014</p>",
+				"issue": "2",
 				"libraryCatalog": "Project MUSE",
-				"shortTitle": "The Pill at Fifty"
+				"pages": "173-195",
+				"publicationTitle": "Latin American Research Review",
+				"publisher": "Latin American Studies Association",
+				"url": "http://muse.jhu.edu.turing.library.northwestern.edu/journals/latin_american_research_review/v049/49.2.manzetti.html",
+				"volume": "49",
+				"attachments": [
+					{
+						"title": "Project MUSE Snapshot"
+					},
+					{
+						"title": "Project MUSE Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"tags": [],
+				"seeAlso": []
 			}
 		]
 	}

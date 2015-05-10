@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2014-04-28 21:03:15"
+	"lastUpdated": "2014-09-17 04:55:38"
 }
 
 function detectWeb(doc, url) {
@@ -17,25 +17,43 @@ function detectWeb(doc, url) {
 		return "journalArticle";
 	} 
 	//permalinks
-	else if (url.indexOf("/content/") != -1  && ZU.xpathText(doc, '//div[contains(@class,"export-formats")]/ul/li/a[@title="EndNote Export"]')) {
+	else if (url.indexOf("/content/") != -1  && getRisUrl(doc) ) {
 		return "journalArticle";
 	}
 	
-	else if (url.indexOf("search?") !=-1 || url.indexOf("search;") != -1) {
+	else if ((url.indexOf("search?") !=-1 || url.indexOf("search;") != -1) && getSearchResults(doc)) {
 		return "multiple";
 	}
 }
 
+
+function getRisUrl(doc) {
+	return ZU.xpathText(doc, '//div[contains(@class,"export-formats")]/ul/li/a[@title="EndNote Export"]/@href');
+}
+
+
+function getSearchResults(doc) {
+	var items = {}, found = false;
+	var rows = doc.getElementsByClassName('searchResultTitle');
+	for (var i=0; i<rows.length; i++) {
+		var id = ZU.xpathText(rows[i], './a/@href');
+		var title = ZU.xpathText(rows[i], './a/@title');
+		if (!id || !title) {
+			continue;
+		} else {
+			found = true;
+			items[id] = title;
+		}
+	}
+	return found ? items : false;
+}
+
+
 function doWeb(doc, url) {
 	var articles = new Array();
 	if (detectWeb(doc, url) == "multiple") {
-		var items = new Object();
-		var artlink = '//div//p/strong/a';
-		var links = doc.evaluate(artlink, doc, null, XPathResult.ANY_TYPE, null);
-		var next_link;
-		while (next_link = links.iterateNext()) {
-			items[next_link.href] = next_link.textContent;
-		}
+		
+		var items = getSearchResults(doc);
 		
 		Zotero.selectItems(items, function (items) {
 			if (!items) {
@@ -53,12 +71,17 @@ function doWeb(doc, url) {
 
 function scrape(newDoc, url){
 		var abs, pdf;
-		var risurl = newDoc.evaluate('//div[contains(@class,"export-formats")]/ul/li/a[@title="EndNote Export"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
+		var risurl = getRisUrl(newDoc);
 		if (newDoc.evaluate('//div[@id="abstract"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			abs = Zotero.Utilities.trimInternal(newDoc.evaluate('//div[@id="abstract"]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().textContent).substr(10);
 		}
-		if (newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"PDF download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
-			pdf = newDoc.evaluate('//div[@id="purchaseexpand"]//a[contains(@title,"PDF download")]', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext().href;
+		var articleID = ZU.xpathText(newDoc, '/html/head/meta[@name="IC.identifier"]/@content');
+		if(articleID) {
+			pdf = '/search/download?pub=infobike://' + articleID + '&mimetype=application/pdf';
+		} else {
+			pdf = url.replace(/[?&#].*/, '')
+				.replace('/content/', '/search/download?pub=infobike://')
+				+ '&mimetype=application/pdf';
 		}
 		if (newDoc.evaluate('//div[@id="info"]/p[1]/a', newDoc, null, XPathResult.ANY_TYPE, null).iterateNext()) {
 			var keywords = newDoc.evaluate('//div[@id="info"]/p[1]/a', newDoc, null, XPathResult.ANY_TYPE, null);
@@ -83,7 +106,7 @@ function scrape(newDoc, url){
 				// Note that the RIS translator gives us a link to the record already
 				item.url = null;
 				if (keys) item.tags = keys;
-				if (item.date) item.date = item.date.replace(/\-01\-01T00:00:00\/*/, "")
+				if (item.date) item.date = item.date.replace(/T00:00:00\/*/, "")
 				if (item.DOI) {
 					if (item.DOI.match(/^doi:/)) {
 						item.DOI = item.DOI.substr(4);
@@ -103,31 +126,130 @@ var testCases = [
 	},
 	{
 		"type": "web",
-		"url": "http://www.ingentaconnect.com/search/article?option1=tka&value1=labor+market&pageSize=10&index=10",
+		"url": "http://www.ingentaconnect.com/content/tpp/ep/2014/00000010/00000001/art00001",
 		"items": [
 			{
 				"itemType": "journalArticle",
+				"title": "Strategies for enabling the use of research evidence",
 				"creators": [
 					{
-						"lastName": "Brinton",
-						"firstName": "M.C.",
+						"lastName": "Gough",
+						"firstName": "David",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Boaz",
+						"firstName": "Annette",
 						"creatorType": "author"
 					}
 				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [],
-				"title": "Social capital in the Japanese youth labor market: Labor market policy, schools, and norms",
-				"journalAbbreviation": "Policy Sciences",
-				"volume": "33",
-				"issue": "3-1",
-				"pages": "289-306",
-				"abstractNote": "This paper develops the concept of institutional social capital and discusses its importance in the labor market. Institutional social capital is constituted by the resources inherent in an organization (such as a school) and thereby available to members of that organization. This is contrasted with the social capital available to individuals through their own personal networks. In the labor market context, an example of institutional social capital is the ties that schools have with employers who recruit a proportion of their new employees as they prepare to graduate. The paper examines how these ties and the norms governing the important labor market screening role played by the high school developed in post-WWII Japan. I also discuss an important positive externality – social control over students – generated by schools’ institutional social capital. Finally, I examine current challenges to Japanese high schools’ institutional social capital.",
-				"date": "2000-12-01T00:00:00///",
-				"publicationTitle": "Policy Sciences",
+				"date": "2014-01-01",
+				"DOI": "10.1332/174426413X13836441441630",
+				"issue": "1",
+				"journalAbbreviation": "Evidence & Policy: A Journal of Research, Debate and Practice",
 				"libraryCatalog": "IngentaConnect",
-				"shortTitle": "Social capital in the Japanese youth labor market"
+				"pages": "3-4",
+				"publicationTitle": "Evidence & Policy: A Journal of Research, Debate and Practice",
+				"volume": "10",
+				"attachments": [
+					{
+						"title": "IngentaConnect Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.ingentaconnect.com/search/article?option1=title&value1=credibility+associated+with+how+often+they+present+research+evidence+to+public+or+partly+government-owned+organisations&sortDescending=true&sortField=default&pageSize=10&index=1",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"title": "Are indicators of faculty members' credibility associated with how often they present research evidence to public or partly government-owned organisations? A cross-sectional survey",
+				"creators": [
+					{
+						"lastName": "Ouimet",
+						"firstName": "Mathieu",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Bédard",
+						"firstName": "Pierre-Olivier",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Léon",
+						"firstName": "Grégory",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Dagenais",
+						"firstName": "Christian",
+						"creatorType": "author"
+					}
+				],
+				"date": "2014-01-01",
+				"DOI": "10.1332/174426413X662699",
+				"abstractNote": "This study provides an empirical test of the assumption that the credibility of the messenger is one of the factors that influence knowledge mobilisation among policy makers. This general hypothesis was tested using a database of 321 social scientists from the province of Quebec that combines survey and bibliometric data. A regression model was used to study the association between indicators of faculty members' credibility and the number of times they have presented research evidence to public or partly government-owned organisations over an 18-month period. Overall, empirical results provide new evidence supporting the credibility hypothesis.",
+				"issue": "1",
+				"journalAbbreviation": "Evidence & Policy: A Journal of Research, Debate and Practice",
+				"libraryCatalog": "IngentaConnect",
+				"pages": "5-27",
+				"publicationTitle": "Evidence & Policy: A Journal of Research, Debate and Practice",
+				"shortTitle": "Are indicators of faculty members' credibility associated with how often they present research evidence to public or partly government-owned organisations?",
+				"volume": "10",
+				"attachments": [
+					{
+						"title": "IngentaConnect Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"tags": [
+					"Credibility",
+					"Cross-Sectional Survey",
+					"Faculty Members",
+					"Knowledge Transfer"
+				],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "http://www.ingentaconnect.com/content/mohr/acp/2014/00000214/00000004/art00003",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"title": "Teilnahme an der vorsätzlichen sittenwidrigen Vermögensschädigung im Gesellschafts- und Kapitalmarktrecht (§§ 826, 830 Abs. 1 Satz 1 und Abs. 2 BGB)",
+				"creators": [
+					{
+						"lastName": "Oechsler",
+						"firstName": "Jürgen",
+						"creatorType": "author"
+					}
+				],
+				"date": "2014-08-01",
+				"DOI": "10.1628/000389914X14061177683732",
+				"issue": "4",
+				"journalAbbreviation": "Archiv fuer die civilistische Praxis",
+				"libraryCatalog": "IngentaConnect",
+				"pages": "542-566",
+				"publicationTitle": "Archiv fuer die civilistische Praxis",
+				"volume": "214",
+				"attachments": [
+					{
+						"title": "IngentaConnect Full Text PDF",
+						"mimeType": "application/pdf"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
 			}
 		]
 	}

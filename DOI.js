@@ -5,11 +5,11 @@
 	"target": "",
 	"minVersion": "3.0",
 	"maxVersion": "",
-	"priority": 300,
+	"priority": 320,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2014-02-23 11:23:36"
+	"lastUpdated": "2015-02-12 07:40:24"
 }
 
 var items = {};
@@ -25,8 +25,13 @@ function getDOIs(doc) {
 	// characters except for control characters. Here, we're cheating
 	// by not allowing ampersands, to fix an issue with getting DOIs
 	// out of URLs.
+  // Additionally, all content inside <noscript> is picked up as text()
+  // by the xpath, which we don't necessarily want to exclude, but
+  // that means that we can get DOIs inside node attributes and we should
+	// exclude quotes in this case.
+  // DOI should never end with a period or a comma (we hope)
 	// Description at: http://www.doi.org/handbook_2000/appendix_1.html#A1-4
-	const DOIre = /\b10\.[0-9]{4,}\/[^\s&]*[^\s\&\.,]/g;
+	const DOIre = /\b10\.[0-9]{4,}\/[^\s&"']*[^\s&"'.,]/g;
 	const DOIXPath = "//text()[contains(., '10.')]\
 						[not(parent::script or parent::style)]";
 
@@ -61,7 +66,7 @@ function detectWeb(doc, url) {
 	if(!blacklistRe.test(url)) {
 		var DOIs = getDOIs(doc);
 		if(DOIs.length) {
-			return DOIs.length == 1 ? "journalArticle" : "multiple";
+			return "multiple";
 		}
 	}
 	return false;
@@ -77,11 +82,6 @@ function completeDOIs(doc) {
 	}
 	if(numDOIs == 0) {
 		throw "DOI Translator: could not find DOI";
-	} else if(numDOIs == 1) {
-		// do we want to add URL of the page?
-		items[DOI].url = doc.location.href;
-		items[DOI].attachments = [{document:doc}];
-		items[DOI].complete();
 	} else {
 		Zotero.selectItems(selectArray, function(selectedDOIs) {
 			if(!selectedDOIs) return true;
@@ -106,6 +106,11 @@ function retrieveDOIs(DOIs, doc) {
 	
 			// don't save when item is done
 			translate.setHandler("itemDone", function(translate, item) {
+				if (!item.title) {
+					Zotero.debug("No title available for " + DOI);
+					return;
+				}
+				
 				item.repository = "CrossRef";
 				items[DOI] = item;
 				selectArray[DOI] = item.title;
@@ -144,41 +149,7 @@ var testCases = [
 	{
 		"type": "web",
 		"url": "http://libguides.csuchico.edu/citingbusiness",
-		"items": [
-			{
-				"itemType": "journalArticle",
-				"creators": [
-					{
-						"creatorType": "author",
-						"firstName": "Jean M.",
-						"lastName": "Twenge"
-					},
-					{
-						"creatorType": "author",
-						"firstName": "Stacy M.",
-						"lastName": "Campbell"
-					}
-				],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
-				"attachments": [
-					{}
-				],
-				"publicationTitle": "Journal of Managerial Psychology",
-				"volume": "23",
-				"issue": "8",
-				"language": "en",
-				"ISSN": "0268-3946",
-				"date": "2008",
-				"pages": "862-877",
-				"DOI": "10.1108/02683940810904367",
-				"url": "http://libguides.csuchico.edu/citingbusiness",
-				"title": "Generational differences in psychological traits and their impact on the workplace",
-				"libraryCatalog": "CrossRef",
-				"accessDate": "CURRENT_TIMESTAMP"
-			}
-		]
+		"items": "multiple"
 	}
 ]
 /** END TEST CASES **/

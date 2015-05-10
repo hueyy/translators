@@ -19,7 +19,7 @@
 		"Full TEI Document": false,
 		"Export Collections": false
 	},
-	"lastUpdated": "2013-05-10 16:39:00"
+	"lastUpdated": "2015-02-19 22:23:41"
 }
 
 // ********************************************************************
@@ -220,7 +220,7 @@ function generateItem(item, teiDoc) {
         // there should be a publication title!
         if(item.publicationTitle){
             var pubTitle = teiDoc.createElementNS(ns.tei, "title");
-            if(item.itemType == "journalTitle"){
+            if(item.itemType == "journalArticle"){
                 pubTitle.setAttribute("level", "j");
             }
             else{
@@ -595,7 +595,7 @@ function doExport() {
     }
 
     // write to file.
-    Zotero.write('<?xml version="1.0"?>'+"\n");
+    Zotero.write('<?xml version="1.0" encoding="UTF-8"?>'+"\n");
     var serializer = new XMLSerializer();
     Zotero.write(serializer.serializeToString(outputElement));
 }
