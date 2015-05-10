@@ -15,6 +15,7 @@
 	"lastUpdated": "2015-02-25 13:12:47"
 }
 
+
 /*
 	***** BEGIN LICENSE BLOCK *****
 	
@@ -1040,6 +1041,7 @@ function importItem(newItem, node) {
         if (!newItem.thesisType) {
             newItem.thesisType = thesisType;
         }
+	}
 	//presentation type from eprints
 	if (newItem.itemType == "presentation"){
         var presentationType = newItem.presentationType;

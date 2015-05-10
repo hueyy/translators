@@ -429,6 +429,7 @@ function doWeb(doc, url) {
 
 		var items = new Object();
 		var resultDivs = new Object();
+<<<<<<< HEAD
 		var citeUrl;
 		for(var i=0, n=results.length; i<n; i++) {
 			var onclick = ZU.xpathText(results[i], './/div[@class="gs_fl"]/a[@aria-controls="gs_cit"]/@onclick');
@@ -443,6 +444,35 @@ function doWeb(doc, url) {
 				// This could happen if GS changes their code around
 				Zotero.debug(onclick);
 				throw new Error("Could not determine Cite link parameters");
+=======
+		var bibtexUrl;
+		for(var i=0, n=results.length; i<n; i++) {
+			bibtexUrl = ZU.xpathText(results[i],
+					'.//div[@class="gs_fl"]/a[contains(@href,"q=info:")\
+						or contains(@href,"q=related:")][1]/@href');
+			if(bibtexUrl) {
+				bibtexUrl = bibtexUrl.replace(/\/scholar.*?\?/,'/scholar.bib?')
+					.replace(/=related:/,'=info:')
+					+ '&ct=citation&cd=1&output=citation';
+			} else {
+				Z.debug('Could not find a good link to construct BibTeX URL\n'
+					+ 'Creating BibTeX URL from scratch');
+				bibtexUrl = ZU.xpathText(results[i],
+					'.//div[@class="gs_fl"]/a[contains(@onclick, "gs_ocit(event")]\
+						[1]/@onclick');
+				var id;
+				if(!bibtexUrl
+					|| !(id = bibtexUrl.match(/gs_ocit\(event,\s*(['"])([^)]+?)\1/)) ) {
+					if(!bibtexUrl) Z.debug('onclick not found');
+					else Z.debug('Could not determine id from: ' + bibtexUrl);
+					Z.debug('Could not build a BibTeX URL');
+					continue;
+				}
+				
+				bibtexUrl = '/scholar.bib?q=info:' + id[2]	
+					+ ':scholar.google.com/&ct=citation&cd=1&output=citation';
+				Z.debug('Constructed BibTeX URL: ' + bibtexUrl);
+>>>>>>> ec1bf951e372617fdfa801b32d9fecc88889840d
 			}
 			
 			var title = ZU.xpathText(results[i], './/h3[@class="gs_rt"]');
@@ -930,7 +960,6 @@ ItemFactory.prototype.saveItem = function () {
 			this.item = new Zotero.Item("case");
 			this.saveItemCommonVars();
 			this.pushAttachments("Judgement");
-			this.item.jurisdiction = "us";
 			this.item.complete();
 		}
 	} else {

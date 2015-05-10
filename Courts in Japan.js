@@ -3,7 +3,7 @@
 	"translatorType": 4,
 	"label": "courts.go.jp",
 	"creator": "Frank Bennett",
-	"target": "http://(?:www.)*courts.go.jp/search",
+	"target": "http://(?:www.)*courts.go.jp/app/hanrei_jp",
 	"minVersion": "2.1",
 	"maxVersion": "",
 	"priority": 100,
@@ -644,7 +644,7 @@ function doWeb(doc, url) { return FW.doWeb(doc, url); }
 
 FW.Scraper({
     itemType: 'case',
-    detect: FW.Url().match(/\/jhsp[_0-9]+(?:\.action)*\?.*hanreiid/),
+    detect: FW.Url().match(/\/detail[0-9](?:\.action)*\?id=[0-9]+/),
     docketNumber: FW.Xpath("//div[contains(.,'事件番号')]/following-sibling::div").text().trim(),
     abstractNote: FW.Xpath("//div[contains(.,'事件名')]/following-sibling::div").text().trim(),
     dateDecided: FW.Xpath("//div[contains(.,'裁判年月日')]/following-sibling::div").text().trim(),
