@@ -412,6 +412,8 @@ record.prototype.translate = function(item) {
 		item.title = glueTogether(title.a, title.e, ': ');
 		item.title = clean(item.title);
 
+        Zotero.debug("XXXX item.title="+item.title);
+
 		// Extract edition
 		this._associateDBField(item, "205", "a", "edition");
 		
