@@ -2,14 +2,14 @@
 	"translatorID": "c73a4a8c-3ef1-4ec8-8229-7531ee384cc4",
 	"label": "Open WorldCat",
 	"creator": "Simon Kornblith, Sebastian Karcher",
-	"target": "^https?://[^/]+\\.worldcat\\.org",
+	"target": "^https?://[^/]+\\.worldcat\\.org/",
 	"minVersion": "3.0.9",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 12,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2015-03-04 19:58:35"
+	"lastUpdated": "2015-07-01 16:19:31"
 }
 
 /**
@@ -67,18 +67,21 @@ function getFirstContextObj(doc) {
 }
 
 function detectWeb(doc, url) {
-	var results = getSearchResults(doc);
+	//distinguish from Worldcat Discovery
+	if (doc.body.id == "worldcat"){
+		var results = getSearchResults(doc);
 
-	//single result
-	if(results.length) {
-		return "multiple";
+		//single result
+		if(results.length) {
+			return "multiple";
+		}
+
+		var co = getFirstContextObj(doc);
+		if(!co) return false;
+
+		// generate item and return type
+		return generateItem(doc, co).itemType;
 	}
-
-	var co = getFirstContextObj(doc);
-	if(!co) return false;
-
-	// generate item and return type
-	return generateItem(doc, co).itemType;
 }
 
 /**
@@ -101,9 +104,17 @@ function scrape(ids, data) {
 	
 	if (!oclcID) return;
 	
-	var risURL = baseURL + "/oclc/" + oclcID + "?page=endnotealt&client=worldcat.org-detailed_record";
-	ZU.doGet(risURL, function (text) {
-		//Z.debug(text);
+	var risURL = baseURL + "/oclc/" + oclcID
+		+ "?client=worldcat.org-detailed_record&page=endnote";
+	var tryAgain = true;
+	ZU.doGet(risURL + 'alt' /* non-latin RIS first **/, function parseRIS(text) {
+		// Sometimes non-latin RIS is blank
+		if (tryAgain && !/^TY\s\s?-/m.test(text)) {
+			Z.debug("WorldCat did not return valid RIS. Trying Latin RIS.");
+			tryAgain = false;
+			ZU.doGet(risURL, parseRIS);
+			return;
+		}
 		
 		//2013-05-28 RIS export currently has messed up authors
 		// e.g. A1  - Gabbay, Dov M., Woods, John Hayden., Hartmann, Stephan, 
@@ -322,6 +333,7 @@ function fetchIDs(isbns, ids, callback) {
 	);
 }
 
+
 /** BEGIN TEST CASES **/
 var testCases = [
 	{
@@ -473,7 +485,6 @@ var testCases = [
 				"libraryCatalog": "Open WorldCat",
 				"place": "London",
 				"publisher": "s.n.",
-				"url": "http://www.archive.org/details/a626827800smituoft/",
 				"attachments": [],
 				"tags": [],
 				"notes": [],
@@ -589,6 +600,42 @@ var testCases = [
 				"date": "1996",
 				"ISBN": "9780585030159",
 				"accessDate": "CURRENT_TIMESTAMP"
+			}
+		]
+	},
+	{
+		"type": "web",
+		"url": "https://www.worldcat.org/title/navigating-the-trilemma-capital-flows-and-monetary-policy-in-china/oclc/4933578953&referer=brief_results",
+		"items": [
+			{
+				"itemType": "journalArticle",
+				"title": "Navigating the trilemma: Capital flows and monetary policy in China",
+				"creators": [
+					{
+						"lastName": "Glick",
+						"firstName": "Reuven",
+						"creatorType": "author"
+					},
+					{
+						"lastName": "Hutchison",
+						"firstName": "Michael",
+						"creatorType": "author"
+					}
+				],
+				"date": "2009",
+				"ISSN": "1049-0078",
+				"abstractNote": "In recent years China has faced an increasing trilemmahow to pursue an independent domestic monetary policy and limit exchange rate flexibility, while at the same time facing large and growing international capital flows. This paper analyzes the impact of the trilemma on China's monetary policy as the country liberalizes its good and financial markets and integrates with the world economy. It shows how China has sought to insulate its reserve money from the effects of balance of payments inflows by sterilizing through the issuance of central bank liabilities. However, we report empirical results indicating that sterilization dropped precipitously in 2006 in the face of the ongoing massive buildup of international reserves, leading to a surge in reserve money growth. We also estimate a vector error correction model linking the surge in China's reserve money to broad money, real GDP, and the price level. We use this model to explore the inflationary implications of different policy scenarios. Under a scenario of continued rapid reserve money growth (consistent with limited sterilization of foreign exchange reserve accumulation) and strong economic growth, the model predicts a rapid increase in inflation. A model simulation using an extension of the framework that incorporates recent increases in bank reserve requirements also implies a rapid rise in inflation. By contrast, model simulations incorporating a sharp slowdown in economic growth such as that seen in late 2008 and 2009 lead to less inflation pressure even with a substantial buildup in international reserves.",
+				"issue": "3",
+				"language": "English",
+				"libraryCatalog": "Open WorldCat",
+				"pages": "205-224",
+				"publicationTitle": "ASIECO Journal of Asian Economics",
+				"shortTitle": "Navigating the trilemma",
+				"volume": "20",
+				"attachments": [],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
 			}
 		]
 	}
