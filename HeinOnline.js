@@ -12,49 +12,60 @@
 	"lastUpdated": "2015-07-04 10:32:10"
 }
 
+var listItems;
+
 function detectWeb (doc, url) {
-	if (url.match(/\/LuceneSearch\?/)) {
-		return "multiple";
+	if (url.indexOf("/LuceneSearch?") > -1) {
+		if (getSearchResults(doc)) {
+			return "multiple";
+		}
 	} else {
 		return "journalArticle";
 	}
+	return false;
+}
+
+function getXPathStr(attr, elem, path) {
+	var res = ZU.xpath(elem, path);
+	res = res.length ? res[0][attr] : '';
+	return res ? res : '';
 }
 
 function Data(doc) {
 	this.node = ZU.xpath(doc, '//form[@id="Print1"]');
-	this.urlbase = "http://heinonline.org/HOL/PDFsearchable?";
+	this.urlbase = "PDFsearchable?sectioncount=1&ext=.pdf&nocover=&";
 	this.queryElems = [];
-	this.tail = "&sectioncount=1&ext=.pdf&nocover=";
 }
 
-Data.prototype.getval = function(name) {
-	var val = '';
-	var input = ZU.xpath(this.node, './/input[@name="' + name + '"]');
-	if (input && input.length) {
-		val = input[0].value ? input[0].value : '';
+Data.prototype.getVal = function(name, returnOnly) {
+
+	var val = getXPathStr("value", this.node, './/input[@name="' + name + '"]');
+	val = val ? encodeURIComponent(val) : '';
+
+	if (!returnOnly) {
+		this.queryElems.push(name + "=" + val);
 	}
-	this.queryElems.push(name + "=" + val);
+	return val;
 }
 
 Data.prototype.dump = function() {
-	return this.urlbase + this.queryElems.join("&") + this.tail;
+	return this.urlbase + this.queryElems.join("&");
 }
 
 function getSearchResults(doc) {
-	var results = ZU.xpath(doc, '//div[contains(@class, "lucene_search_result_b")]'),
+	var results = doc.getElementsByClassName("lucene_search_result_b"),
 		items = {},
 		found = false
 	for (var i=0; i<results.length; i++) {
-		
-		var url = ZU.xpath(results[i], './/a[contains(@href, "Print")]');
-		url = (url && url.length) ? url[0].href : false;
+		var url = getXPathStr("href", results[i], './/a[contains(@href, "Print")]');
+		url = url.replace(/Print/, "Page");
+		url = url.replace(/&terms=[^&]*/, '');
 
-		var title = ZU.trimInternal(ZU.xpath(results[i], './/a[1]')[0].textContent);		
+		var title = getXPathStr("textContent", results[i], './/a[1]');
+		title = ZU.trimInternal(title);
 		title = title.replace(/\s*\[[^\]]*\]$/, '');
 
 		if (!title || !url) continue;
-		url = url.replace(/Print/, "Page");
-		url = url.replace(/&terms=[^&]*/, '');
 		
 		items[url] = title;
 		found = true;
@@ -62,25 +73,54 @@ function getSearchResults(doc) {
 	return found ? items : false;
 }
 
-function scrapePage(doc, isSingle) {
-	var pdfPageURL = doc.location.href.replace(/\/Page\?/, "/Print?");
-	var item = new Zotero.Item();
-	var spans = ZU.xpath(doc, '//span[contains(@class, " Z3988") or contains(@class, "Z3988 ") or @class="Z3988"][@title]');
-	if (spans && spans.length) {
-		ZU.parseContextObject(spans[0].title, item);
+function scrapePage(doc, url, item) {
+	var pdfPageURL = url.replace(/\/Page\?/, "/Print?");
+	if (!item) {
+		item = new Zotero.Item();
+		var z3988title = getXPathStr("title", doc, '//span[contains(@class, " Z3988") or contains(@class, "Z3988 ") or @class="Z3988"][@title]');
+		ZU.parseContextObject(z3988title, item);
+		
+		if (!item.itemType) {
+			// Sometimes items that report full-text PDF in the search listing
+			// resolve to a failure page. This builds a placeholder item out
+			// of the data that is available.
+			item.itemType = "journalArticle";
+			if (listItems) {
+				item.title = listItems[url];		
+			} else {
+				item.title = getXPathStr("textContent", doc, '//div[@id="content-container"]//a[1]');
+			}
+			var notAvailableURL = url.replace("/Page?", "/NotAvailable?").replace("handle=", "handle_bad=");
+			item.attachments.push({
+				url:notAvailableURL,
+				mimetype:"text/html",
+				snapshot:true,
+				title:"HeinOnline page placeholder"
+			});
+			item.url = url;
+			item.abstract = "CAUTION: Resource not yet available at HeinOnline";
+			item.complete();
+			return true;
+		}	
 	}
-
 	ZU.processDocuments([pdfPageURL], 
-		function(pdoc){
+		function(pdoc, purl){
 			var input = new Data(pdoc);
-			input.getval("handle");
-			input.getval("collection");
-			input.getval("section");
-			input.getval("id");
-			input.getval("print");
-			input.getval("nocover");
+			var startingID = input.getVal("id");
+			var endingID = input.getVal("toid", true);
+			input.getVal("handle");
+			input.getVal("collection");
+			input.getVal("section");
+			input.getVal("print");
 			var pdfURL = input.dump();
 			
+			if (item.pages && endingID && startingID) {
+				item.pages = item.pages + "-" 
+					+ (parseInt(item.pages) 
+					+  parseInt(endingID) 
+					-  parseInt(startingID));
+			}
+
 			item.attachments.push({
 				url:pdfURL,
 				title:"HeinOnline PDF",
@@ -98,15 +138,19 @@ function doWeb (doc, url) {
 			}
 			var urls = [];
 			for (var i in items) {
-				Zotero.debug(i);
 				urls.push(i);
 			}
+			listItems = items;
+			Zotero.debug("Process documents (1)");
 			ZU.processDocuments(urls, scrapePage);
 		});
 	} else {
-		scrapePage(doc);
+		listItems = null;
+		scrapePage(doc, url);
 	}
-}/** BEGIN TEST CASES **/
+}
+
+/** BEGIN TEST CASES **/
 var testCases = [
 	{
 		"type": "web",
