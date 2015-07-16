@@ -1150,6 +1150,9 @@ function doImport() {
 	// keep track of collections while we're looping through
 	var collections = new Array();
 	
+	// topics also
+	var topics = new Array();
+	
 	for (var i=0; i<nodes.length; i++) {
 		var node = nodes[i];
         // JURIS-M (start)
