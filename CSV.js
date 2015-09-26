@@ -13,7 +13,7 @@
 	"inRepository": true,
 	"translatorType": 2,
 	"browserSupport": "g",
-	"lastUpdated": "2015-04-23 21:28:32"
+	"lastUpdated": "2015-09-03 21:28:32"
 }
 
 /*
@@ -84,7 +84,7 @@ var creatorBaseTypes = {
 	artist: 'author',
 	sponsor: 'author',
 	contributor: 'author',
-	inventor: 'auhtor',
+	inventor: 'author',
 	cartographer: 'author',
 	performer: 'author',
 	presenter: 'author',
@@ -101,6 +101,7 @@ function doExport() {
 	writeColumnHeaders();
 	var item, line;
 	while (item = Zotero.nextItem()) {
+		if(item.itemType == "note" || item.itemType == "attachment") continue;
 		line = '';
 		for (var i=0; i<exportedFields.length; i++) {
 			line += (i ? fieldDelimiter : recordDelimiter)
