@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2016-03-13 21:15:23"
+	"lastUpdated": "2016-03-13 21:20:09"
 }
 
 urlRegExp = new RegExp("https?://old\\.shuukh\\.mn/(?:eruu|irgen|zahirgaa)(?:anhan|davah|hyanalt)/?(?:[0-9]+/)*(view|\\?)");
@@ -144,7 +144,7 @@ function scrape (doc, url) {
 	addToNote(doc, item, "Хэргийн индекс");
 	item.url = url.replace(/#$/, "");
 	addTag(doc, item, "Маргааны төрөл");
-	var block = getNode(doc, "Шийдвэрийн товч");
+	var block = getNode(doc, "товч");
 	if (block) {
 		var title = item.court 
 			+ ", " + item.callNumber + " " + item.docketNumber
