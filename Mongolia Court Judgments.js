@@ -2,17 +2,17 @@
 	"translatorID": "a41fc438-1644-4313-ad1e-0ed7d1977937",
 	"label": "Mongolia Court Judgments",
 	"creator": "Frank Bennett",
-	"target": "https?:\\/\\/old\\.shuukh\\.mn\\/zahirgaadavah\\/[0-9]+\\/view",
+	"target": "https?:\\/\\/old\\.shuukh\\.mn\\/(eruu|irgen|zahirgaa)(anhan|davah|hyanalt)\\/[0-9]+\\/view",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2016-03-12 05:02:30"
+	"lastUpdated": "2016-03-13 00:35:44"
 }
 
-urlRegExp = new RegExp("https?:\/\/old\.shuukh\.mn\/zahirgaadavah\/[0-9]+\/view")
+urlRegExp = new RegExp("https?:\/\/old\.shuukh\.mn\/(eruu|irgen|zahirgaa)(anhan|davah|hyanalt)\/[0-9]+\/view");
 
 
 function detectWeb(doc, url) {
@@ -23,25 +23,15 @@ function detectWeb(doc, url) {
 	return false;
 }
 
-var jurisdictionMap = {
-	"Захиргааны хэргийн давж заалдах шатны шүүх": "zakhirgaanii.khergiin.davj.zaaldakh.shatnii.shuukh"
-}
-
-function getJurisdiction(doc, label){
-	var labelVal = getValue(doc, label);
-	var ret = jurisdictionMap[labelVal];
-	if (!ret){
-		ret = labelVal;
-	}
-	return ret;
-}
-
 function getValue(doc, label){
-	var ret = ZU.xpathText(doc, '//th[text()="' + label + '"]/following-sibling::td');
-	if (ret) {
-		ret = ret.trim();
+	var ret = ZU.xpathText(doc, '//th[contains(text(),"' + label + '")]/following-sibling::td');
+	if (!ret) {
+		ret = ZU.xpathText(doc, '//th[contains(text(),"' + label.toLowerCase() + '")]/following-sibling::td');
 	}
-	return ret;
+	if (ret) {
+		ret = ret.replace(/\s+/g, " ").trim();
+	}
+	return ret ? ret : "";
 }
 
 function addJudges(doc, item, label){
@@ -73,26 +63,51 @@ function addTag(doc, item, label) {
 function addToNote(doc, item, label) {
 	var labelVal = getValue(doc, label);
 	if (item.extra) {
-		item.extra += ' / ' + labelVal;
+		item.extra += ', ' + labelVal;
 	} else {
 		item.extra = labelVal;
 	}
 }
 
+function shortenName(name) {
+	if (!name) return "";
+	if (name.indexOf("аймгийн") > -1) {
+		name = name.split(/[\-\s]+/);
+		for (var i=0,ilen=name.length;i<ilen;i++) {
+			if (name[i] === "аймгийн") {
+				name[i] = " ";
+			} else {
+				name[i] = name[i].slice(0, 1).toUpperCase();
+			}
+		}
+		name = name.join("");
+	}
+	return name;
+}
+
 function scrape (doc, url) {
 	var item = new Zotero.Item("case");
 	item.jurisdiction = 'mn';
-	addToNote(doc, item, "Шийдвэрийн төрөл");
-	addToNote(doc, item, "Хүчинтэй эсэх");
-	addToNote(doc, item, "Шийдсэн байдал");
-	item.date = getValue(doc, "Огноо");
-	item.callNumber = getValue(doc, "Дугаар");
-	item.docketNumber = getValue(doc, "Хэргийн индекс");
-	item.court = getValue(doc, "Шүүх");
 	addJudges(doc, item, "Шүүгч");
 	var plaintiff = getValue(doc, "Нэхэмжлэгч");
 	var defendant = getValue(doc, "Хариуцагч");
-	item.caseName = plaintiff + " v. " + defendant;
+	if (!defendant) {
+		defendant = getValue(doc, "Шүүгдэгч");
+	}
+	item.caseName = plaintiff + " э " + defendant;
+	var plaintiffShort = shortenName(plaintiff);
+	var defendantShort = shortenName(defendant);
+	if (plaintiff !== plaintiffShort || defendant !== defendantShort) {
+		item.shortName = plaintiffShort + " э " + defendantShort;
+	}
+	item.court = getValue(doc, "Шүүх");
+	item.docketNumber = getValue(doc, "Дугаар");
+	item.callNumber = getValue(doc, "байдал");
+	item.date = getValue(doc, "Огноо");
+	//addToNote(doc, item, "Шийдвэрийн төрөл");
+	addToNote(doc, item, "Хүчинтэй эсэх");
+	addToNote(doc, item, "Хэргийн индекс");
+	item.url = url.replace(/#$/, "");
 	addTag(doc, item, "Маргааны төрөл");
 	// Judgment type
 	item.complete();
