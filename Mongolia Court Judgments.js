@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2016-03-13 21:20:09"
+	"lastUpdated": "2016-03-14 05:23:44"
 }
 
 urlRegExp = new RegExp("https?://old\\.shuukh\\.mn/(?:eruu|irgen|zahirgaa)(?:anhan|davah|hyanalt)/?(?:[0-9]+/)*(view|\\?)");
@@ -50,10 +50,67 @@ function doWeb(doc,url) {
 	}
 }
 
-function getValue(doc, label){
-	var ret = ZU.xpathText(doc, '//th[contains(text(),"' + label + '")]/following-sibling::td');
+function combineNames(plaintiff, defendant, shorten) {
+	var ret = [];
+	if (shorten) {
+		plaintiff = shortenName(plaintiff);
+		defendant = shortenName(defendant);
+	}
+	if (plaintiff) {
+		ret.push(plaintiff);
+	}
+	if (defendant) {
+		ret.push(defendant)
+	}
+	return ret.join(" ба ");
+}
+
+function scrape (doc, url) {
+	var item = new Zotero.Item("case");
+	item.jurisdiction = 'mn';
+	addJudges(doc, item, "Шүүгч");
+	var plaintiff = getValue(doc, "Нэхэмжлэгч");
+	var defendant = getValue(doc, "Хариуцагч");
+	if (!defendant) {
+		defendant = getValue(doc, "Шүүгдэгч");
+	}
+	item.title = combineNames(plaintiff, defendant);
+	item.titleShort = combineNames(plaintiff, defendant, true);
+	item.court = getValue(doc, "Шүүх");
+	item.docketNumber = getValue(doc, "Дугаар");
+
+	item.callNumber = getValue(doc, "төрөл", true);
+	if (!item.callNumber && url.match(/eruu/))  {
+		item.callNumber = "шийдвэрийн төрөл";
+	}
+	item.date = getValue(doc, "Огноо");
+	//addToNote(doc, item, "Шийдвэрийн төрөл");
+	//addToNote(doc, item, "Хүчинтэй эсэх");
+	addToNote(doc, item, "байдал");
+	addToNote(doc, item, "Хэргийн индекс");
+	item.url = url.replace(/#$/, "");
+	var block = getNode(doc, "товч");
+	if (block) {
+		var title = item.court 
+			+ ", " + item.callNumber + " " + item.docketNumber
+			+ ", " + item.date
+		makeAttachment(doc, item, title, block);
+	}
+	item.complete();
+}
+
+function getValue(doc, label, firstNode){
+	if (firstNode) {
+		doc = ZU.xpath(doc, '//div[@id="shiidver-detail"]//tbody/tr[1]');
+	}
+	var ret = ZU.xpath(doc, './/th[contains(text(),"' + label + '")]/following-sibling::td');
 	if (!ret) {
-		ret = ZU.xpathText(doc, '//th[contains(text(),"' + label.toLowerCase() + '")]/following-sibling::td');
+		ret = ZU.xpath(doc, './/th[contains(text(),"' + label.toLowerCase() + '")]/following-sibling::td');
+	}
+	if (ret[0]) {
+		ret = ret[0].textContent;
+	} else {
+		ret = "";
 	}
 	if (ret) {
 		ret = ret.replace(/\s+/g, " ").trim();
@@ -118,40 +175,6 @@ function getNode(doc, label) {
 		ret = ZU.xpath(doc, '//th[contains(text(),"' + label.toLowerCase() + '")]/following-sibling::td');
 	}
 	return ret && ret.length ? ret[0] : false;
-}
-
-function scrape (doc, url) {
-	var item = new Zotero.Item("case");
-	item.jurisdiction = 'mn';
-	addJudges(doc, item, "Шүүгч");
-	var plaintiff = getValue(doc, "Нэхэмжлэгч");
-	var defendant = getValue(doc, "Хариуцагч");
-	if (!defendant) {
-		defendant = getValue(doc, "Шүүгдэгч");
-	}
-	item.caseName = plaintiff + " э " + defendant;
-	var plaintiffShort = shortenName(plaintiff);
-	var defendantShort = shortenName(defendant);
-	if (plaintiff !== plaintiffShort || defendant !== defendantShort) {
-		item.shortName = plaintiffShort + " э " + defendantShort;
-	}
-	item.court = getValue(doc, "Шүүх");
-	item.docketNumber = getValue(doc, "Дугаар");
-	item.callNumber = getValue(doc, "байдал");
-	item.date = getValue(doc, "Огноо");
-	//addToNote(doc, item, "Шийдвэрийн төрөл");
-	addToNote(doc, item, "Хүчинтэй эсэх");
-	addToNote(doc, item, "Хэргийн индекс");
-	item.url = url.replace(/#$/, "");
-	addTag(doc, item, "Маргааны төрөл");
-	var block = getNode(doc, "товч");
-	if (block) {
-		var title = item.court 
-			+ ", " + item.callNumber + " " + item.docketNumber
-			+ ", " + item.date
-		makeAttachment(doc, item, title, block);
-	}
-	item.complete();
 }
 
 function makeAttachment(doc, item, title, block){
