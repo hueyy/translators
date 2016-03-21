@@ -12,7 +12,7 @@
 	"lastUpdated": "2016-03-14 05:23:44"
 }
 
-urlRegExp = new RegExp("https?://(?:old|www|shine)old\\.shuukh\\.mn/(?:eruu|irgen|zahirgaa)(?:anhan|davah|hyanalt)/?(?:[0-9]+/)*(view|\\?)");
+urlRegExp = new RegExp("https?://(?:old|www|shine)\\.shuukh\\.mn/(?:eruu|irgen|zahirgaa)(?:anhan|davah|hyanalt)/?(?:[0-9]+/)*(view|\\?)");
 
 function detectWeb(doc, url) {
 	var m = urlRegExp.exec(url, urlRegExp);
