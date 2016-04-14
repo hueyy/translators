@@ -963,9 +963,12 @@ function importItem(newItem, node) {
 	newItem.archiveLocation = getFirstResults(node, [n.dc+"coverage", n.dc1_0+"coverage", n.dcterms+"coverage"], true);
 	
 	// abstract
-	newItem.abstractNote = getFirstResults(node, [n.eprints+"abstract", n.prism+"teaser", n.prism2_0+"teaser", n.prism2_1+"teaser", n.og+"description",
-		n.bibo+"abstract", n.dcterms+"abstract", n.dc+"description.abstract", n.dcterms+"description.abstract", n.dc1_0+"description"], true);
+	newItem.abstractNote = getFirstResults(node, [n.eprints+"abstract", n.prism+"teaser", n.prism2_0+"teaser", n.prism2_1+"teaser",
+		n.bibo+"abstract", n.dcterms+"abstract", n.dc+"description.abstract", n.dcterms+"description.abstract"], true);
 	
+	// extra
+	newItem.extra = getFirstResults(node, [n.dc+"description", n.dc1_0+"description", n.og+"description"], true);
+
 	// type
 	var type = getFirstResults(node, [n.dc+"type", n.dc1_0+"type", n.dcterms+"type"], true);
 	// these all mean the same thing
