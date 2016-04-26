@@ -117,6 +117,11 @@ function translatePage(ris, pdfURL) {
 function scrapePage(doc, url) {
 	var risPopupURL = getXPathStr("href", doc, '//form[@id="pagepicker"]//a[contains(@href, "PrintRequest")][1]');
 	var docParams = extractQueryValues(risPopupURL);
+	var selectedSectionURL = getXPathStr("href", doc, '//div[@id="contents-show"]//span[contains(@class,"sectionhighlight")]//a[contains(@class,"contents_page")]');
+	var selectedParams = extractQueryValues(selectedSectionURL);
+	if (selectedParams.id) {
+		docParams.id = selectedParams.id;
+	}
 	var risURL = docParams.base + "CitationFile?kind=ris&handle=" + docParams.handle + "&div=" + docParams.div + "&id=" + docParams.id + "&base=js";
 
 	var pdfPageURL = getXPathStr("href", doc, '//a[contains(@class, "updatediv")]');
