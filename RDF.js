@@ -1,18 +1,18 @@
 {
 	"translatorID": "5e3ad958-ac79-463d-812b-a86a9235c28f",
+	"translatorType": 1,
 	"label": "RDF",
 	"creator": "Simon Kornblith",
 	"target": "rdf",
 	"minVersion": "2.1.9",
 	"maxVersion": "",
 	"priority": 100,
+	"inRepository": true,
+	"browserSupport": "gcs",
 	"configOptions": {
 		"dataMode": "rdf/xml"
 	},
-	"inRepository": true,
-	"translatorType": 1,
-	"browserSupport": "gcs",
-	"lastUpdated": "2016-06-21 08:45:20"
+	"lastUpdated": "2016-08-06 08:20:12"
 }
 
 /*
@@ -77,14 +77,15 @@ var callNumberTypes = [n.dcterms+"LCC", n.dcterms+"DDC", n.dcterms+"UDC"];
 
 // gets the first result set for a property that can be encoded in multiple
 // ontologies
-function getFirstResults(node, properties, onlyOneString) {
+function getFirstResults(node, properties, onlyOneString, preserveObject) {
 	for(var i=0; i<properties.length; i++) {
-		var result = Zotero.RDF.getTargets(node, properties[i]);
+		var result = Zotero.RDF.getTargets(node, properties[i], preserveObject);
 		if(result) {
 			if(onlyOneString) {
 				// onlyOneString means we won't return nsIRDFResources, only
 				// actual literals
-				if(typeof(result[0]) != "object") {
+				if((!preserveObject && typeof(result[0]) != "object")
+					|| result[0].termType == 'literal') {
 					return result[0];
 				} else {
 					return Zotero.RDF.getResourceURI(result[0]);
@@ -99,52 +100,88 @@ function getFirstResults(node, properties, onlyOneString) {
 
 // adds creators to an item given a list of creator nodes
 /**TODO: PRISM 2.0 roles for DC creator/contributor*/
+// adds creators to an item given a list of creator nodes
+/**TODO: PRISM 2.0 roles for DC creator/contributor*/
 function handleCreators(newItem, creators, creatorType) {
-	if(!creators) {
+	if(!creators || !creators.length) {
 		return;
 	}
-	
-	if(typeof(creators[0]) != "string") {	// see if creators are in a container
+
+	var creatorSet = [];
+	var doInit = true;
+    var origcreators = creators;
+	if(typeof creators[0] !== "string") {
 		try {
 			var c = Zotero.RDF.getContainerElements(creators[0]);
 		} catch(e) {}
 		if(c && c.length) {
 			creators = c;
-	}
+		}
 	}
 	
-	if(typeof(creators[0]) == "string") {	// support creators encoded as strings
+	if(typeof(creators[0]) == "string" || creators[0].termType === 'literal') {	// support creators encoded as strings
+		var lastLang = creators[0].lang;
+		var creatorPos = -1;
 		for(var i in creators) {
-			if(typeof(creators[i]) != "object") {
-				// Use comma to split if present
-				if (creators[i].indexOf(',') !== -1) {
-					newItem.creators.push(Zotero.Utilities.cleanAuthor(creators[i], creatorType, true));
+			if(typeof creators[i] !== "object" || creators[i].termType === 'literal') {
+				if (creators[i].lang !== lastLang) {
+					var creatorPos = 0;
+					var doInit = false;
 				} else {
-					newItem.creators.push(Zotero.Utilities.cleanAuthor(creators[i], creatorType, false));
+					creatorPos++;
 				}
+				if (doInit) {
+					creatorSet.push({});
+				}
+				var newCreator = Zotero.Utilities.cleanAuthor(creators[i].toString(), creatorType, true);
+				if (!creatorSet[creatorPos]) {
+					creatorSet.push({});
+					Zotero.Utilities.setMultiCreator(newCreator, newCreator, null, creatorType);
+				}
+				Zotero.Utilities.setMultiCreator(creatorSet[creatorPos], newCreator, creators[i].lang, creatorType);
+				lastLang = creators[i].lang;
 			}
 		}
-	} else {								// also support foaf
+	} else {
+		// also support foaf
 		for(var i in creators) {
 			var type = Zotero.RDF.getTargets(creators[i], rdf+"type");
 			if(type) {
 				type = Zotero.RDF.getResourceURI(type[0]);
 				if(type == n.foaf+"Person") {	// author is FOAF type person
-					var creator = new Object();
-					creator.lastName = getFirstResults(creators[i],
+					var creator = {};
+					creator.multi = {};
+					creator.multi._key = {};
+					creator.multi._lst = [];
+					var lastName = getFirstResults(creators[i],
 						[n.foaf+"familyName", n.foaf+"lastName",
-						n.foaf+"surname", n.foaf+"family_name"], true); //unofficial
-					creator.firstName = getFirstResults(creators[i],
+						 n.foaf+"surname", n.foaf+"family_name"], false, true); //unofficial
+					var firstName = getFirstResults(creators[i],
 						[n.foaf+"givenName", n.foaf+"firstName",
-						n.foaf+"givenname"], true);	//unofficial
-				   	 if (!creator.firstName){
-						creator.fieldMode=1;
+						 n.foaf+"givenname"], false, true);	//unofficial
+					creator.lastName = lastName[0].toString();
+					if (firstName && firstName[0]) {
+						creator.firstName = firstName[0].toString();
 					}
 					creator.creatorType = creatorType;
+					for (var j = 1, jlen = lastName.length; j < jlen; j += 1) {
+						creator.multi._lst.push(lastName[j].lang);
+						var fn = false;
+						if (firstName && firstName[j]) {
+							fn = firstName[j].toString();
+						}
+						creator.multi._key[lastName[j].lang] = {
+							lastName: lastName[j].toString(),
+							firstName: fn
+						};
+					}
 					newItem.creators.push(creator);
 				}
 			}
 		}
+	}
+	for (var i = 0, ilen = creatorSet.length; i < ilen; i += 1) {
+		newItem.creators.push(creatorSet[i]);
 	}
 }
 
@@ -724,14 +761,28 @@ function detectType(newItem, node, ret) {
 	
 function importItem(newItem, node) {
 	var ret = new Object();
+    
+	function setMultiFields(fieldName, result) {
+		if (!result || !result.length) {
+			return;
+		}
+		newItem[fieldName] = result[0].toString();
+		for (var i = 1, ilen = result.length; i < ilen; i += 1) {
+			var lang = result[i].lang;
+			var val = result[i].toString();
+			Zotero.Utilities.setMultiField(newItem,fieldName,val,lang);
+		}
+	}
+    
 	var itemType = detectType(newItem, node, ret);
 	newItem.itemType = exports.itemType || itemType;
 	var container = ret.container;
 	var isPartOf = ret.isPartOf;
 
 	// title
-	newItem.title = getFirstResults(node, [n.dc+"title", n.dc1_0+"title", n.dcterms+"title",
-		n.eprints+"title", n.vcard2+"fn", n.og+"title"], true);
+	var result = getFirstResults(node, [n.dc+"title", n.dc1_0+"title", n.dcterms+"title",
+		n.eprints+"title", n.vcard2+"fn", n.og+"title"], false, true);
+	setMultiFields('title', result);
 	if(!newItem.itemType) {
 		if(!newItem.title) {	// require the title
 								// (if not a known type)
@@ -750,21 +801,21 @@ function importItem(newItem, node) {
 		if(creatorType == "author") {
 			creators = getFirstResults(node, [n.bib+"authors", n.dc+"creator", n.dc1_0+"creator",
 				n.dcterms+"creator", n.eprints+"creators_name",
-				n.dc+"contributor", n.dc1_0+"contributor", n.dcterms+"contributor"]);
+				n.dc+"contributor", n.dc1_0+"contributor", n.dcterms+"contributor"], false, true);
 		} else if(creatorType == "editor" || creatorType == "contributor") {
-			creators = getFirstResults(node, [n.bib+creatorType+"s", n.eprints+creatorType+"s_name"]);
+			creators = getFirstResults(node, [n.bib+creatorType+"s", n.eprints+creatorType+"s_name"], false, true);
 		//get presenters in unpublished conference papers on eprints
 		} else if(creatorType == "presenter") {
-			creators = getFirstResults(node, [n.z+creatorType+"s", n.eprints+"creators_name"]);
+			creators = getFirstResults(node, [n.z+creatorType+"s", n.eprints+"creators_name"], false, true);
 
 		} else if(creatorType == "castMember") {
-			creators = getFirstResults(node, [n.video+"actor"]);
+			creators = getFirstResults(node, [n.video+"actor"], false, true);
 
 		} else if(creatorType == "scriptwriter") {
-			creators = getFirstResults(node, [n.video+"writer"]);
+			creators = getFirstResults(node, [n.video+"writer"], false, true);
 
 		} else {
-			creators = getFirstResults(node, [n.z+creatorType+"s"]);
+			creators = getFirstResults(node, [n.z+creatorType+"s"], false, true);
 		}
 		
 		if(creators) handleCreators(newItem, creators, creatorType);
@@ -772,8 +823,9 @@ function importItem(newItem, node) {
 	
 	
 	// publicationTitle -- first try PRISM, then DC
-	newItem.publicationTitle = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.eprints+"book_title",
-		n.dc+"source", n.dc1_0+"source", n.dcterms+"source", n.og+"site_name"], true);
+	var result = getFirstResults(node, [n.prism+"publicationName", n.prism2_0+"publicationName", n.prism2_1+"publicationName", n.eprints+"publication", n.eprints+"book_title",
+		n.dc+"source", n.dc1_0+"source", n.dcterms+"source", n.og+"site_name"], false, true);
+	setMultiFields('publicationTitle', result);
 	
 
 	// rights
@@ -790,9 +842,11 @@ function importItem(newItem, node) {
 	
 	// publication
 	if(container) {
-		newItem.publicationTitle = getFirstResults(container, [n.dc+"title", n.dc1_0+"title", n.dcterms+"title"], true);
+		var result = getFirstResults(container, [n.dc+"title", n.dc1_0+"title", n.dcterms+"title"], false, true);
+	    setMultiFields('publicationTitle', result);
 		// these fields mean the same thing
-		newItem.reporter = newItem.publicationTitle;
+	    setMultiFields('reporter', result);
+		//newItem.reporter = newItem.publicationTitle;
 	}
 	
 	// series
@@ -850,7 +904,8 @@ function importItem(newItem, node) {
 	newItem.numberOfVolumes = getFirstResults(node, [n.bibo+"numVolumes"], true);
 
 	// short title
-	newItem.shortTitle = getFirstResults(node, [n.bibo+"shortTitle"], true);
+	var result = getFirstResults(node, [n.bibo+"shortTitle"], false, true);
+	setMultiFields('shortTitle', result);
 	
 	// mediums
 	newItem.artworkMedium = newItem.interviewMedium = getFirstResults(node, [n.dcterms+"medium"], true);
