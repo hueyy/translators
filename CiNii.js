@@ -305,6 +305,7 @@ var testCases = [
 		"items": [
 			{
 				"itemType": "journalArticle",
+				"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring",
 				"creators": [
 					{
 						"lastName": "岡田",
@@ -358,56 +359,25 @@ var testCases = [
 						"firstName": "兼一"
 					}
 				],
-				"notes": [],
-				"tags": [
-					"New"
-				],
-				"seeAlso": [],
-				"attachments": [],
-				"multi": {
-					"main": {},
-					"_lsts": {
-						"title": [
-							"en"
-						],
-						"publicationTitle": [
-							"en"
-						],
-						"publisher": [
-							"en"
-						]
-					},
-					"_keys": {
-						"title": {
-							"en": "GPU-Accelerated Pairwise Alignment for Genome Sequences"
-						},
-						"publicationTitle": {
-							"en": "IPSJ SIG technical reports"
-						},
-						"publisher": {
-							"en": "Information Processing Society of Japan (IPSJ)"
-						}
+				"date": "November 2002",
+				"DOI": "10.11188/seisankenkyu.54.384",
+				"ISSN": "0037105X",
+				"issue": "6",
+				"itemID": "110000244188",
+				"libraryCatalog": "CiNii",
+				"pages": "384-387",
+				"publicationTitle": "生産研究",
+				"url": "http://ci.nii.ac.jp/naid/110000244188/ja/",
+				"volume": "54",
+				"attachments": [
+					{
+						"title": "<研究速報>観測用既存鉄骨造モデル構造物を用いたオンライン応答実験=Pseudo-dynamic tests on existing steel model structure for seismic monitoring Snapshot",
+						"mimeType": "text/html"
 					}
-				},
-				"itemID": "http://ci.nii.ac.jp/naid/110008803112#article",
-				"title": "遺伝子配列に対するペアワイズアライメントのGPUによる高速化",
-				"publicationTitle": "情報処理学会研究報告. BIO, バイオ情報学",
-				"volume": "2012",
-				"issue": "7",
-				"number": "7",
-				"patentNumber": "7",
-				"pages": "1-2",
-				"ISSN": "09196072",
-				"publisher": "一般社団法人情報処理学会",
-				"institution": "一般社団法人情報処理学会",
-				"company": "一般社団法人情報処理学会",
-				"label": "一般社団法人情報処理学会",
-				"distributor": "一般社団法人情報処理学会",
-				"date": "2012-03-21",
-				"language": "ja",
-				"extra": "本稿では,GPU(Graphics Processing Unit)における高速なSmith-Waterman(SW)アルゴリズムの実装を示す.提案実装は1組の遺伝子配列に対するアライメントを高速に処理する.そのために,Striped SWアルゴリズムをタイリング技術とともにCUDA(Compute Unified Device Architecture)上に実装している.",
-				"checkFields": "title",
-				"libraryCatalog": "CiNii"
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
 			}
 		]
 	}
