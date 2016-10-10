@@ -409,9 +409,6 @@ record.prototype.translate = function(item) {
 						.replace(	//chop off any translations, since they may have repeated $e fields
 							new RegExp('\\' + subfieldDelimiter + 'd.+'), '');
 		title = this.extractSubfields(title, '200');
-
-        Zotero.debug("XXXX item.title=("+title.a+"/"+title.e+")");
-
 		item.title = glueTogether(title.a, title.e, ': ');
 		item.title = clean(item.title);
 

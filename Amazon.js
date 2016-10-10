@@ -351,7 +351,7 @@ function scrape(doc, url) {
 	
 	//we search for translators for a given ISBN
 	//and try to figure out the missing publication place
-	if(item.ISBN && !item.place && !isAsian) {
+	if(item.ISBN && !item.place) {
 		Z.debug("Searching for additional metadata by ISBN: " + item.ISBN);
 		var search = Zotero.loadTranslator("search");
 		search.setHandler("translators", function(obj, translators) {

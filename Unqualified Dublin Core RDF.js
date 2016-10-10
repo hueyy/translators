@@ -37,52 +37,24 @@ function doExport() {
 		
 		// title
 		if(item.title) {
-			// Covers only the one field, logic needs to be moved or encapsulated.
-
-			var value = item.title;
-			var fieldVariants = [{value: value}];
-			if (item.multi && item.multi._keys['title']) {
-				for each (var langTag in item.multi._lsts['title']) {
-					fieldVariants.push({value: item.multi._keys['title'][langTag], langTag: langTag});
-				}
-				for (var j in fieldVariants) {
-					value = fieldVariants[j].value;
-					var langTag = fieldVariants[j].langTag;
-					Zotero.RDF.addStatement(resource, dc+"title", value, true, langTag);
-				}
-			}
+			Zotero.RDF.addStatement(resource, dc+"title", item.title, true);
 		}
 		
 		// type
 		Zotero.RDF.addStatement(resource, dc+"type", item.itemType, true);
 		
 		// creators
-		var creatorsets = [];
 		for(var j in item.creators) {
-			creatorsets.push([]);
-			creatorsets[creatorsets.length - 1].push(item.creators[j]);
-			if (item.creators[j].multi) {
-				for each (var langTag in item.creators[j].multi._lst) {
-						var c = item.creators[j].multi._key[langTag];
-						c.servantLang = langTag;
-					creatorsets[creatorsets.length - 1].push(c);
-				}
+			// put creators in lastName, firstName format (although DC doesn't specify)
+			var creator = item.creators[j].lastName;
+			if(item.creators[j].firstName) {
+				creator += ", "+item.creators[j].firstName;
 			}
-		}
-		for(var j = 0, jlen = creatorsets.length; j < jlen; j += 1) {
-			for (var k = 0, klen = creatorsets[j].length; k < klen; k += 1) {
-				var creatordata = creatorsets[j][k];
-				// put creators in lastName, firstName format (although DC doesn't specify)
-				var creator = creatordata.lastName;
-				if(creatordata.firstName) {
-					creator += ", "+creatordata.firstName;
-				}
-				var lang = creatordata.servantLang;
-				if(creatordata.creatorType == "author") {
-					Zotero.RDF.addStatement(resource, dc+"creator", creator, true, lang);
-				} else {
-					Zotero.RDF.addStatement(resource, dc+"contributor", creator, true, lang);
-				}
+			
+			if(item.creators[j].creatorType == "author") {
+				Zotero.RDF.addStatement(resource, dc+"creator", creator, true);
+			} else {
+				Zotero.RDF.addStatement(resource, dc+"contributor", creator, true);
 			}
 		}
 		

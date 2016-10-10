@@ -12,7 +12,6 @@
 	"lastUpdated": "2014-09-11 06:28:15"
 }
 
-
 /**
 	Copyright (c) 2013 Sebastian Karcher
 	

@@ -1,4 +1,4 @@
-{
+	{
 	"translatorID": "2d174277-7651-458f-86dd-20e168d2f1f3",
 	"label": "Canadiana.ca",
 	"creator": "Adam Crymble, Sebastian Karcher",

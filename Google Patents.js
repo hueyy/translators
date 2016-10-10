@@ -36,9 +36,6 @@ function fixAuthorCase(name) {
 
 var scrapers = [
 	//U.S. (?) patent page. E.g. http://www.google.com/patents/US20090289560
-
-    // XXX Fix this for MLZ field assignments.
-
 	{
 		getBoxes: function(doc) {
 			return ZU.xpath(doc, '(//div[@class="patent_bibdata"]//*[./b]|//div[@class="patent_bibdata"][./b])');
@@ -338,7 +335,7 @@ function fixUrl(url) {
 
 function doWeb(doc, url) {
 	var host = 'http://' + doc.location.host + "/";
-	
+
 	if (detectWeb(doc, url) == "multiple") {
 		var res = getSearchResults(doc);
 		var items = {};
@@ -412,7 +409,7 @@ var testCases = [
 				"title": "Push-pin.",
 				"creators": [
 					{
-						"firstName": "Jonathan a.",
+						"firstName": "Jonathan A.",
 						"lastName": "Hunt",
 						"creatorType": "inventor"
 					}
