@@ -605,35 +605,9 @@ LiteralProperty.prototype.mapToItem = function(newItem, nodes) {
 		var statements = getStatementsByDefinition(this.mapping[1], node);
 		if(!statements) return false;
 		
-		var main = [];
-		var keylist = [];
-		var variants = {};
+		var content = [];
 		for (var i=0; i<statements.length; i++) {
-            var stmt = statements[i];
-			if (stmt[3]) {
-				if (!variants[stmt[3]]) {
-					keylist.push(stmt[3]);
-					variants[stmt[3]] = [];
-				}
- 				variants[stmt[3]].push(stmt[2].toString());
-			} else {
-				main.push(stmt[2].toString());
-			}
-		}
-		// Hacks to avoid replication of content in fields of the series family
-		// Only one per customer
-		if (main.length > 1) {
-			main = main[seriesFieldsDone.length];
-			seriesFieldsDone.push(this.field);
-		} else {
-			main = main[0];
-		}
-		for (var lang in variants) {
-			if (variants[lang].length > 1) {
-				variants[lang] = variants[lang][seriesFieldsDone.length];
-			} else {
-				variants[lang] = variants[lang][0];
-			}
+			content.push(statements[i][2].toString());
 		}
 		newItem[this.field] = content.join(",");
 	}
@@ -673,32 +647,18 @@ CreatorProperty = function(field) {
  */
 CreatorProperty.prototype.mapToCreator = function(creatorNode, zoteroType) {
 	//Zotero.debug("mapping "+Zotero.RDF.getResourceURI(creatorNode)+" to a creator");
-	var creator = {};
-	creator.multi = {};
-	creator.multi._lst = [];
-	creator.multi._key = {};
-	var variants = {};
-	var keylist = [];
-	var nameMap = {
-		surname:"lastName",
-		givenname:"firstName",
-		name:"lastName"
-	}
-    var partsList = ["surname", "givenname", "name"]
-	for (var i=0; i<partsList.length; i++) {
-        var part = partsList[i];
-		var nameStmts = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+part, null);
-		for (var j=0; j<nameStmts.length; j++) {
-            var stmt = nameStmts[j];
-			if (stmt[3]) {
-				if (!variants[stmt[3]]) {
-					keylist.push(stmt[3]);
-					variants[stmt[3]] = {};
-				}
- 				variants[stmt[3]][nameMap[part]] = stmt[2].toString();
-			} else {
-				creator[nameMap[part]] = stmt[2].toString();
-			}
+	var lastNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"surname", null);
+	if(lastNameStmt) {		// look for a person with a last name
+		creator = {lastName:lastNameStmt[0][2].toString()};
+		var firstNameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"givenname", null);
+		if(firstNameStmt) creator.firstName = firstNameStmt[0][2].toString();
+	} else {
+		var nameStmt = Zotero.RDF.getStatementsMatching(creatorNode, n.foaf+"name", null);
+		if(nameStmt) {		// an organization
+			creator = {lastName:nameStmt[0][2].toString(), fieldMode:1};
+		} else {			// an unnamed entity; ignore it
+			//Zotero.debug("Dropping unnamed creator "+creatorNode.toString());
+			return false;
 		}
 	}
 	
@@ -967,8 +927,7 @@ function doImport() {
 			var propertiesHandled = {};
 			var properties = Zotero.RDF.getArcsOut(nodes[i]);
 			for (var g=0; g<properties.length; g++) {
-                var property = properties[g];
-				// XXXXX Not getting volume etc. in properties for journalArticle type
+				var property = properties[g];
 				// only handle each property once
 				if(propertiesHandled[property]) continue;
 				propertiesHandled[property] = true;
@@ -1000,8 +959,8 @@ function doImport() {
 		}
 		
 		// handle function properties
-		for (var j=0; functionProperties.length; j++) {
-			functionProperties[j].mapToItem(newItem, nodes, seriesFieldsDone);
+		for (var j in functionProperties) {
+			functionProperties[j].mapToItem(newItem, nodes);
 		}
 		
 		// handle creators and tags
@@ -1082,117 +1041,6 @@ function doImport() {
 			}
 		}
 		
-		// Fix multilingual fields if necessary
-		for (var field in newItem.multi._keys) {
-			if (newItem[field]) {
-				for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
-					var lang = newItem.multi._lsts[field][i];
-					if (newItem[field] === newItem.multi._keys[field][lang]) {
-						// If there is a field value, look for a match, then give up
-						newItem.multi.main[field] = lang;
-						newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
-						delete newItem.multi._keys[field][lang];
-						break;
-					}
-				}
-			} else {
-				var itemLanguage;
-				if (newItem.language) {
-					// If there is none, but there is an item language, look for a match there
-					var itemLanguage = newItem.language.split(/[; ]+/)[0];
-					var itemLanguageLst = itemLanguage.split("-");
-					for (var i=0, ilen=newItem.multi._lsts[field].length; i<ilen; i += 1) {
-						var lang = newItem.multi._lsts[field][i];
-						var langLst = lang.split("-");
-						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
-							newItem[field] = newItem.multi._keys[field][lang];
-							newItem.multi.main[field] = lang;
-							newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(0, i).concat(newItem.multi._lsts[field].slice(i + 1));
-							delete newItem.multi._keys[field][lang];
-							break;
-						}
-					}
-				}
-				// If there is none and the above has failed, just take the first
-				if (!newItem[field]) {
-					var lang = newItem.multi._lsts[field][0];
-					newItem[field] = newItem.multi._keys[field][lang];
-					newItem.multi.main[field] = lang;
-					newItem.multi._lsts[field] = newItem.multi._lsts[field].slice(1);
-					delete newItem.multi._keys[field][lang];
-				}
-			}
-		}
-
-		// Fix multilingual creators if necessary
-		for (var j=0,jlen=newItem.creators.length; j<jlen;j += 1) {
-			var creator = newItem.creators[j];
-			if (creator.lastName) {
-				for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
-					var lang = creator.multi._lst[i];
-					if (creator.lastName === creator.multi._key[lang].lastName 
-						&& ((!creator.firstName && !creator.multi._key[lang].firstName)
-							|| creator.firstName === creator.firstName)) {
-
-						creator.multi.main = lang;
-						creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
-						delete creator.multi._key[lang];
-						break;
-					}
-				}
-			} else {
-				var itemLanguage;
-				if (creator.language) {
-					var itemLanguage = newItem.language.split(/[; ]+/)[0];
-					var itemLanguageLst = itemLanguage.split("-");
-					for (var i=0, ilen=creator.multi._lst.length; i<ilen; i += 1) {
-						var lang = creator.multi._lst[i];
-						var langLst = lang.split("-");
-						if (itemLanguageLst.slice(0, langLst.length).join("-") === lang) {
-							for (var key in creator.multi._key[lang]) {
-								creator[key] = creator.multi._key[lang][key];
-							}
-							creator.multi.main = lang;
-							creator.multi._lst = creator.multi._lst.slice(0, i).concat(creator.multi._lst.slice(i + 1));
-							delete creator.multi._key[lang];
-							break;
-						}
-					}
-				}
-				if (!creator.lastName) {
-					var lang = creator.multi._lst[0];
-					for (var key in creator.multi._key[lang]) {
-						creator[key] = creator.multi._key[lang][key];
-					}
-					creator = creator.multi._key[lang];
-					creator.multi.main = lang;
-					creator.multi._lst = creator.multi._lst.slice(1);
-					delete creator.multi._key[lang];
-				}
-			}
-			// Add attachments
-			// The kindest thing than can be said about this is that it works.
-			var linkStmts = Zotero.RDF.getStatementsMatching(nodes[ITEM], n.link+"link", null);
-			for (var k=0; k<linkStmts.length; k++) {
-                var linkStmt = linkStmts[k];
-				var linkURI = Zotero.RDF.getResourceURI(linkStmt[2]);
-				var attachmentStmts = Zotero.RDF.getStatementsMatching(linkURI, n.rdf+"type", n.z+"Attachment");
-				if (attachmentStmts) {
-					var attachmentNode = attachmentStmts[0][0];
-					var attachment = {};
-					for each(var m=0; m<ATTACHMENT_FIELDS; m++) {
-                        var key = ATTACHMENT_FIELDS[m];
-						var field = FIELDS[key];
-						var stmt = Zotero.RDF.getStatementsMatching(attachmentNode, field[1], null, true);
-						if (stmt) {
-							attachment[key] = stmt[0][2];
-						}
-					}
-					newItem.attachments.push(attachment);
-				}
-			}
-		}
-		// Push to an array of items instead, so attachments can be added.
 		newItem.complete();
 	}
 }
@@ -1229,25 +1077,6 @@ function doExport() {
 			property.mapFromItem(item, nodes);
 		}
 		//Zotero.debug("fields added");
-		for (var i=0; item.attachments.length; i++) {
-            var attachment = itemlattachments[i];
-			var attachmentNode = "#item_"+attachment.itemID;
-			Zotero.RDF.addStatement(attachmentNode, RDF_TYPE, n.z+"Attachment", false);
-			// Only attached files export correctly at the moment.
-			if (attachment.defaultPath) {
-				Zotero.RDF.addStatement(attachmentNode, n.rdf+"resource", attachment.defaultPath, true);
-				if (attachment.saveFile) {
-					attachment.saveFile(attachment.defaultPath, true);
-				}
-			}
-			if (attachment.title) {
-				Zotero.RDF.addStatement(attachmentNode, n.dcterms+"title", attachment.title, true);
-			}
-			if (attachment.mimeType) {
-				Zotero.RDF.addStatement(attachmentNode, n.link+"type", attachment.mimeType, true);
-			}
-			Zotero.RDF.addStatement(nodes[ITEM], n.link+"link", attachmentNode);
-		}
 		
 		// add creators
 		var creatorLists = [];
