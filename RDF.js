@@ -101,6 +101,90 @@ function getFirstResults(node, properties, onlyOneString, preserveObject) {
 	return;	// return undefined on failure
 }
 
+/**
+ * Sets a multilingual field value
+ * Used in translators.
+ *
+ * @param {Object} obj Item object
+ * @param {String} field Field name
+ * @param {String} val Field value
+ * @param {String} languageTag RFC 5646 language tag
+ */
+function setMultiField (obj, field, val, languageTag, defaultLanguage) {
+	// Validate parameters
+	if ("string" !== typeof val) {
+		throw "Invalid value for multilingual field";
+	}
+	if (!field) {
+		throw "No field value given to setMultiField";
+	}
+	// Initialize if required
+	if (languageTag) {
+		if (!obj.multi) {
+			obj.multi = {};
+		}
+		if (!obj.multi.main) {
+			obj.multi.main = {};
+		}
+		if (!obj.multi._keys) {
+			obj.multi._keys = {};
+		}
+	}
+	// Set field value
+	if (!obj[field]) {
+		obj[field] = val;
+		if (languageTag && languageTag !== defaultLanguage) {
+			obj.multi.main[field] = languageTag;
+		}
+	} else if (languageTag) {
+		if (!obj.multi._keys[field]) {
+			obj.multi._keys[field] = {};
+		}
+		obj.multi._keys[field][languageTag] = val;
+	}
+}
+
+/**
+ * Sets a multilingual creator
+ * Used in translators.
+ *
+ * @param {Object} obj Parent creator object (may be empty)
+ * @param {String} child Child creator object to be added
+ * @param {String} languageTag RFC 5646 language tag
+ */
+function setMultiCreator (obj, child, languageTag, creatorType, defaultLanguage) {
+	// Validate parameters
+	if ("object" !== typeof obj) {
+		throw "Multilingual creator parent must be an object";
+	}
+	if ("object" !== typeof child) {
+		throw "Multilingual creator child must be an object";
+	}
+	if (obj.itemID) {
+		throw "Must give creator as multilingual creator parent, not item";
+	}
+	// Initialize if required
+	if (languageTag) {
+		if (!obj.multi) {
+			obj.multi = {};
+		}
+		if (!obj.multi._key) {
+			obj.multi._key = {};
+		}
+	}
+	// Set field value
+	if (!obj.lastName) {
+		obj.lastName = child.lastName;
+		obj.firstName = child.firstName;
+		obj.creatorType = creatorType;
+		if (languageTag && languageTag !== defaultLanguage) {
+			obj.multi.main = languageTag;
+		}
+	} else  if (languageTag) {
+		obj.multi._key[languageTag] = child;
+	}
+}
+
 // adds creators to an item given a list of creator nodes
 /**TODO: PRISM 2.0 roles for DC creator/contributor*/
 // adds creators to an item given a list of creator nodes
@@ -139,9 +223,9 @@ function handleCreators(newItem, creators, creatorType) {
 				var newCreator = Zotero.Utilities.cleanAuthor(creators[i].toString(), creatorType, true);
 				if (!creatorSet[creatorPos]) {
 					creatorSet.push({});
-					Zotero.Utilities.setMultiCreator(newCreator, newCreator, null, creatorType);
+					setMultiCreator(newCreator, newCreator, null, creatorType);
 				}
-				Zotero.Utilities.setMultiCreator(creatorSet[creatorPos], newCreator, creators[i].lang, creatorType);
+				setMultiCreator(creatorSet[creatorPos], newCreator, creators[i].lang, creatorType);
 				lastLang = creators[i].lang;
 			}
 		}
@@ -772,7 +856,7 @@ function importItem(newItem, node) {
 		for (var i = 1, ilen = result.length; i < ilen; i += 1) {
 			var lang = result[i].lang;
 			var val = result[i].toString();
-			Zotero.Utilities.setMultiField(newItem,fieldName,val,lang);
+			setMultiField(newItem,fieldName,val,lang);
 		}
 	}
     
