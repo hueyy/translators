@@ -33,6 +33,24 @@
 	
 	***** END LICENSE BLOCK *****
 */
+
+var composeAttachment;
+var composeRisUrl;
+var composeRisPostData;
+
+// http://go.galegroup.com/ps/retrieve.do?tabID=T002&resultListType=RESULT_LIST&searchResultsType=SingleTab&searchType=BasicSearchForm&currentPosition=1&docId=GALE%7CA317467679&docType=Article&sort=Relevance&contentSegment=&prodId=LT&contentSet=GALE%7CA317467679&searchId=R1&userGroupName=ko_k12hs_d41&inPS=true
+
+// http://go.galegroup.com/ps/citationtools/rest/cite/download
+// "citationFormat=RIS&documentData=%7B%22docId%22%3A%22GALE%7C" + docID + "%22%2C%22documentUrl%22%3A%22http%3A%2F%2Fgo.galegroup.com%2Fps%2Fi.do%3Fp%3DLT%26sw%3Dw%26u%3Dko_k12hs_d41%26v%3D2.1%26it%3Dr%26id%3DGALE%257CA317467679%26asid%3D08c9a2eb36396058fd1ae30971c5374f%22%2C%22productName%22%3A%22LegalTrac%22%7D
+
+// (1) Find id="citationToolsRisDownload" in page
+// (2) get form action attribute
+// (3) get name citationFormat value (RIS)
+// (4) get name documentData value (serialized JSON)
+// (5) compose for submission without change (encodeURIComponent(thing))
+// data = "citationFormat=RIS&documentData=" + encodeURIComponent(documentData);
+
+
 function getSearchResults(doc) {
 	//Gale Virtual Reference Library
 	var results = ZU.xpath(doc, '//*[@id="SearchResults"]//section[@class="resultsBody"]/ul/li');
@@ -41,6 +59,7 @@ function getSearchResults(doc) {
 		Z.debug("Using GVRL");
 		composeAttachment = composeAttachmentGVRL;
 		composeRisUrl = composeRisUrlGVRL;
+		composeRisPostData = false;
 		return results;
 	}
 	
@@ -52,16 +71,18 @@ function getSearchResults(doc) {
 		Z.debug("Academic, but using GVRL");
 		composeAttachment = composeAttachmentGVRL;
 		composeRisUrl = composeRisUrlGVRL;
+		composeRisPostData = false;
 		return results;
 	}
 	
 	//LegalTrac
-	results = ZU.xpath(doc, '//*[@id="sr_ul"]/li');
+	results = ZU.xpath(doc, '//li[contains(@data-id, "GALE|")]');
 	if(results.length) {
 		results.linkXPath = './/span[@class="title"]/a';
 		Z.debug("LegalTrac, but using GVRL");
 		composeAttachment = composeAttachmentGVRL;
-		composeRisUrl = composeRisUrlGVRL;
+		composeRisUrl = composeRisUrlLT;
+		composeRisPostData = composeRisPostDataLT;
 		return results;
 	}
 	
@@ -72,6 +93,7 @@ function getSearchResults(doc) {
 		Z.debug("LRC, but using GVRL");
 		composeAttachment = composeAttachmentGVRL;
 		composeRisUrl = composeRisUrlGVRL;
+		composeRisPostData = false;
 		return results;
 	}
 	
@@ -131,8 +153,6 @@ function detectWeb(doc, url) {
 	if(getSearchResults(doc).length) return "multiple";
 }
 
-var composeRisUrl;
-
 function composeRisUrlGNV(url) {
 	return url.replace(/#.*/,'').replace(/\/[^\/?]+(?=\?|$)/, '/centralizedGenerateCitation.do')
 		.replace(/\bactionString=[^&]*&?/g, '').replace(/\bcitationFormat=[^&]*&?/g, '')
@@ -156,7 +176,23 @@ function composeRisUrlTDA(url) {
 		+ '&actionString=FormatCitation&citationFormat=ENDNOTE';
 }
 
-var composeAttachment;
+function composeRisUrlLT() {
+	return "http://go.galegroup.com/ps/citationtools/rest/cite/download";
+}
+
+function composeRisPostDataLT(doc) {
+	var documentData = "";
+	var results = ZU.xpath(doc, '//input[@id="primaryDocId"]');
+	if(results.length) {
+		var documentData = {
+			docId: results[0].getAttribute("data-docid"),
+			documentUrl: results[0].getAttribute("data-url"),
+			productName: "LegalTrac"
+		}
+		return "citationFormat=RIS&documentData=" + encodeURIComponent(JSON.stringify(documentData));
+	}
+	return false;
+}
 
 function composeAttachmentGVRL(doc, url) {
 	var pdf = !!(doc.getElementById('pdfLink') || doc.getElementById('docTools-pdf'));
@@ -227,11 +263,18 @@ function processArticles(articles) {
 }
 
 function processPage(doc, url) {
-	var attachment = composeAttachment(doc, url);
 	Z.debug(composeRisUrl(url))
-	ZU.doGet(composeRisUrl(url), function(text) {
-		parseRis(text, attachment);
-	});
+	if (composeRisPostData) {
+		var data = composeRisPostData(doc);
+		ZU.doPost(composeRisUrl(url), data, function(text){
+			parseRis(text, false);
+		});
+	} else {
+		var attachment = composeAttachment(doc, url);
+		ZU.doGet(composeRisUrl(url), function(text) {
+			parseRis(text, attachment);
+		});
+	}
 }
 
 function doWeb(doc, url) {
@@ -255,18 +298,26 @@ function doWeb(doc, url) {
 			processArticles(articles);
 		});
 	} else {
-		if(doc.title.indexOf('NewsVault') != -1) {
+		if (doc.title.match(/^LegalTrac/)) {
+			Z.debug("Using GLT");
+			composeAttachment = function(){};
+			composeRisUrl = composeRisUrlLT;
+			composeRisPostData = composeRisPostDataLT;
+		} else if(doc.title.indexOf('NewsVault') != -1) {
 			Z.debug("Using GNV");
 			composeAttachment = composeAttachmentGNV;
 			composeRisUrl = composeRisUrlGNV;
+			composeRisPostData = false;
 		} else if(doc.title.indexOf('The Times Digital Archive') != -1) {
 			Z.debug("Using TDA");
 			composeAttachment = composeAttachmentTDA;
 			composeRisUrl = composeRisUrlTDA;
+			composeRisPostData = false;
 		} else {
 			Z.debug("Using GVRL");
 			composeAttachment = composeAttachmentGVRL;
 			composeRisUrl = composeRisUrlGVRL;
+			composeRisPostData = false;
 		}
 		
 		processPage(doc, url);
