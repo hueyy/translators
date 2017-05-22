@@ -3,7 +3,7 @@
 	"translatorType": 4,
 	"label": "BAILII",
 	"creator": "Bill McKinney",
-	"target": "^https?:\\/\\/www\\.bailii\\.org(?:\\/cgi\\-bin\\/markup\\.cgi\\?doc\\=)?\\/\\w+\\/cases\\/.+",
+	"target": "^https?://www\\.bailii\\.org(/cgi\\-bin/markup\\.cgi\\?doc\\=)?/\\w+/cases/.+",
 	"minVersion": "1.0.0b4.r1",
 	"maxVersion": "",
 	"priority": 100,
