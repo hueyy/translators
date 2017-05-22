@@ -8,7 +8,7 @@
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
-	"browserSupport": "gcsib",
+	"browserSupport": "gcsibv",
 	"lastUpdated": "2014-05-05 15:58:26"
 }
 
@@ -232,7 +232,7 @@ function doWeb(doc, url) {
 		}
 		Zotero.selectItems(items, function (items) {
 			if (!items) {
-				return true
+				return true;
 			}
 			for (var i in items) {
 				arts.push(i);
@@ -245,11 +245,10 @@ function doWeb(doc, url) {
 	} else {
 		scrape(doc, url);
 	}
-	return true;
 }
 
 function scrape(doc, url) {
-	url = url.replace(/\/$/,"").replace(/\/(en|ja)$/,"") + '/rdf';
+	url = url.replace(/\?.*/, "").replace(/\/$/,"").replace(/\/(?:en|ja)/,"") + '.rdf';
 	Zotero.Utilities.HTTP.doGet(url, function (rdfStr) {
 		var rdftrans = Zotero.loadTranslator("import");
 		rdftrans.setTranslator("5e3ad958-ac79-463d-812b-a86a9235c28f");
