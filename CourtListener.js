@@ -512,13 +512,13 @@ var proc = {
 		                item.volume = citeSplit[0];
 		                item.reporter = citeSplit.slice(1, -1).join(" ");
 		                item.pages = citeSplit[citeSplit.length-1];
-		                item.date = obj.date_filed;
 		                firstCite = false;
 		            } else {
 		                extras.push(obj[citeTypes[i]]);
 		            }
 	            }
 	        }
+		    item.date = obj.date_filed;
 	        if (extras.length) {
 	            item.extra = "Other cites: " + extras.join("; ")
 	        }
