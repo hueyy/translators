@@ -32,751 +32,166 @@
 */
 
 
-/**
- * Flatten a nested array; e.g., [[1], [2,3]] -> [1,2,3]
- */
-function flatten(a) {
-    var retval = new Array();
-    for (var i in a) {
-        var entry = a[i];
-        if (entry instanceof Array) {
-            retval = retval.concat(flatten(entry));
-        } else {
-            retval.push(entry);
-        }
-    }
-    return retval;
+var sessionMap = {
+    "1": "1790",
+    "2": "1792",
+    "3": "1794",
+    "4": "1796",
+    "5": "1798",
+    "6": "1800",
+    "7": "1802",
+    "8": "1804",
+    "9": "1806",
+    "10": "1808",
+    "11": "1810",
+    "12": "1812",
+    "13": "1814",
+    "14": "1816",
+    "15": "1818",
+    "16": "1820",
+    "17": "1822",
+    "18": "1824",
+    "19": "1826",
+    "20": "1828",
+    "21": "1830",
+    "22": "1832",
+    "23": "1834",
+    "24": "1836",
+    "25": "1838",
+    "26": "1840",
+    "27": "1842",
+    "28": "1844",
+    "29": "1846",
+    "30": "1848",
+    "31": "1850",
+    "32": "1852",
+    "33": "1854",
+    "34": "1856",
+    "35": "1858",
+    "36": "1860",
+    "37": "1862",
+    "38": "1864",
+    "39": "1866",
+    "40": "1868",
+    "41": "1870",
+    "42": "1872",
+    "43": "1874",
+    "44": "1876",
+    "45": "1878",
+    "46": "1880",
+    "47": "1882",
+    "48": "1884",
+    "49": "1886",
+    "50": "1888",
+    "51": "1890",
+    "52": "1892",
+    "53": "1894",
+    "54": "1896",
+    "55": "1898",
+    "56": "1900",
+    "57": "1902",
+    "58": "1904",
+    "59": "1906",
+    "60": "1908",
+    "61": "1910",
+    "62": "1912",
+    "63": "1914",
+    "64": "1916",
+    "65": "1918",
+    "66": "1920",
+    "67": "1922",
+    "68": "1924",
+    "69": "1926",
+    "70": "1928",
+    "71": "1930",
+    "72": "1932",
+    "73": "1934"
 }
 
-var FW = {
-    _scrapers : new Array()
-};
-
-FW._Base = function () {
-    this.callHook = function (hookName, item, doc, url) {
-        if (typeof this['hooks'] === 'object') {
-            var hook = this['hooks'][hookName];
-            if (typeof hook === 'function') {
-                hook(item, doc, url);
-            }
-        }
-    };
-
-    this.evaluateThing = function(val, doc, url) {
-        var valtype = typeof val;
-        if (valtype === 'object') {
-            if (val instanceof Array) {
-                /* map over each array val */
-                /* this.evaluate gets out of scope */
-                var parentEval = this.evaluateThing;
-                var retval = val.map ( function(i) { return parentEval (i, doc, url); } );
-                return flatten(retval);
-            } else {
-                return val.evaluate(doc, url);
-            }
-        } else if (valtype === 'function') {
-            return val(doc, url);
-        } else {
-            return val;
-        }
-    };
-
-    /*
-     * makeItems is the function that does the work of making an item.
-     * doc: the doc tree for the item
-     * url: the url for the item
-     * attachments ...
-     * eachItem: a function to be called for each item made, with the arguments (doc, url, ...)
-     * ret: the function to call when you are done, with no args
-     */
-    this.makeItems = function (doc, url, attachments, eachItem, ret) {
-        ret();
-    }
-
-};
-
-FW.Scraper = function (init) { 
-    FW._scrapers.push(new FW._Scraper(init));
-};
-
-FW._Scraper = function (init) {
-    for (x in init) {
-        this[x] = init[x];
-    }
-
-    this._singleFieldNames = [
-        "abstractNote",
-        "applicationNumber",
-        "archive",
-        "archiveLocation",
-        "artworkMedium",
-        "artworkSize",
-        "assignee",
-        "audioFileType",
-        "audioRecordingType",
-        "billNumber",
-        "blogTitle",
-        "bookTitle",
-        "callNumber",
-        "caseName",
-        "code",
-        "codeNumber",
-        "codePages",
-        "codeVolume",
-        "committee",
-        "company",
-        "conferenceName",
-        "country",
-        "court",
-        "date",
-        "dateDecided",
-        "dateEnacted",
-        "dictionaryTitle",
-        "distributor",
-        "docketNumber",
-        "documentNumber",
-        "DOI",
-        "edition",
-        "encyclopediaTitle",
-        "episodeNumber",
-        "extra",
-        "filingDate",
-        "firstPage",
-        "forumTitle",
-        "genre",
-        "history",
-        "institution",
-        "interviewMedium",
-        "ISBN",
-        "ISSN",
-        "issue",
-        "issueDate",
-        "issuingAuthority",
-        "journalAbbreviation",
-        "label",
-        "language",
-        "legalStatus",
-        "legislativeBody",
-        "letterType",
-        "libraryCatalog",
-        "manuscriptType",
-        "mapType",
-        "medium",
-        "meetingName",
-        "nameOfAct",
-        "network",
-        "number",
-        "numberOfVolumes",
-        "numPages",
-        "pages",
-        "patentNumber",
-        "place",
-        "postType",
-        "presentationType",
-        "priorityNumbers",
-        "proceedingsTitle",
-        "programTitle",
-        "programmingLanguage",
-        "publicLawNumber",
-        "publicationTitle",
-        "publisher",
-        "references",
-        "reportNumber",
-        "reportType",
-        "reporter",
-        "reporterVolume",
-        "rights",
-        "runningTime",
-        "scale",
-        "section",
-        "series",
-        "seriesNumber",
-        "seriesText",
-        "seriesTitle",
-        "session",
-        "shortTitle",
-        "studio",
-        "subject",
-        "system",
-        "thesisType",
-        "title",
-        "type",
-        "university",
-        "url",
-        "version",
-        "videoRecordingType",
-        "volume",
-        "websiteTitle",
-        "websiteType",
-        "jurisdiction",
-        "assemblyNumber",
-        "resolutionLabel",
-        "sessionType",
-        "newsCaseDate",
-        "priorityDate",
-        "yearAsVolume",
-        "publicationDate",
-        "reign",
-        "regnalYear",
-        "supplementName",
-        "originalDate",
-        "album",
-        "opus",
-        "meetingNumber",
-        "committeeFullname",
-        "signingDate",
-        "openingDate",
-        "adoptionDate",
-        "release",
-        "regulationType",
-        "regulatoryBody"
- ];
+function addAttachment(doc, rawCite, block, item) {
+    // head element
+    var head = doc.createElement("head");
+    var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}pre.inline{white-space:pre;display:inline;}span.citation{white-space:pre;}";
     
-    this._makeAttachments = function(doc, url, config, item) {
-        if (config instanceof Array) {
-            config.forEach(function (child) { this._makeAttachments(doc, url, child, item); }, this);
-        } else if (typeof config === 'object') {
+    head.innerHTML = '<title>' + rawCite + '</title>';
+    head.innerHTML += '<style type="text/css">' + css + '</style>'; 
+    
+    var newDoc = ZU.composeDoc(doc, head, block);
+    item.attachments.push({
+	title: "Cornell LII US Code attachment",
+	document: newDoc,
+	mimeType: "text/html",
+	snapshot: true
+    });
+}
 
-            // FB: added document element
 
-            /* plural or singual */
-            var urlsFilter = config["urls"] || config["url"];
-            var typesFilter = config["types"] || config["type"];
-            var titlesFilter = config["titles"] || config["title"];
-            var snapshotsFilter = config["snapshots"] || config["snapshot"];
-            var documentsFilter = config["documents"] || config["document"];
-
-            var attachUrls = this.evaluateThing(urlsFilter, doc, url);
-            var attachTitles = this.evaluateThing(titlesFilter, doc, url);
-            var attachTypes = this.evaluateThing(typesFilter, doc, url);
-            var attachSnapshots = this.evaluateThing(snapshotsFilter, doc, url);
-            var attachDocuments = this.evaluateThing(documentsFilter, doc, url);
-
-            if (!(attachUrls instanceof Array)) {
-                attachUrls = [attachUrls];
-            }
-            for (var k in attachUrls) {
-                var attachUrl = attachUrls[k];
-                var attachType;
-                var attachTitle;
-                var attachSnapshot;
-                if (attachTypes instanceof Array) { attachType = attachTypes[k]; }
-                else { attachType = attachTypes; }
-
-                if (attachTitles instanceof Array) { attachTitle = attachTitles[k]; }
-                else { attachTitle = attachTitles; }
-
-                if (attachSnapshots instanceof Array) { attachSnapshot = attachSnapshots[k]; }
-                else { attachSnapshot = attachSnapshots; }
-
-                if (attachDocuments instanceof Array) { attachDocument = attachDocuments[k]; }
-                else { attachDocument = attachDocuments; }
-
-                if (attachDocument) {
-                    item["attachments"].push({ title    : attachTitle,
-                                               document : attachDocument,
-                                               snapshot : attachSnapshot });
-                } else {
-                    item["attachments"].push({ url      : attachUrl,
-                                               title    : attachTitle,
-                                               type     : attachType,
-                                               snapshot : attachSnapshot });
-                }
-            }
-        }
-    };
-
-    this.makeItems = function (doc, url, ignore, eachItem, ret) {
-        var item = new Zotero.Item(this.itemType);
-        item.url = url;
-        for (var i in this._singleFieldNames) {
-            var field = this._singleFieldNames[i];
-            if (this[field]) {
-                var fieldVal = this.evaluateThing(this[field], doc, url);
-                if (fieldVal instanceof Array) {
-                    item[field] = fieldVal[0];
-                } else {
-                    item[field] = fieldVal;
-                }
-            }
-        }
-        var multiFields = ["creators", "tags"];
-        for (var j in multiFields) {
-            var key = multiFields[j];
-            var val = this.evaluateThing(this[key], doc, url);
-            if (val) {
-                for (var k in val) {
-                    item[key].push(val[k]);
-                }
-            }
-        }
-        this._makeAttachments(doc, url, this["attachments"], item);
-        eachItem(item, this, doc, url);
-        ret();
-    };
-};
-
-FW._Scraper.prototype = new FW._Base;
-
-FW.MultiScraper = function (init) { 
-    FW._scrapers.push(new FW._MultiScraper(init));
-};
-
-FW._MultiScraper = function (init) {
-    for (x in init) {
-        this[x] = init[x];
+function detectWeb(doc, url) {
+    var codeBlock = ZU.xpath(doc, "//div[@id='block-uscode-text']//div[contains(@class, 'section')]");
+    if (codeBlock.length > 0) {
+	return 'statute';
+    } else {
+	return false;
     }
+}
 
-    this._mkSelectItems = function(titles, urls) {
-        var items = new Object;
-        for (var i in titles) {
-            items[urls[i]] = titles[i];
-        }
-        return items;
-    };
 
-    this._selectItems = function(titles, urls, callback) {
-        var items = new Array();
-	Zotero.selectItems(this._mkSelectItems(titles, urls), function (chosen) {
-	    for (var j in chosen) {
-		items.push(j);
-	    }
-	    callback(items);
-	});
-    };
+function scrape(doc, url) {
+}
 
-    this._mkAttachments = function(doc, url, urls) {
-        var attachmentsArray = this.evaluateThing(this['attachments'], doc, url);
-        var attachmentsDict = new Object();
-        if (attachmentsArray) {
-            for (var i in urls) {
-                attachmentsDict[urls[i]] = attachmentsArray[i];
-            }
-        }
-        return attachmentsDict;
-    };
-
-    /* This logic is very similar to that used by _makeAttachments in
-     * a normal scraper, but abstracting it out would not achieve much
-     * and would complicate it. */
-    this._makeChoices = function(config, doc, url, choiceTitles, choiceUrls) {
-        if (config instanceof Array) {
-            config.forEach(function (child) { this._makeTitlesUrls(child, doc, url, choiceTitles, choiceUrls); }, this);
-        } else if (typeof config === 'object') {
-            /* plural or singual */
-            var urlsFilter = config["urls"] || config["url"];
-            var titlesFilter = config["titles"] || config["title"];
-
-            var urls = this.evaluateThing(urlsFilter, doc, url);
-            var titles = this.evaluateThing(titlesFilter, doc, url);
-
-            var titlesIsArray = (titles instanceof Array);
-            if (!(urls instanceof Array)) {
-                urls = [urls];
-            }
-            for (var k in urls) {
-                var myUrl = urls[k];
-                var myTitle;
-                if (titlesIsArray) { myTitle = titles[k]; }
-                else { myTitle = titles; }
-                choiceUrls.push(myUrl);
-                choiceTitles.push(myTitle);
-            }
-        }
-    };
-
-    this.makeItems = function(doc, url, ignore, eachItem, ret) {
-        if (this.beforeFilter) {
-            var newurl = this.beforeFilter(doc, url);
-            if (newurl != url) {
-                this.makeItems(doc, newurl, ignore, eachItem, ret);
-                return;
-            }
-        }
-        var titles = [];
-        var urls = [];
-        this._makeChoices(this["choices"], doc, url, titles, urls);
-        var attachments = this._mkAttachments(doc, url, urls);
-        
-	var parentItemTrans = this.itemTrans;
-	this._selectItems(titles, urls, function (itemsToUse) {
-	    if(!itemsToUse) {
-		ret();
-	    } else {
-	        var cb = function (doc1) {
-		        var url1 = doc1.documentURI;
-		        var itemTrans = parentItemTrans;
-		        if (itemTrans === undefined) {
-			        itemTrans = FW.getScraper(doc1, url1);
-		        }
-		        if (itemTrans === undefined) {
-			/* nothing to do */
-		        } else {
-			        itemTrans.makeItems(doc1, url1, attachments[url1],
-                                        eachItem, function() {});
-		        }
-		    };
-	        Zotero.Utilities.processDocuments(itemsToUse, cb, ret);
-	    }
-	});
-    };
-};
-
-FW._MultiScraper.prototype = new FW._Base;
-
-FW.WebDelegateTranslator = function (init) { 
-    return new FW._WebDelegateTranslator(init);
-};
-
-FW._WebDelegateTranslator = function (init) {
-    for (x in init) {
-        this[x] = init[x];
+function doWeb(doc, url) {
+    var uscTitle, uscReporter, uscSection, sessionYear;
+    var rawCite = ZU.xpath(doc, "//meta[@name='dcterms.title']")
+    if (rawCite.length > 0) {
+	rawCite = rawCite[0].getAttribute("content");
+	rawCite = rawCite.trim();
+    } else {
+	rawCite = false;
     }
-    this.makeItems = function(doc, url, attachments, eachItem, ret) {
-        // need for scoping
-        var parentThis = this;
-
-        var translator = Zotero.loadTranslator("web");
-        translator.setHandler("itemDone", function(obj, item) { 
-            eachItem(item, parentThis, doc, url);
-        });
-        translator.setDocument(doc);
-
-        if (this.translatorId) {
-            translator.setTranslator(this.translatorId);
-            translator.translate();
-        } else {
-            translator.setHandler("translators", function(obj, translators) {
-                if (translators.length) {
-                    translator.setTranslator(translators[0]);
-                    translator.translate();
-                }
-            });
-            translator.getTranslators();
-        }
-        ret();
-    };
-};
-
-FW._WebDelegateTranslator.prototype = new FW._Base;
-
-FW._StringMagic = function () {
-    this._filters = new Array();
-
-    this.addFilter = function(filter) {
-        this._filters.push(filter);
-        return this;
-    };
-
-    this.split = function(re) {
-        return this.addFilter(function(s) {
-            return s.split(re).filter(function(e) { return (e != ""); });
-        });
-    };
-
-    this.replace = function(s1, s2, flags) {
-        return this.addFilter(function(s) {
-            if (s.match(s1)) {
-                return s.replace(s1, s2, flags);
-            } else {
-                return s;
-            }
-        });
-    };
-
-    this.prepend = function(prefix) {
-        return this.replace(/^/, prefix);
-    };
-
-    this.append = function(postfix) {
-        return this.replace(/$/, postfix);
-    };
-
-    this.remove = function(toStrip, flags) {
-        return this.replace(toStrip, '', flags);
-    };
-
-    this.trim = function() {
-        return this.addFilter(function(s) { return Zotero.Utilities.trim(s); });
-    };
-
-    this.trimInternal = function() {
-        return this.addFilter(function(s) { return Zotero.Utilities.trimInternal(s); });
-    };
-
-    this.match = function(re, group) {
-        if (!group) group = 0;
-        return this.addFilter(function(s) { 
-                                  var m = s.match(re);
-                                  if (m === undefined || m === null) { return undefined; }
-                                  else { return m[group]; } 
-                              });
-    };
-
-    this.cleanAuthor = function(type, useComma) {
-        return this.addFilter(function(s) { return Zotero.Utilities.cleanAuthor(s, type, useComma); });
-    };
-
-    this.key = function(field) {
-        return this.addFilter(function(n) { return n[field]; });
-    };
-
-    this.capitalizeTitle = function() {
-        return this.addFilter(function(s) { return Zotero.Utilities.capitalizeTitle(s); });
-    };
-
-    this.unescapeHTML = function() {
-        return this.addFilter(function(s) { return Zotero.Utilities.unescapeHTML(s); });
-    };
-
-    this.unescape = function() {
-        return this.addFilter(function(s) { return unescape(s); });
-    };
-
-    this._applyFilters = function(a, doc1) {
-        for (i in this._filters) {
-            a = flatten(a);
-            /* remove undefined or null array entries */
-            a = a.filter(function(x) { return ((x !== undefined) && (x !== null)); });
-            for (var j = 0 ; j < a.length ; j++) {
-                try {
-                    if ((a[j] === undefined) || (a[j] === null)) { continue; }
-                    else { a[j] = this._filters[i](a[j], doc1); }
-                } catch (x) {
-                    a[j] = undefined;
-                    Zotero.debug("Caught exception " + x + "on filter: " + this._filters[i]);
-                }
-            }
-            /* remove undefined or null array entries */
-            /* need this twice because they could have become undefined or null along the way */
-            a = a.filter(function(x) { return ((x !== undefined) && (x !== null)); });
-        }
-        return flatten(a);
-    };
-};
-
-FW.PageText = function () {
-    return new FW._PageText();
-};
-
-FW._PageText = function() {
-    this._filters = new Array();
-
-    this.evaluate = function (doc) {        
-        var a = [doc.documentElement.innerHTML];
-        a = this._applyFilters(a, doc);
-        if (a.length == 0) { return false; }
-        else { return a; }
-    };
-};
-
-FW._PageText.prototype = new FW._StringMagic();
-
-FW.Url = function () { return new FW._Url(); };
-
-FW._Url = function () {
-    this._filters = new Array();
-
-    this.evaluate = function (doc, url) {        
-        var a = [url];
-        a = this._applyFilters(a, doc);
-        if (a.length == 0) { return false; }
-        else { return a; }
-    };
-};
-
-FW._Url.prototype = new FW._StringMagic();
-
-FW.Xpath = function (xpathExpr) { return new FW._Xpath(xpathExpr); };
-
-FW._Xpath = function (_xpath) {
-    this._xpath = _xpath;
-    this._filters = new Array();
-
-    this.text = function() {
-        var filter = function(n) {
-            if (typeof n === 'object' && n.textContent) { return n.textContent; }
-            else { return n; }
-        };
-        this.addFilter(filter);
-        return this;
-    };
-
-    this.doclet = function(title, css) {
-        var filter = function(n, doc) {
-            if (n) {
-                if (!title) {
-                    title = doc.getElementsByTagName("head")[0].getElementsByTagName("title")[0].textContent;
-                }
-                var myns = "http://www.w3.org/1999/xhtml"
-                var head = doc.createElementNS(myns, "head");
-                var titlenode = doc.createElementNS(myns, "title");
-                head.appendChild(titlenode)
-                titlenode.appendChild(doc.createTextNode(title));
-                if (css) {
-
-                    var style = doc.createElementNS(myns, "style");
-                    head.appendChild(style)
-                    style.setAttribute("type", "text/css")
-                    style.appendChild(doc.createTextNode(css));
-                }
-                return ZU.composeDoc(doc, head, n);
-            } else {
-                return n;
-            }
-        }
-        this.addFilter(filter);
-        return this;
-    };
-
-    this.sub = function(xpath) {
-        var filter = function(n, doc) {
-            var result = doc.evaluate(xpath, n, null, XPathResult.ANY_TYPE, null);
-            if (result) {
-                return result.iterateNext();
-            } else {
-                return undefined;               
-            }
-        };
-        this.addFilter(filter);
-        return this;
-    };
-
-    this.evaluate = function (doc) {
-        var res = doc.evaluate(this._xpath, doc, null, XPathResult.ANY_TYPE, null);
-        var resultType = res.resultType;
-        var a = new Array();
-        if (resultType == XPathResult.STRING_TYPE) {
-            a.push(res.stringValue);
-        } else if (resultType == XPathResult.BOOLEAN_TYPE) {
-            a.push(res.booleanValue);
-        } else if (resultType == XPathResult.NUMBER_TYPE) {
-            a.push(res.numberValue);
-        } else if (resultType == XPathResult.ORDERED_NODE_ITERATOR_TYPE ||
-                   resultType == XPathResult.UNORDERED_NODE_ITERATOR_TYPE) {
-            var x;
-            while ((x = res.iterateNext())) { a.push(x); }
-        } 
-        a = this._applyFilters(a, doc);
-        if (a.length == 0) { return false; }
-        else { return a; }
-    };
-};
-
-FW._Xpath.prototype = new FW._StringMagic();
-
-FW.detectWeb = function (doc, url) {
-    for (var i in FW._scrapers) {
-	var scraper = FW._scrapers[i];
-	var itemType = scraper.evaluateThing(scraper['itemType'], doc, url);
-	var v = scraper.evaluateThing(scraper['detect'], doc, url);
-        if (v.length > 0 && v[0]) {
-	    return itemType;
+    if (rawCite) {
+	var m = rawCite.match(/^([0-9]+)\s+(U\.*S\.*\s+Code)\s+§+\s+(.*)\s*-.*/);
+	if (m) {
+	    uscTitle = m[1];
+	    uscReporter = m[2];
+	    uscSection = m[3];
 	}
     }
-    return undefined;
-};
-
-FW.getScraper = function (doc, url) {
-    var itemType = FW.detectWeb(doc, url);
-    return FW._scrapers.filter(function(s) {
-        return (s.evaluateThing(s['itemType'], doc, url) == itemType)
-		&& (s.evaluateThing(s['detect'], doc, url));
-    })[0];
-};
-
-FW.doWeb = function (doc, url) {
-    var scraper = FW.getScraper(doc, url);
-    scraper.makeItems(doc, url, [], 
-                      function(item, scraper, doc, url) {
-                          scraper.callHook('scraperDone', item, doc, url);
-                          if (!item['title']) {
-                              item['title'] = "";
-                          }
-                          item.complete();
-                      },
-                      function() {
-                          Zotero.done();
-                      });
-    Zotero.wait();
-};
-
-
-function detectWeb(doc, url) { return FW.detectWeb(doc, url); }
-function doWeb(doc, url) { return FW.doWeb(doc, url); }
-
-// Local code
-
-var css = "*{margin:0;padding:0;}div{width: 60em;margin:0 auto;text-align:left;margin-top:1em;margin-bottom:1em;}body{text-align:center;}.enumbell{font-weight:bold;}div.psection-2{text-indent:1em;}div.psection-3{text-indent:2em;}div.psection-4{text-indent:3em;}div.psection-5{text-indent:4em;}div.psection-6{text-indent:5em;}div.psection-7{text-indent:6em;}div.psection-8{text-indent:7em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}";
-
-
-FW.Scraper({
-    itemType: 'statute',
-    jurisdiction: 'us',
-    code: 'US Code',
-    codeNumber: FW.Url().replace(/^.*\/text\/([0-9]+)\/.*$/, "$1"),
-    section: FW.Url().replace(/^.*\/text\/[0-9]+\/([0-9]+).*$/, "$1"),
-    detect: FW.Url().match(/^https?:\/\/(www\.)law.cornell.edu\/uscode\/text\/[0-9]+\/[0-9]+$/),
-    publicationDate: FW.Xpath("//div[@id='quicktabs_tabpage_8_3']//h2/following-sibling::div/p/strong[1]").text().trim(),
-    dateEnacted: FW.Xpath("//div[b[contains(.,'Source')]]/following-sibling::span").addFilter(
-        function (n) {
-            return n.innerHTML;
-        }
-    ).trim(),
-    attachments: [
-        {
-			title:"US Code text (Cornell LII)",
-			document: FW.Xpath("//div[@id='quicktabs_tabpage_8_0']//sectioncontent").doclet(false, css),
-		    snapshot:true,
-            url: FW.Url()
-        }
-    ],
-    hooks: { 
-        "scraperDone": function  (item,doc, url) {
-            if (item.dateEnacted) {
-                var rex = new RegExp('(.*?)<a[^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>(.*)');
-                var lst = item.dateEnacted.replace(/&nbsp;/g," ").replace(/&amp;/g,"&").split(/\s*;\s*/);
-                var m = item.dateEnacted.match(/.*?(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec).*?([0-9]{4})/);
-                if (m) {
-                    item.dateEnacted = m[1];
-                } else {
-                    item.dateEnacted = "";
-                }
-                numlen = ("" + lst.length).length;
-                if (item.attachments.length) {
-                    var num = "0";
-                    while (num.length < numlen) {
-                        num = "0" + num;
-                    }
-                    item.attachments[0].title = "[" + num + "] " + item.attachments[0].title; 
-                }
-                for (var i=0,ilen=lst.length;i<ilen;i+=1) {
-                    var num = "" + (i+1);
-                    while (num.length < numlen) {
-                        num = "0" + num;
-                    }
-                    var title = lst[i];
-                    var m = title.match(rex);
-                    if (m) {
-                        title = m[1] + m[3] + m[4].replace(/<[^>]*>/g,"");
-                        title = title.replace(/,([^ ])/g,", $1").replace(/^\s*\(/,"").replace(/\)\s*$/,"");
-                        title = "[" + num + "] " + title;
-                        var url = m[2];
-                        url = url.replace(" ", "%20", "g");
-                        item.attachments.push({url:url,title:title,mimeType:"text/html",snapshot:false})
-                    }
-                }
-            }
-        }
+    var rawSession = ZU.xpath(doc, "//div[@id='uscode_prelim_note']//a[contains(@title, 'Pub. L.')]");
+    if (rawSession.length > 0) {
+	rawSession = rawSession[0].getAttribute('title');
+    } else {
+	rawSession = false;
     }
-});
-
-
-FW.MultiScraper({
-    itemType         : 'multiple',
-    detect           : FW.Xpath('//supcontentreg/ul/li//a[1]').text().trim().match(/^\s*§/),
-    choices          : {
-        titles:  FW.Xpath("//supcontentreg/ul/li//a").text().trim(),
-        urls:  FW.Xpath("//supcontentreg/ul/li//a").key("href")
+    if (rawSession) {
+	var m = rawSession.match(/^[^0-9]*([0-9]+).*/);
+	if (m) {
+	    var session = m[1];
+	    session = parseInt(session, 10);
+	    if (session <= 73) {
+		sessionYear = sessionMap[session];
+	    } else {
+		sessionYear = (((session-73)*2)+1934);
+	    }
+	}
     }
-});
+    var rawBlock = ZU.xpath(doc, "//div[@class='liicontent']");
+    if (rawBlock.length > 0) {
+	rawBlock = rawBlock[0];
+    } else {
+	rawBlock = false;
+    }
+    
+    if (uscTitle && uscReporter && uscSection && sessionYear) {
+	var item = new Zotero.Item("statute");
+	item.jurisdiction = "us";
+	item.codeNumber = uscTitle;
+	item.code = uscReporter;
+	item.section = uscSection;
+	item.publicationDate = sessionYear;
+	item.url = url;
+	if (rawBlock) {
+	    addAttachment(doc, rawCite, rawBlock, item);
+	}
+	item.complete();
+    }
+}
