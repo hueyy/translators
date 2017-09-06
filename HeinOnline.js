@@ -90,7 +90,6 @@ function translateRIS(ris, pdfURL) {
 				mimeType: "application/pdf"
 			}];
 		}
-		item.complete();
 	});
 	trans.translate();
 }
