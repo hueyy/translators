@@ -1359,23 +1359,9 @@ function importNext(nodes, index, collections, resolve, reject) {
 	try {
 		for (var i = index; i < nodes.length; i++) {
 			var node = nodes[i];
-			
 			// JURIS-M (start)
 			var itemID = Zotero.RDF.getResourceURI(node);
 			
-			// Suppress import of foaf:topic nodes that have a dc:title attribute
-			// (RDF descriptions of this kind are shipped by CiNii)
-			var topicset = getFirstResults(node, [n.foaf+"topic"]);
-			if (topicset) {
-				for (var i = 0, ilen = topicset.length; i < ilen; i += 1) {
-					var topic = Zotero.RDF.getResourceURI(topicset[i]);
-					topics.push(topic);
-				}
-			}
-			if (topics.indexOf(itemID) > -1) {
-				continue;
-			}
-
 			// figure out if this is a part of another resource, or a linked
 			// attachment
 			if(Zotero.RDF.getSources(node, n.dcterms+"isPartOf") ||
@@ -1384,7 +1370,6 @@ function importNext(nodes, index, collections, resolve, reject) {
 				continue;
 			}
 			// JURIS-M (end)
-
 			// type
 			var type = Zotero.RDF.getTargets(node, rdf+"type");
 			if (type) {
