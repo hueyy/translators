@@ -535,19 +535,21 @@ var proc = {
     opinion: {
         setData: function(item, obj) {
 	        // Zotero.debug("proc: opinion");
-	        var textForms = ["html_with_citations", "html", "html_columbia", "html_lawbox", "plain_text"];
-	        var mimeTypes = ["text/html", "text/html", "text/html", "text/html", "text/plain"];
-	        for (var i=0,ilen=textForms.length;i<ilen;i++) {
-	            if (obj[textForms[i]]) {
-		            item.attachments.push({
-		                _description: obj.description,
-		                _txt: obj[textForms[i]],
-		                mimeType: mimeTypes[i],
-                        snapshot: true
-		            });
-		            break;
-	            }
-	        }
+
+			// Saving of document fragments not currently possible in 5.0
+	        //var textForms = ["html_with_citations", "html", "html_columbia", "html_lawbox", "plain_text"];
+	        //var mimeTypes = ["text/html", "text/html", "text/html", "text/html", "text/plain"];
+	        //for (var i=0,ilen=textForms.length;i<ilen;i++) {
+	        //    if (obj[textForms[i]]) {
+		    //        item.attachments.push({
+		    //            _description: obj.description,
+		    //            _txt: obj[textForms[i]],
+		    //            mimeType: mimeTypes[i],
+            //            snapshot: true
+		    //        });
+		    //        break;
+	        //    }
+	        //}
         },
         setURLs: function(item, obj) {
             // opinion proc sets up no onward call
@@ -607,7 +609,9 @@ function runURLs(step, pos, item, doc) {
     var mode = procSegments[step];
     var url = urls[mode][pos];
     if (!url || urls.end) {
-        fixAttachments(doc, item);
+		// Saving of document fragments not currently possible in 5.0,
+		// so skip this for now
+        //fixAttachments(doc, item);
         item.complete();
         return;
     }
