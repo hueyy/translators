@@ -31,16 +31,16 @@ function parseInput() {
 }
 
 function detectImport() {
-	const CSL_TYPES = {"article":true, "article-journal":true, "article-magazine":true,
-		"article-newspaper":true, "bill":true, "book":true, "broadcast":true,
-		"classic":true, "chapter":true, "dataset":true, "entry":true, "entry-dictionary":true,
-		"entry-encyclopedia":true, "figure":true, "gazette":true, "graphic":true, "interview":true,
-		"legal_case":true, "legislation":true, "manuscript":true, "map":true,
-		"motion_picture":true, "musical_score":true, "pamphlet":true,
-		"paper-conference":true, "patent":true, "personal_communication":true,
-		"post":true, "post-weblog":true, "regulation":true, "report":true, "review":true, "review-book":true,
-		"standard":true, "song":true, "speech":true, "thesis":true, "treaty":true, "webpage":true};
-		
+	const CSL_TYPES = {"book":true,"chapter":true,"article-journal":true,"article-magazine":true,
+					   "article-newspaper":true,"thesis":true,"entry-encyclopedia":true,
+					   "entry-dictionary":true,"paper-conference":true,"personal_communication":true,
+					   "manuscript":true,"interview":true,"motion_picture":true,"graphic":true,
+					   "webpage":true,"report":true,"bill":true,"legal_case":true,"hearing":true,
+					   "patent":true,"legislation":true,"map":true,"post-weblog":true,"post":true,
+					   "song":true,"speech":true,"video":true,"broadcast":true,"gazette":true,
+					   "regulation":true,"classic":true,"treaty":true,"standard":true,
+					   "article":true};
+
 	var parsedData = parseInput();
 	if(!parsedData) return false;
 	
