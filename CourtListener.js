@@ -589,14 +589,14 @@ var proc = {
     audio: {
         setData: function(item, obj) {
 	        // Zotero.debug("proc: audio");
-            for (var i=0,ilen=obj.results.length;i<ilen;i++) {
-                var theattachment = {
-                    url: 'https://www.courtlistener.com' + obj.results[i].absolute_url,
-                    title: 'CourtListener Audio' + (i+1),
-                    snapshot: false
-                }
-                item.attachments.push(theattachment);
-            }
+            //for (var i=0,ilen=obj.results.length;i<ilen;i++) {
+                //var theattachment = {
+                //    url: 'https://www.courtlistener.com' + obj.results[i].absolute_url,
+                //    title: 'CourtListener Audio' + (i+1),
+                //    snapshot: false
+                //}
+                //item.attachments.push(theattachment);
+            //}
         },
         setURLs: function(item, obj) {
             // audio is the terminus
