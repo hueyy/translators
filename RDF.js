@@ -249,7 +249,7 @@ function handleCreators(newItem, creators, creatorType) {
 					}
 					creator.creatorType = creatorType;
 					for (var j = 1, jlen = lastName.length; j < jlen; j += 1) {
-						var fn = false;
+						var fn = "";
 						if (firstName && firstName[j]) {
 							fn = firstName[j].toString();
 						}
