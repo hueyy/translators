@@ -2,7 +2,7 @@
 	"translatorID": "46291dc3-5cbd-47b7-8af4-d009078186f6",
 	"label": "CiNii",
 	"creator": "Michael Berkowitz and Mitsuo Yoshida",
-	"target": "http://ci.nii.ac.jp/",
+	"target": "https?://ci.nii.ac.jp/",
 	"minVersion": "1.0.0b4.r5",
 	"maxVersion": "",
 	"priority": 100,
