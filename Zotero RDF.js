@@ -289,7 +289,7 @@ function generateItem(item, zoteroType, resource) {
 			creatorsets.push([]);
 			creatorsets[creatorsets.length - 1].push(item.creators[j]);
 			if (item.creators[j].multi) {
-				for each (var langTag in item.creators[j].multi._lst) {
+				for (var langTag in item.creators[j].multi._key) {
 						var c = item.creators[j].multi._key[langTag];
 						c.servantLang = langTag;
 						creatorsets[creatorsets.length - 1].push(c);
@@ -382,7 +382,7 @@ function generateItem(item, zoteroType, resource) {
 		var fieldVariants = [];
 		fieldVariants.push({value: value});
 		if (item.multi && item.multi._keys[property]) {
-			for each (var langTag in item.multi._lsts[property]) {
+			for (var langTag in item.multi._keys[property]) {
 				fieldVariants.push({value: item.multi._keys[property][langTag], langTag: langTag});
 			}
 		}
