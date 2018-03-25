@@ -237,7 +237,6 @@ function handleCreators(newItem, creators, creatorType) {
 					var creator = {};
 					creator.multi = {};
 					creator.multi._key = {};
-					creator.multi._lst = [];
 					var lastName = getFirstResults(creators[i],
 						[n.foaf+"familyName", n.foaf+"lastName",
 						 n.foaf+"surname", n.foaf+"family_name"], false, true); //unofficial
@@ -250,7 +249,6 @@ function handleCreators(newItem, creators, creatorType) {
 					}
 					creator.creatorType = creatorType;
 					for (var j = 1, jlen = lastName.length; j < jlen; j += 1) {
-						creator.multi._lst.push(lastName[j].lang);
 						var fn = false;
 						if (firstName && firstName[j]) {
 							fn = firstName[j].toString();
