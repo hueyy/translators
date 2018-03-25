@@ -286,7 +286,7 @@ function scrape(doc, url) {
 				item.language = "ja";
 			}
 			// XXXX This is a hack to avoid garbage returns from CiNii RDF.
-			if (!item.itemID || item.itemID.slice(0,25) === 'http://ci.nii.ac.jp/naid/') {
+			if (!item.itemID || item.itemID.slice(0,26) === 'https://ci.nii.ac.jp/naid/') {
 			    item.complete();
             }
 		});
