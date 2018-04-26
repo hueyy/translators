@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2016-08-10 09:29:21"
+	"lastUpdated": "2018-04-26 08:59:56"
 }
 
 /*
@@ -103,14 +103,18 @@ function translateCOinS(COinS) {
 
 // Build URL for RIS, and for PDF if available
 function scrapePage(doc, url) {
+	// We need the id= and the handle= of the *target* ref.
+	// From that, we can build URL for RIS and PDF.
+	//
+	// Get URL used to call the Citation popup (which contains a link to the item RIS)
+	var pageID = doc.getElementById("pageSelect").value;
 	var risPopupURL = getXPathStr("href", doc, '//form[@id="pagepicker"]//a[contains(@href, "PrintRequest")][1]');
 	if (risPopupURL) {
 		// If page has RIS, use that
 		var docParams = extractQueryValues(risPopupURL);
 		var risURL = docParams.base 
-			+ "CitationFile?handle=" + docParams.handle 
-			+ "&div=" + docParams.div 
-			+ "&id=" + docParams.id 
+			+ "CitationFile?kind=ris&handle=" + docParams.handle 
+			+ "&id=" + pageID 
 			+ "&base=js";
 		var pdfPageURLs = doc.getElementsByClassName("updatediv");
 		ZU.doGet(risURL, function(ris) {
