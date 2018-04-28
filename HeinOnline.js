@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2018-04-26 08:59:56"
+	"lastUpdated": "2018-04-27 02:53:31"
 }
 
 /*
@@ -103,19 +103,22 @@ function translateCOinS(COinS) {
 
 // Build URL for RIS, and for PDF if available
 function scrapePage(doc, url) {
-	// We need the id= and the handle= of the *target* ref.
-	// From that, we can build URL for RIS and PDF.
-	//
-	// Get URL used to call the Citation popup (which contains a link to the item RIS)
-	var pageID = doc.getElementById("pageSelect").value;
-	var risPopupURL = getXPathStr("href", doc, '//form[@id="pagepicker"]//a[contains(@href, "PrintRequest")][1]');
-	if (risPopupURL) {
-		// If page has RIS, use that
-		var docParams = extractQueryValues(risPopupURL);
+	// We need the id= and the handle= of the current target item.
+	// From that, we can build URL for RIS.
+
+	// Check for an RIS popup link in the page.
+	var risPopupLink = getXPathStr("href", doc, '//form[@id="pagepicker"]//a[contains(@href, "PrintRequest")][1]');
+	if (risPopupLink) {
+		// Get the id from pageSelect.
+		var pageID = doc.getElementById("pageSelect").value;
+		// Get other parameters from the page URL.
+		var docParams = extractQueryValues(url);
+		// Compose the RIS link.
 		var risURL = docParams.base 
 			+ "CitationFile?kind=ris&handle=" + docParams.handle 
 			+ "&id=" + pageID 
 			+ "&base=js";
+		// updatediv apparently gives us a page that will refresh itself to the PDF.
 		var pdfPageURLs = doc.getElementsByClassName("updatediv");
 		ZU.doGet(risURL, function(ris) {
 			if (pdfPageURLs) {
@@ -180,7 +183,7 @@ function doWeb (doc,url) {
 			ZU.processDocuments(urls, scrapePage);
 		});
 	} else {
-		scrapePage(doc);
+		scrapePage(doc, url);
 	}
 }
 
