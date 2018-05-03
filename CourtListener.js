@@ -5,12 +5,13 @@
 	"creator": "Frank Bennett",
 	"target": "https://www.courtlistener.com/(opinion/[0-9]+/|\\?q=.*type=o[^a]).*",
 	"minVersion": "1.0",
-	"maxVersion": "",
+	"maxVersion": null,
 	"priority": 100,
 	"inRepository": true,
 	"browserSupport": "g",
-	"lastUpdated": "2017-06-05 22:29:49"
+	"lastUpdated": "2018-03-24 07:44:14"
 }
+
 
 var codeMap = {
     "acca": "us:fed;army.court.criminal.appeals", 
@@ -647,6 +648,11 @@ var urls = {};
 function scrapeData(doc, url) {
     var num = url.replace(/^.*\/([0-9]+)\/.*/, "$1")
     var item = new Zotero.Item("case");
+    item.attachments.push({
+        url: url,
+        title: 'CourtListener Snapshot',
+		mimeType: 'text/html'
+    });
     item.url = url.replace(/\?.*/, '');
     urls.cluster = ['https://www.courtlistener.com/api/rest/v3/clusters/' + num + "/?fields=docket,sub_opinions,date_filed," + citeTypes.join(",")];
     runURLs(0, 0, item, doc);
