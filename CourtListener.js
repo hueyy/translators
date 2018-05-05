@@ -561,6 +561,7 @@ var proc = {
 			// Zotero.debug("proc: docket");
 			item.docketNumber = obj.docket_number;
 			item.caseName = obj.case_name;
+			item.title = obj.case_name;
 			item.shortTitle = obj.case_name_short;
 		},
 		setURLs: function(item, obj) {
