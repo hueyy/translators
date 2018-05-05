@@ -473,12 +473,12 @@ function fixAttachments(doc, item) {
 		var css = "*{margin:0;padding:0;}div.mlz-outer{width: 60em;margin:0 auto;text-align:left;}body{text-align:center;}p{margin-top:0.75em;margin-bottom:0.75em;}div.mlz-link-button a{text-decoration:none;background:#cccccc;color:white;border-radius:1em;font-family:sans;padding:0.2em 0.8em 0.2em 0.8em;}div.mlz-link-button a:hover{background:#bbbbbb;}div.mlz-link-button{margin: 0.7em 0 0.8em 0;}pre.inline{white-space:pre;display:inline;}span.citation{white-space:pre;}";
 		
 		var year = false;
-		var itemTitle = item.title;
-		if (item.volume && item.reporter && item.pages) {
-			itemTitle = itemTitle + ', ' + item.volume + ' ' + item.reporter + ' ' + item.pages;
+		var itemTitle = item.caseName;
+		if (item.reporterVolume && item.reporter && item.firstPage) {
+			itemTitle = itemTitle + ', ' + item.reporterVolume + ' ' + item.reporter + ' ' + item.firstPage;
 		}
-		if (item.date) {
-			year = item.date.replace(/^.*([0-9][0-9][0-9][0-9]).*/, "$1");
+		if (item.dateDecided) {
+			year = item.dateDecided.replace(/^.*([0-9][0-9][0-9][0-9]).*/, "$1");
 			itemTitle = itemTitle + ' (' + year + ')';
 		}
 		if (attachment._description) {
@@ -510,16 +510,16 @@ var proc = {
 				if (obj[citeTypes[i]]) {
 					if (firstCite) {
 						var citeSplit = obj[citeTypes[i]].split(" ");
-						item.volume = citeSplit[0];
+						item.reporterVolume = citeSplit[0];
 						item.reporter = citeSplit.slice(1, -1).join(" ");
-						item.pages = citeSplit[citeSplit.length-1];
+						item.firstPage = citeSplit[citeSplit.length-1];
 						firstCite = false;
 					} else {
 						extras.push(obj[citeTypes[i]]);
 					}
 				}
 			}
-			item.date = obj.date_filed;
+			item.dateDecided = obj.date_filed;
 			if (extras.length) {
 				item.extra = "Other cites: " + extras.join("; ")
 			}
@@ -559,9 +559,9 @@ var proc = {
 	docket: {
 		setData: function(item, obj) {
 			// Zotero.debug("proc: docket");
-			item.number = obj.docket_number;
-			item.title = obj.case_name;
-			item["title-short"] = obj.case_name_short;
+			item.docketNumber = obj.docket_number;
+			item.caseName = obj.case_name;
+			item.shortTitle = obj.case_name_short;
 		},
 		setURLs: function(item, obj) {
 			urls.court = [obj.court + "?fields=resource_uri"];
@@ -582,7 +582,7 @@ var proc = {
 		setURLs: function(item, obj) {
 			var flp_code = obj.resource_uri.replace(/^.*?\/([^\/]*)\/*$/, "$1");
 			urls.audio = [];
-			if (item.number && flp_code) {
+			if (item.docketNumber && flp_code) {
 				urls.audio.push('https://www.courtlistener.com/api/rest/v3/search/?type=oa&docket_number=' + item.number + '&court=' + flp_code);
 			}
 		}
