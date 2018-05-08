@@ -129,5 +129,6 @@ function doWeb(doc, url) {
 		item.issue = item.seriesNumber;
 		delete item.seriesNumber;
 	}
+	item.url = url;
 	item.complete();
 }
