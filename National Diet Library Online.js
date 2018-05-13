@@ -1,6 +1,6 @@
 {
 	"translatorID": "6c51f0b2-75b2-4f4c-aa40-1e6bbbd674e3",
-	"label": "National Diet Library Periodicals",
+	"label": "National Diet Library Online",
 	"creator": "Frank Bennett",
 	"target": "https://ndlonline.ndl.go.jp/#!/(detail|search)",
 	"minVersion": "3.0",
@@ -9,7 +9,7 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2018-05-12 12:59:14"
+	"lastUpdated": "2018-05-13 08:27:48"
 }
 
 /*
@@ -660,7 +660,7 @@ function doWeb(doc, url) {
 			}
 		]
 	}
-    */
+	*/
 
 
 /** BEGIN TEST CASES **/
