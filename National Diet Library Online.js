@@ -2,14 +2,14 @@
 	"translatorID": "6c51f0b2-75b2-4f4c-aa40-1e6bbbd674e3",
 	"label": "National Diet Library Online",
 	"creator": "Frank Bennett",
-	"target": "https://ndlonline.ndl.go.jp/#!/(detail|search)",
+	"target": "https://ndlonline.ndl.go.jp/",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsbv",
-	"lastUpdated": "2018-05-13 08:27:48"
+	"lastUpdated": "2018-05-14 03:53:44"
 }
 
 /*
@@ -42,6 +42,31 @@
 	if type is Kikaku and no standardno, set as report.
 	responsibility as author (or Institution, if report), if no other evidence of authorship.
 */
+
+function getCookies(doc) {
+	var ret = {};
+	if (doc.cookie) {
+		var lst = doc.cookie.split(/; */);
+		for (var i=0,ilen=lst.length; i<ilen; i++) {
+			var pair = lst[i].split('=');
+			if (pair[1]) {
+				pair[1] = pair.slice(1).join("=");
+			}
+			if ("object" === typeof pair && pair.length) {
+				pair[1] = pair[1].split("|");
+				if (pair[1].length === 1) {
+					pair[1] = pair[1][0];
+				} else if (!pair[1].slice(-1)[0]) {
+					pair[1].pop();
+				}
+			}
+			ret[pair[0]] = pair[1];
+		}
+	}
+	return ret;
+}
+
+
 
 var typeMap = {
 	Eizo: "videoRecording",
@@ -398,25 +423,18 @@ function scrape(jsonTxt) {
 	}, false, "utf8", headers);
 }
 
-function detectWeb(doc, url) {
-	var m = url.match(/https:\/\/ndlonline.ndl.go.jp\/#\!\/(detail|search)/);
-	if (m) {
-		if (m[1] === "detail") {
-			return "journalArticle";
-		} else if (m[1] === "search") {
-			return "multiple";
-		}
-	}
-	return false;
-}
-
-function doWeb(doc, url) {
-	var m = url.match(/https:\/\/ndlonline.ndl.go.jp\/#\!\/(detail\/|search)([^\/]+)/);
-	if (m) {
-		if (m[1] === "detail/") {
-			callData([url], headers);
-		} else if (m[1] === "search") {
-			var urlMap = {};
+function checkPageType(doc, url, returnData) {
+	var info = {};
+	// materialTitle class occurws only in search-result pages.
+	var multipleNodes = ZU.xpath(doc, "//a[contains(@class, 'materialTitle')]");
+	// Exactly one anchor with class optAct-linker occurs in item pages. This is the sole
+	// source of the ID needed to build the JSON urls, apart from the URL (which isn't correct
+	// in this phase).)
+	if (multipleNodes.length) {
+		
+		info.multiple = {};
+		//if (returnData) {
+			info.multiple.urlMap = {};
 			var rowNodes = ZU.xpath(doc, "//div[contains(@class, 'rowContainer')]");
 			for (var rowNode of rowNodes) {
 				var titleNode = ZU.xpath(rowNode, ".//a[contains(@class, 'materialTitle')]")[0];
@@ -428,17 +446,69 @@ function doWeb(doc, url) {
 					}
 					var childUrl = titleNode.getAttribute("href");
 					var val = titleNode.textContent.trim();
-					urlMap[childUrl] = prefixNote + val;
+						info.multiple.urlMap[childUrl] = prefixNote + val;
 				}
 			}
-			Z.selectItems(urlMap, function(itemUrls) {
-				var urls = Object.keys(itemUrls);
-				callData(urls, headers);
-			});
+		//}
+	} else {
+		var singleNode = ZU.xpath(doc, "//a[contains(@class, 'optAct-linker')]")[0];
+		if (singleNode) {
+			info.single = {};
+			//if (returnData) {
+				var key = singleNode.getAttribute('href');
+				key = key.replace(/^.*issToken=/, "").replace(/\&.*$/, "");
+				var url = "detail/" + key
+				info.single.url = url;
+			//}
+		} else if (url.match(/detail\//)) {
+			info.single = {};
+			info.single.url = url;
 		}
 	}
+	return info;
 }
 
+function detectWeb(doc, url) {
+	// URL is not properly updated, and doc is initially delivered as a bare skeleton.
+	// To make things work, we need to monitor ALL changes to body.
+	//if (url.match(/\/detail\//)) {
+	//	return "journalArticle";
+	//} else if (url.match(/\/search\//)) {
+	//	return "multiple";
+	//} else {
+		var info = checkPageType(doc, url);
+		if (info.multiple) {
+			Zotero.debug("MULTIPLE");
+			return "multiple";
+		} else if (info.single) {
+			return "journalArticle";
+		} else {
+			var body = ZU.xpath(doc, "//body")[0];
+			Z.monitorDOMChanges(body, {childList: true, subtree: true});
+			if (info.single) {
+				Zotero.debug("SINGLE");
+				return "journalArticle";
+			}
+		}
+		return false;
+	//}
+}
+
+function doWeb(doc, url) {
+	var info = checkPageType(doc, url, true)
+	if (info.single) {
+		Zotero.debug("Using this url for single: " + info.single.url);
+		callData([info.single.url], headers);
+	} else if (info.multiple) {
+		var urlMap = info.multiple.urlMap;
+		Zotero.debug("urlMap: " + JSON.stringify(urlMap, null, 2));
+		Z.selectItems(urlMap, function(itemUrls) {
+			Zotero.debug("itemUrls: " + JSON.stringify(itemUrls, null, 2));
+			var urls = Object.keys(itemUrls);
+			callData(urls, headers);
+		});
+	}
+}
 
 	/*
 	 * Item type mismatch
