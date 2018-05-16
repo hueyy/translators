@@ -445,6 +445,7 @@ function checkPageType(doc, url, returnData) {
 	return info;
 }
 
+
 /*
  * About detectWeb() in this translator ...
  *
