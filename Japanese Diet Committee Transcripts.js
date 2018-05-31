@@ -2,11 +2,10 @@
 	"translatorID": "ad3a50fa-4f2f-4ca8-9fdf-eabc03f3fc57",
 	"label": "Japanese Diet Committee Transcripts",
 	"creator": "Frank Bennett",
-	"target": "http://kokkai.ndl.go.jp/cgi-bin/KENSAKU/swk_dispdoc.cgi",
+	"target": "http://kokkai.ndl.go.jp/cgi-bin/KENSAKU/swk_dispdoc.*.cgi",
 	"minVersion": "1.0.0b3.r1",
 	"maxVersion": "",
 	"priority": 100,
-	"targetAll": "http://kokkai.ndl.go.jp/cgi-bin/KENSAKU/swk_dispdoc_*.cgi",
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
@@ -15,7 +14,6 @@
 
 
 function detectWeb(doc, url) {
-	return "multiple";
 	res = ZU.xpath(doc, '//tr/td//input[@name="IS_HIT"]')[0];
 	if (res) {
 		return "multiple"
