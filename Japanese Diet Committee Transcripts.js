@@ -13,6 +13,7 @@
 	"lastUpdated": "2018-05-31 04:27:08"
 }
 
+
 function detectWeb(doc, url) {
 	return "multiple";
 	res = ZU.xpath(doc, '//tr/td//input[@name="IS_HIT"]')[0];
