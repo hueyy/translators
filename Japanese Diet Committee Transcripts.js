@@ -60,7 +60,6 @@ function detectWeb(doc, url) {
 // Constants for remangling URLs
 
 var url_base = 'http://kokkai.ndl.go.jp';
-var text_url_base = url_base+"/cgi-bin/KENSAKU/swk_dispdoc_text.cgi";
 var speaker_url_base = url_base+"/cgi-bin/KENSAKU/swk_dispdoc_speaker.cgi";
 
 
@@ -97,13 +96,26 @@ NDL.prototype.getCol = function ( s ) {
 	}
 };
 
-function getLinkInfo( str ) {
-	Zotero.debug("XXX str="+str);
-	var m = str.match(/.*href=([^\']+)[^\?]+(\?[^\']+)[^0-9]+([0-9]+)/);
+function getLinkInfo( anchor ) {
+	var strText = anchor.getAttribute("onClick");
+	var mText = strText.match(/.*href=([^\']+)[^\?]+(\?[^\']+)[^0-9]+([0-9]+)/);
+	var spInfoNode = ZU.xpath(anchor, "./parent::td/preceding-sibling::td[1]/a")[0];
+    if (spInfoNode) {
+        var strSpeaker = spInfoNode.getAttribute("onClick");
+        var mSpeaker = strSpeaker.match(/.*href=([^\']+)/);
+        var urlSpeaker = mSpeaker[1];
+    } else {
+        var urlSpeaker = false;
+    }
 	return {
-		url: m[1] + m[2],
-		params: m[2],
-		pos: m[3]
+		text: {
+			url: url_base + mText[1] + mText[2] + "&PPOS=" + mText[3],
+			params: mText[2],
+		},
+		speaker: {
+			url: urlSpeaker
+		},
+		pos: mText[3]
 	};
 }
 
@@ -180,19 +192,17 @@ function doWeb(doc, url) {
 	}
 	var anchorNodes = ZU.xpath(doc, '//form[@name="form1"]//table/tbody/tr/td[3]//a', doc);
 	for (var anchor of anchorNodes) {
-		
-		var link_info = getLinkInfo( anchor.getAttribute("onClick") );
+		var link_info = getLinkInfo(anchor);
 		var pos = link_info.pos;
         var index_url = speakers_url.replace(/dispdoc_speaker/, "list").replace(/MODE=[0-9]+/, "MODE=") + "&MYPOS=" + pos;
-
-		items_data[index_url] = {};
 		// The PPOS value identifies the statement in the document frame. If it is not
 		// appended, the attachment note derived from the document frame will show an
 		// error message instead of the content.
-		items_data[index_url].text_url = text_url_base + link_info.params + "&PPOS=" + pos;
-		items_data[index_url].speaker = anchor.textContent.replace(/.*]/,"");
-		items_data[index_url].statement_pos = pos;
-
+		items_data[index_url] = {
+			text_url: link_info.text.url,
+			speaker: anchor.textContent.replace(/.*\]/,""),
+            speaker_url: link_info.speaker.url
+		};
 		items_select[index_url] = anchor.textContent;
 	}
 	Zotero.selectItems(items_select, function(items){
@@ -230,7 +240,7 @@ function doWeb(doc, url) {
 				item.session = session;
 				item.meetingNumber = meetingNumber.replace(/号/,"");
 				item.date = convertImperialDate(date);
-				item.url = url_base+"/";
+				item.url = url;
 
 				ZU.processDocuments(
 					[items_data[url].text_url],
@@ -250,7 +260,41 @@ function doWeb(doc, url) {
 						item.notes.push({
 							note: body.innerHTML
 						});
-						item.complete();
+                        // If we have a speaker info URL, add that information. Otherwise
+                        // finish immediately.
+                        if (items_data[item.url].speaker_url) {
+                            ZU.processDocuments(
+                                [items_data[item.url].speaker_url],
+                                function(doc, url) {
+                                    var tableNodes = ZU.xpath(doc, "//td");
+                                    var descrip = [];
+                                    var furigana = false;
+                                    if (tableNodes.length === 4) {
+                                        descrip.push(tableNodes[1].textContent.trim());
+                                        descrip.push(tableNodes[2].textContent.trim());
+                                        descrip.push(tableNodes[3].textContent.trim());
+                                    } else if (tableNodes.length === 5) {
+                                        furigana = tableNodes[1].textContent.trim();
+                                        descrip.push(tableNodes[2].textContent.trim());
+                                        descrip.push(tableNodes[3].textContent.trim());
+                                        descrip.push(tableNodes[4].textContent.trim());
+                                    }
+                                    if (item.creators.length && furigana) {
+                                        var creator = item.creators.slice(-1)[0];
+                                        var variant = {lastName: furigana};
+                                        ZU.setMultiCreator(creator, variant, "ja-Hira", "testimonyBy", "ja");
+                                    }
+                                    item.abstractNote = descrip.filter(function(obj){
+                                        return obj;
+                                    }).join("、");
+                                    item.url = url_base;
+                                    item.complete();
+                                }
+                            );
+                        } else {
+                            item.url = url_base;
+                            item.complete();
+                        }
 					});
 			});
 	});
