@@ -211,6 +211,7 @@ function doWeb(doc, url) {
 				var item = new Zotero.Item("hearing");
 				item.jurisdiction = "jp";
 				var pos = url.replace(/.*\&MYPOS=([0-9]+).*/, "$1");
+				item.archiveLocation = "stmt. " + pos;
 				var speaker = items_data[url].speaker;
 				item.creators.push( {lastName:speaker, creatorType:"testimonyBy"});
 				// Number of columns varies (of course!), so we build a map before
