@@ -249,7 +249,7 @@ function doWeb(doc, url) {
                 Zotero.debug("XXX   date...");
 				var date = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("開会日付")+']')[0].textContent;
 				//
-				item.title = "国会議事録、" + committee + "、" + date + "、" + speaker + "の発言";
+				item.title = "国会議事録、" + committee + "、" + date + "、" + pos + "、" + speaker + "の発言";
 				setTranslation(item, "committee", committee);
 				setTranslation(item, "legislativeBody" , legislativeBody);
 				item.session = session;
