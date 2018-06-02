@@ -1,16 +1,17 @@
 {
 	"translatorID": "ad3a50fa-4f2f-4ca8-9fdf-eabc03f3fc57",
+	"translatorType": 4,
 	"label": "Japanese Diet Committee Transcripts",
 	"creator": "Frank Bennett",
 	"target": "http://kokkai.ndl.go.jp/cgi-bin/KENSAKU/swk_dispdoc.cgi",
 	"minVersion": "1.0.0b3.r1",
-	"maxVersion": "",
+	"maxVersion": null,
 	"priority": 100,
 	"inRepository": true,
-	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2018-06-01 00:34:28"
+	"lastUpdated": "2018-06-01 18:21:18"
 }
+
 
 /*
 	***** BEGIN LICENSE BLOCK *****
@@ -100,12 +101,13 @@ function getLinkInfo( anchor ) {
 	var strText = anchor.getAttribute("onClick");
 	var mText = strText.match(/.*href=([^\']+)[^\?]+(\?[^\']+)[^0-9]+([0-9]+)/);
 	var spInfoNode = ZU.xpath(anchor, "./parent::td/preceding-sibling::td[1]/a")[0];
+	var urlSpeaker;
     if (spInfoNode) {
         var strSpeaker = spInfoNode.getAttribute("onClick");
         var mSpeaker = strSpeaker.match(/.*href=([^\']+)/);
-        var urlSpeaker = mSpeaker[1];
+        urlSpeaker = mSpeaker[1];
     } else {
-        var urlSpeaker = false;
+        urlSpeaker = false;
     }
 	return {
 		text: {
@@ -194,7 +196,12 @@ function doWeb(doc, url) {
 	for (var anchor of anchorNodes) {
 		var link_info = getLinkInfo(anchor);
 		var pos = link_info.pos;
-        var index_url = speakers_url.replace(/dispdoc_speaker/, "list").replace(/MODE=[0-9]+/, "MODE=") + "&MYPOS=" + pos;
+        var page = Math.floor(((parseInt(session_list_pos, 10) - 1) / 20) + 1);
+        var index_url = speakers_url
+            .replace(/dispdoc_speaker/, "list")
+            .replace(/\&?MODE=[0-9]*/, "")
+            .replace(/\&?DPAGE=[0-9]*/, "")
+            + "&MODE=&DPAGE=" + page + "&MYPOS=" + pos;
 		// The PPOS value identifies the statement in the document frame. If it is not
 		// appended, the attachment note derived from the document frame will show an
 		// error message instead of the content.
@@ -227,11 +234,19 @@ function doWeb(doc, url) {
 				// Number of columns varies (of course!), so we build a map before
 				// extracting.  Column 1 is assumed to be No, for number.
 				var ndl = new NDL(newDoc);
+                Zotero.debug("XXX Doing " + url);
+                Zotero.debug("XXX setCols()...");
 				ndl.setCols();
+                Zotero.debug("XXX xpath statements...");
+                Zotero.debug("XXX   session...");
 				var session = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("回次")+']')[0].textContent;
+                Zotero.debug("XXX   legislativeBody...");
 				var legislativeBody = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("院名")+']')[0].textContent;
+                Zotero.debug("XXX   committee...");
 				var committee = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("会議名")+']')[0].textContent;
+                Zotero.debug("XXX   meetingNumber...");
 				var meetingNumber = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("号数")+']')[0].textContent;
+                Zotero.debug("XXX   date...");
 				var date = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("開会日付")+']')[0].textContent;
 				//
 				item.title = "国会議事録、" + committee + "、" + date + "、" + speaker + "の発言";
@@ -263,6 +278,7 @@ function doWeb(doc, url) {
                         // If we have a speaker info URL, add that information. Otherwise
                         // finish immediately.
                         if (items_data[item.url].speaker_url) {
+                            Zotero.debug("XXX speaker_url = " + items_data[item.url].speaker_url);
                             ZU.processDocuments(
                                 [items_data[item.url].speaker_url],
                                 function(doc, url) {
@@ -270,14 +286,23 @@ function doWeb(doc, url) {
                                     var descrip = [];
                                     var furigana = false;
                                     if (tableNodes.length === 4) {
+                                        Zotero.debug("XXX FOUR!");
                                         descrip.push(tableNodes[1].textContent.trim());
+                                        Zotero.debug("XXX   did 1");
                                         descrip.push(tableNodes[2].textContent.trim());
+                                        Zotero.debug("XXX   did 2");
                                         descrip.push(tableNodes[3].textContent.trim());
+                                        Zotero.debug("XXX   did 3");
                                     } else if (tableNodes.length === 5) {
+                                        Zotero.debug("XXX FIVE!");
                                         furigana = tableNodes[1].textContent.trim();
+                                        Zotero.debug("XXX   did 1");
                                         descrip.push(tableNodes[2].textContent.trim());
+                                        Zotero.debug("XXX   did 2");
                                         descrip.push(tableNodes[3].textContent.trim());
+                                        Zotero.debug("XXX   did 3");
                                         descrip.push(tableNodes[4].textContent.trim());
+                                        Zotero.debug("XXX   did 4");
                                     }
                                     if (item.creators.length && furigana) {
                                         var creator = item.creators.slice(-1)[0];
