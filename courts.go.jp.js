@@ -374,8 +374,10 @@ function scrape(doc, url) {
 	var item = new Z.Item("case");
 	setValue(doc, item, "事件番号", "number");
 	setValue(doc, item, "裁判年月日", "dateDecided", convertImperialDate);
-	setValue(doc, item, "法廷名", ["jurisdiction", "court"], convertCourtName)
-	setValue(doc, item, "裁判所名", ["jurisdiction", "court"], convertCourtName)
+	setValue(doc, item, "法廷名", ["jurisdiction", "court"], convertCourtName);
+	if (!item.court) {
+		setValue(doc, item, "裁判所名", ["jurisdiction", "court"], convertCourtName);
+	}
 	item.url = url;
 	var attachmentNodes = ZU.xpath(doc, "//div[contains(text(), '全文')]/following-sibling::div/a");
 	for (var attachmentNode of attachmentNodes) {
