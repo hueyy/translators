@@ -36,23 +36,23 @@ var courtMap = {
 		courtID: "chiteki.zaisan.koto.saibansho"
 	},
 	"最高裁判所": {
-		juridictionID: "jp",
+		jurisdictionID: "jp",
 		courtID: "saiko.saibansho"
 	},
 	"最高裁判所大法廷": {
-		juridictionID: "jp",
+		jurisdictionID: "jp",
 		courtID: "saiko.saibansho.dai"
 	},
 	"最高裁判所第一小法廷": {
-		juridictionID: "jp",
+		jurisdictionID: "jp",
 		courtID: "saiko.saibansho.ichi"
 	},
 	"最高裁判所第二小法廷": {
-		juridictionID: "jp",
+		jurisdictionID: "jp",
 		courtID: "saiko.saibansho.ni"
 	},
 	"最高裁判所第三小法廷": {
-		juridictionID: "jp",
+		jurisdictionID: "jp",
 		courtID: "saiko.saibansho.san"
 	},
 	"東京高等裁判所": {
