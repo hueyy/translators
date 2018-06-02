@@ -289,6 +289,18 @@ var courtMap = {
 	}
 }
 
+var courtKeys = Object.keys(courtMap);
+courtKeys.sort(function(a, b){
+	if (a.length > b.length) {
+		return 1;
+	} else if (a.length < b.length) {
+		return -1;
+	} else {
+		return 0;
+	}
+});
+
+
 var zenkakuRex = function () {
 	var zenkakuNums = ["\uff10", "\uff11", "\uff12", "\uff13", "\uff14", "\uff15", "\uff16", "\uff17", "\uff18", "\uff19"];
 	for (var i=0,ilen=zenkakuNums.length; i<ilen; i++) {
@@ -331,7 +343,7 @@ function convertImperialDate(dateStr) {
 
 function convertCourtName(str) {
 	var ret = false;
-	for (var key in courtMap) {
+	for (var key of courtKeys) {
 		if (key === str.slice(0, key.length)) {
 			ret = courtMap[key];
 			break;
