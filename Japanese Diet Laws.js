@@ -17,7 +17,7 @@ function detectWeb(doc, url) {
 }
 
 var kanjiNum = {
-	"": 0,
+	"◯": 0,
 	"一": 1,
 	"二": 2,
 	"三": 3,
