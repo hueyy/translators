@@ -228,7 +228,7 @@ function doWeb(doc, url) {
 				var item = new Zotero.Item("hearing");
 				item.jurisdiction = "jp";
 				var pos = url.replace(/.*\&MYPOS=([0-9]+).*/, "$1");
-				item.archiveLocation = "stmt. " + pos;
+				item.archiveLocation = "" + pos;
 				var speaker = items_data[url].speaker;
 				item.creators.push( {lastName:speaker, creatorType:"testimonyBy"});
 				// Number of columns varies (of course!), so we build a map before
@@ -239,7 +239,7 @@ function doWeb(doc, url) {
 				ndl.setCols();
                 Zotero.debug("XXX xpath statements...");
                 Zotero.debug("XXX   session...");
-				var session = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("回次")+']')[0].textContent;
+				var assemblyNumber = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("回次")+']')[0].textContent;
                 Zotero.debug("XXX   legislativeBody...");
 				var legislativeBody = ZU.xpath(newDoc, '//tr/td[1][contains(text(),"'+session_list_pos+'")]/following-sibling::td['+ndl.getCol("院名")+']')[0].textContent;
                 Zotero.debug("XXX   committee...");
@@ -252,7 +252,7 @@ function doWeb(doc, url) {
 				item.title = "国会議事録、" + committee + "、" + date + "、" + pos + "、" + speaker + "の発言";
 				setTranslation(item, "committee", committee);
 				setTranslation(item, "legislativeBody" , legislativeBody);
-				item.session = session;
+				item.assemblyNumber = assemblyNumber;
 				item.meetingNumber = meetingNumber.replace(/号/,"");
 				item.date = convertImperialDate(date);
 				item.url = url;
