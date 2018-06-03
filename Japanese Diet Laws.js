@@ -54,7 +54,7 @@ function fixNumber(number) {
 	var defaultNum = "1";
 	for (var i=0,ilen=3; i<ilen; i++) {
 		if (!nums[i]) {
-			if (i === (ilen-1) {
+			if (i === (ilen-1)) {
 				nums[i] = "0";
 			} else {
 				nums[i] = "1";
