@@ -2,14 +2,14 @@
 	"translatorID": "3ddda662-ec86-448a-9979-9ee1e567c848",
 	"label": "Japanese Diet Laws",
 	"creator": "Frank Bennett",
-	"target": "http://www.shugiin.go.jp/internet/itdb_housei.nsf/html/houritsu/[0-9]+\\.htm",
+	"target": "http://www.shugiin.go.jp/internet/itdb_housei.nsf/html/(houritsu|housei)/[0-9]+\\.htm",
 	"minVersion": "3.0",
 	"maxVersion": "",
 	"priority": 100,
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsv",
-	"lastUpdated": "2018-06-03 00:55:00"
+	"lastUpdated": "2018-06-17 14:39:36"
 }
 
 function detectWeb(doc, url) {
@@ -101,7 +101,7 @@ function fixDate(date) {
 function doWeb(doc, url) {
 	var item = new Zotero.Item("statute");
 	item.jurisdiction = "jp";
-    item.url = url;
+	item.url = url;
 	var details = ZU.xpath(doc, "//title")[0].textContent;
 	var nameNode = ZU.xpath(doc, "//p[contains(text(),'\u25ce')]")[0];
 	item.nameOfAct = nameNode.textContent.replace(/^[\u3000\u25ce ]+/g, "");
