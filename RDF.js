@@ -71,14 +71,19 @@ var n = {
 	eprints:"http://purl.org/eprint/terms/",
 	og:"http://ogp.me/ns#",				// Used for Facebook's OpenGraph Protocol
 	article:"http://ogp.me/ns/article#",
-	book:"http://ogp.me/ns/book#"
+	book:"http://ogp.me/ns/book#",
+	so:"http://schema.org/",
+	codemeta:"https://codemeta.github.io/terms/"
 };
 
 var callNumberTypes = [n.dcterms+"LCC", n.dcterms+"DDC", n.dcterms+"UDC"];
 
 // gets the first result set for a property that can be encoded in multiple
 // ontologies
-function getFirstResults(node, properties, onlyOneString, preserveObject) {
+//				if((!preserveObject && typeof(result[0]) != "object")
+//					|| result[0].termType == 'literal') {
+//					return result[0];
+function getFirstResults(nodes, properties, onlyOneString, preserveObject) {
 	if (!nodes.length) nodes = [nodes];
 	for (let node of nodes) {
 		for(var i=0; i<properties.length; i++) {
@@ -88,16 +93,16 @@ function getFirstResults(node, properties, onlyOneString, preserveObject) {
 					// onlyOneString means we won't return nsIRDFResources, only
 					// actual literals
 					if((!preserveObject && typeof(result[0]) != "object")
-						|| result[0].termType == 'literal') {
+					   || result[0].termType == 'literal') {
 						return result[0];
+					} else if (preserveObject) {
+						return result;
 					} else {
 						return Zotero.RDF.getResourceURI(result[0]);
 					}
 				} else {
-					return Zotero.RDF.getResourceURI(result[0]);
+					return result;
 				}
-			} else {
-				return result;
 			}
 		}
 	}
@@ -876,6 +881,9 @@ function importItem(newItem, node) {
 	}
 	newItem.itemType = exports.itemType || itemType;
 	var container = ret.container;
+	var containerPeriodical = ret.containerPeriodical;
+	var containerPublicationVolume = ret.containerPublicationVolume;
+	var containerPublicationIssue = ret.containerPublicationIssue;
 	var isPartOf = ret.isPartOf;
 
 	// title
@@ -1378,7 +1386,7 @@ function importNext(nodes, index, collections, resolve, reject) {
 			var node = nodes[i];
 			// JURIS-M (start)
 			var itemID = Zotero.RDF.getResourceURI(node);
-			
+
 			// figure out if this is a part of another resource, or a linked
 			// attachment
 			if(Zotero.RDF.getSources(node, n.dcterms+"isPartOf") ||
@@ -1416,7 +1424,6 @@ function importNext(nodes, index, collections, resolve, reject) {
 					return;
 				}
 			}
-			
 			Zotero.setProgress((i + 1) / nodes.length * 100);
 		}
 		
