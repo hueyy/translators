@@ -37,6 +37,7 @@
 */
 
 // Get any search results from current page
+
 // Used in detectWeb() and doWeb()
 function getSearchResults(doc) {
 	var results = doc.getElementsByClassName("lucene_search_result_b"),
