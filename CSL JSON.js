@@ -12,7 +12,7 @@
 	"inRepository": true,
 	"translatorType": 3,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2017-07-05 19:32:38"
+	"lastUpdated": "2019-01-31 00:12:00"
 }
 
 function parseInput() {
@@ -31,16 +31,16 @@ function parseInput() {
 }
 
 function detectImport() {
-	const CSL_TYPES = {"book":true,"chapter":true,"article-journal":true,"article-magazine":true,
-					   "article-newspaper":true,"thesis":true,"entry-encyclopedia":true,
-					   "entry-dictionary":true,"paper-conference":true,"personal_communication":true,
-					   "manuscript":true,"interview":true,"motion_picture":true,"graphic":true,
-					   "webpage":true,"report":true,"bill":true,"legal_case":true,"hearing":true,
-					   "patent":true,"legislation":true,"map":true,"post-weblog":true,"post":true,
-					   "song":true,"speech":true,"video":true,"broadcast":true,"gazette":true,
-					   "regulation":true,"classic":true,"treaty":true,"standard":true,
-					   "article":true};
-
+	const CSL_TYPES = {"article":true, "article-journal":true, "article-magazine":true,
+		"article-newspaper":true, "bill":true, "book":true, "broadcast":true,
+		"chapter":true, "dataset":true, "entry":true, "entry-dictionary":true,
+		"entry-encyclopedia":true, "figure":true, "graphic":true, "interview":true,
+		"legal_case":true, "legislation":true, "manuscript":true, "map":true,
+		"motion_picture":true, "musical_score":true, "pamphlet":true,
+		"paper-conference":true, "patent":true, "personal_communication":true,
+		"post":true, "post-weblog":true, "report":true, "review":true, "review-book":true,
+		"song":true, "speech":true, "thesis":true, "treaty":true, "webpage":true};
+		
 	var parsedData = parseInput();
 	if (!parsedData) return false;
 	
@@ -108,7 +108,17 @@ function importNext(data, resolve, reject) {
 
 function doExport() {
 	var item, data = [];
-	while (item = Z.nextItem()) data.push(ZU.itemToCSLJSON(item));
+	while (item = Z.nextItem()) {
+		if (item.extra) {
+			item.extra = item.extra.replace(/(?:^|\n)citation key\s*:\s*([^\s]+)(?:\n|$)/i, (m, citationKey) => {
+				item.citationKey = citationKey;
+				return '\n';
+			}).trim();
+		}
+		var cslItem = ZU.itemToCSLJSON(item);
+		if (item.citationKey) cslItem.id = item.citationKey;
+		data.push(cslItem);
+	}
 	Z.write(JSON.stringify(data, null, "\t"));
 }
 /** BEGIN TEST CASES **/
