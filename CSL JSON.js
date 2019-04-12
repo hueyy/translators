@@ -15,6 +15,27 @@
 	"lastUpdated": "2019-01-31 00:12:00"
 }
 
+var mimeTypes = {
+    "PDF": "application/pdf",
+    "DOC": "application/msword",
+    "DOCX": "application/msword",
+    "HTML": "text/html",
+    "HTM": "text/html",
+    "TXT": "text/plain",
+    "DEFAULT": "application/octet-stream"
+};
+
+var mimeRex = new RegExp("(" + Object.keys(mimeTypes).join("|") + ")$", "i");
+
+function getMimeType(str) {
+    var mimeKey = "DEFAULT";
+    var m = mimeRex.exec(str);
+    if (m) {
+        mimeKey = m[1].toUpperCase();
+    }
+    return mimeTypes[mimeKey];
+}
+
 function parseInput() {
 	var str, json = "";
 	
@@ -90,6 +111,34 @@ function importNext(data, resolve, reject) {
 		while (d = data.shift()) {
 			var item = new Z.Item();
 			ZU.itemFromCSLJSON(item, d);
+			item.attachments = [];
+            item.tags = [];
+			if (d.attachments && d.attachments.length) {
+				for (var att of d.attachments) {
+                    var title = null, path = null;
+                    if (typeof att === "string") {
+                        title = "Attachment";
+                        path = att;
+                    } else if (att.title && att.url) {
+                        title = att.title;
+                        path = att.path;
+                    }
+                    if (title && path) {
+					    item.attachments.push({
+						    title: title,
+						    path: path,
+						    mimeType: getMimeType(path)
+					    });
+                    }
+				}
+			}
+            if (d.tags) {
+                var tags = d.tags;
+                if (typeof d.tags === "string") {
+                    tags = d.tags.split(/\s*,\s*/);
+                }
+                item.tags = tags;
+            }
 			var maybePromise = item.complete();
 			if (maybePromise) {
 				maybePromise.then(function () {
