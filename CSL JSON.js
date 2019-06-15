@@ -52,16 +52,7 @@ function parseInput() {
 }
 
 function detectImport() {
-	const CSL_TYPES = {"article":true, "article-journal":true, "article-magazine":true,
-		"article-newspaper":true, "bill":true, "book":true, "broadcast":true,
-		"chapter":true, "dataset":true, "entry":true, "entry-dictionary":true,
-		"entry-encyclopedia":true, "figure":true, "graphic":true, "interview":true,
-		"legal_case":true, "legislation":true, "manuscript":true, "map":true,
-		"motion_picture":true, "musical_score":true, "pamphlet":true,
-		"paper-conference":true, "patent":true, "personal_communication":true,
-		"post":true, "post-weblog":true, "report":true, "review":true, "review-book":true,
-		"song":true, "speech":true, "thesis":true, "treaty":true, "webpage":true};
-		
+
 	var parsedData = parseInput();
 	if (!parsedData) return false;
 	
@@ -70,7 +61,8 @@ function detectImport() {
 	
 	for (var i=0; i<parsedData.length; i++) {
 		var item = parsedData[i];
-		if (typeof item !== "object" || !item.type || !(item.type in CSL_TYPES)) {
+		// second argument is for "strict"
+		if (typeof item !== "object" || !item.type || !(ZU.getZoteroTypeFromCslType(item, true))) {
 			return false;
 		}
 	}
