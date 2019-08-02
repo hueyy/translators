@@ -82,6 +82,11 @@ function extractQueryValues(url) {
 function translateRIS(ris, pdfURL) {
 	var trans = Zotero.loadTranslator('import');
 	trans.setTranslator('32d59d2d-b65a-4da4-b0a3-bdd3cfb979e7');//https://github.com/zotero/translators/blob/master/RIS.js
+	var lst = ris.split("\n");
+	for (var i=0,ilen=lst.length;i<ilen;i++) {
+		lst[i] = lst[i].replace(/^VO\s/g, "VL ");
+	}
+	ris = lst.join("\n");
 	trans.setString(ris);
 	trans.setHandler('itemDone', function (obj, item) {
 		if (pdfURL) {
@@ -119,6 +124,7 @@ function scrapePage(doc, url) {
 		var risURL = docParams.base
 			+ "CitationFile?kind=ris&handle=" + docParams.handle
 			+ "&id=" + pageID
+			+ "&div=" + docParams.div
 			+ "&base=js";
 		ZU.doGet(risURL, function(ris) {
 			// the PDF URL gives us a page that will refresh itself to the PDF.
