@@ -9,11 +9,11 @@
 	"inRepository": true,
 	"translatorType": 4,
 	"browserSupport": "gcsibv",
-	"lastUpdated": "2014-04-03 16:36:35"
+	"lastUpdated": "2019-11-15 22:12:39"
 }
 
 function detectWeb(doc, url) {
-	var liiRegexp= /^https?:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/.+\.html/
+	var liiRegexp= /^https?:\/\/www\.bailii\.org(?:\/cgi\-bin\/format\.cgi\?doc\=)?\/\w+\/cases\/.+\.html/
 	if (liiRegexp.test(url)) {
 		return "case";
 	} else {
@@ -43,7 +43,7 @@ function scrape(doc, url) {
 	var courtRegexp = /cases\/([^\/]+)\/([^\/]+)\//
 	var courtMatch = courtRegexp.exec(doc.location.href);
 	if (courtMatch) {
-		var divRegexp = /\w+/
+		var divRegexp = /[a-zA-Z]+/
 		var divMatch = divRegexp.exec(courtMatch[2]);
 		if (divMatch) {
 			newItem.court = courtMatch[1] + " (" + courtMatch[2] + ")";
@@ -72,7 +72,7 @@ function scrape(doc, url) {
 }
 
 function doWeb(doc, url) {
-	var liiRegexp= /http:\/\/www\.bailii\.org(?:\/cgi\-bin\/markup\.cgi\?doc\=)?\/\w+\/cases\/.+\.html/
+	var liiRegexp= /https?:\/\/www\.bailii\.org(?:\/cgi\-bin\/format\.cgi\?doc\=)?\/\w+\/cases\/.+\.html/
 	if (liiRegexp.test(url)) {
 		scrape(doc);
 	} else {
@@ -95,34 +95,54 @@ function doWeb(doc, url) {
 var testCases = [
 	{
 		"type": "web",
-		"url": "http://www.bailii.org/cgi-bin/markup.cgi?doc=/eu/cases/EUECJ/2011/C40308.html&query=copyright&method=boolean",
+		"url": "https://www.bailii.org/cgi-bin/format.cgi?doc=/eu/cases/EUECJ/2011/C40308.html&query=copyright&method=boolean",
 		"items": [
 			{
 				"itemType": "case",
+				"caseName": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08",
 				"creators": [],
-				"notes": [],
-				"tags": [],
-				"seeAlso": [],
+				"dateDecided": "04 October 2011",
+				"court": "EUECJ",
+				"url": "https://www.bailii.org/cgi-bin/format.cgi?doc=/eu/cases/EUECJ/2011/C40308.html&query=copyright&method=boolean",
 				"attachments": [
 					{
 						"title": "BAILII Snapshot",
 						"mimeType": "text/html"
 					}
 				],
-				"title": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08",
-				"url": "http://www.bailii.org/cgi-bin/markup.cgi?doc=/eu/cases/EUECJ/2011/C40308.html&query=copyright&method=boolean",
-				"caseName": "Football Association Premier League & Ors (Freedom to provide services) [2011] EUECJ C-403/08",
-				"dateDecided": "04 October 2011",
-				"court": "EUECJ (2011)",
-				"libraryCatalog": "BAILII",
-				"accessDate": "CURRENT_TIMESTAMP"
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
 			}
 		]
 	},
 	{
 		"type": "web",
-		"url": "http://www.bailii.org/eu/cases/EUECJ/2007/",
+		"url": "https://www.bailii.org/eu/cases/EUECJ/2007/",
 		"items": "multiple"
+	},
+	{
+		"type": "web",
+		"url": "https://www.bailii.org/cgi-bin/format.cgi?doc=/uk/cases/UKSC/2019/27.html",
+		"items": [
+			{
+				"itemType": "case",
+				"caseName": "Lachaux v Independent Print Ltd & Anor [2019] UKSC 27",
+				"creators": [],
+				"dateDecided": "12 June 2019",
+				"court": "UKSC",
+				"url": "https://www.bailii.org/cgi-bin/format.cgi?doc=/uk/cases/UKSC/2019/27.html",
+				"attachments": [
+					{
+						"title": "BAILII Snapshot",
+						"mimeType": "text/html"
+					}
+				],
+				"tags": [],
+				"notes": [],
+				"seeAlso": []
+			}
+		]
 	}
 ]
 /** END TEST CASES **/
